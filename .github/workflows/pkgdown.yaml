@@ -17,8 +17,11 @@ permissions:
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
+    # non-PR events share one group so a newer run cancels an older in-flight
+    # one (avoids two builds racing to deploy gh-pages); PR runs stay distinct.
     concurrency:
-      group: pkgdown-${{ github.run_id }}
+      group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
+      cancel-in-progress: true
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       CMDSTAN: ${{ github.workspace }}/.cmdstan/cmdstan
