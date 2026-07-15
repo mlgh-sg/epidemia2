@@ -48,9 +48,10 @@ An object of class \code{epimodel}.
 \code{\link{epim}} is the only model fitting function in \pkg{epidemia}.
 It takes a model description, a dataframe, and additional
 arguments relating to the fitting algorithm, and translates this
-to data that is then passed to a precompiled \pkg{Stan} program which is used to fit the model.
-This allows model fitting to begin immediately as opposed to requiring compilation
-each time \code{epim} is called.
+to data that is then passed to a \pkg{Stan} program which is used to fit the model.
+The \pkg{Stan} program is compiled the first time it is needed and then cached
+(via \pkg{cmdstanr}), so subsequent calls to \code{epim} begin fitting immediately
+without recompilation.
 }
 \details{
 This is similar to the workflow for fitting Bayesian regression models with \pkg{rstanarm}.
