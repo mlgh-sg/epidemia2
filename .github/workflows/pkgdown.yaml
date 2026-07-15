@@ -24,7 +24,6 @@ jobs:
       cancel-in-progress: true
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      CMDSTAN: ${{ github.workspace }}/.cmdstan/cmdstan
     steps:
       - uses: actions/checkout@v4
 
@@ -64,28 +63,27 @@ jobs:
         run: tinytex::install_tinytex()
         shell: Rscript {0}
 
-      # Install + cache CmdStan (the slow part). The key pins the version so a
-      # toolchain bump invalidates the cache automatically.
+      # Install + cache CmdStan (the slow part) into cmdstanr's DEFAULT location
+      # (~/.cmdstan/cmdstan-<version>). Installing there means cmdstanr auto-
+      # detects it in every subprocess, including the fresh R sessions pkgdown
+      # spawns to knit the (model-fitting) vignettes. The cache key pins the
+      # version so a toolchain bump invalidates it automatically.
       - name: Cache CmdStan
         id: cmdstan-cache
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/.cmdstan
+          path: ~/.cmdstan
           key: cmdstan-${{ runner.os }}-2.36.0
 
       - name: Install CmdStan
         if: steps.cmdstan-cache.outputs.cache-hit != 'true'
         run: |
-          dir.create(dirname(Sys.getenv("CMDSTAN")), recursive = TRUE, showWarnings = FALSE)
           cmdstanr::check_cmdstan_toolchain(fix = TRUE)
-          cmdstanr::install_cmdstan(
-            dir = dirname(Sys.getenv("CMDSTAN")),
-            cores = parallel::detectCores(), overwrite = TRUE
-          )
+          cmdstanr::install_cmdstan(version = "2.36.0", cores = parallel::detectCores())
         shell: Rscript {0}
 
-      - name: Point cmdstanr at the cached CmdStan
-        run: cmdstanr::set_cmdstan_path(Sys.getenv("CMDSTAN"))
+      - name: Check CmdStan is discoverable
+        run: cat("CmdStan:", cmdstanr::cmdstan_path(), "/", as.character(cmdstanr::cmdstan_version()), "\n")
         shell: Rscript {0}
 
       - name: Build site
