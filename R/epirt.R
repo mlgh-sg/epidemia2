@@ -36,7 +36,8 @@
 #' @export
 #' @return An object of class \code{epirt}.
 #' @examples
-#' \donttest{
+#' # Fitting requires an external CmdStan install (cmdstanr::install_cmdstan()).
+#' \dontrun{
 #' library(epidemia)
 #' library(ggplot2)
 #' data("EuropeCovid")

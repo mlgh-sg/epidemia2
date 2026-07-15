@@ -14,32 +14,9 @@ pkgdown:
   } 
 </style>
 
-<div class = "article_container">
+::: {.article_container}
 
-```{r setup, include=FALSE, message = FALSE, warning = FALSE}
-knitr::opts_chunk$set(
-  out.width = 6, fig.height = 6, out.width = "70%", fig.align = "center"
-)
-library(ggplot2)
-library(kableExtra)
-library(gridExtra)
 
-extrafont::loadfonts()
-
-text_size <- 7
-leg <- theme(legend.text = element_text(size=text_size), legend.title = element_text(size=text_size), legend.key.size = unit(0.3, "cm"))
-bord <- theme(panel.border = element_rect(fill=NA, colour="black", size=1))
-font <- theme(axis.text.x = element_text(size=text_size), axis.text.y= element_text(size=text_size), plot.title = element_text(size=text_size),
-               strip.text.x =  element_text(size=text_size))
-marg <- theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
-no_angle <- theme(axis.text.x = element_text(angle=0, hjust = 0.5))
-
-g_legend<-function(a.gplot){
-  tmp <- ggplot_gtable(ggplot_build(a.gplot))
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-  legend <- tmp$grobs[[leg]]
-  return(legend)}
-```
 
 #  Spanish Flu in Baltimore {#sec:flu}
 <hr>
@@ -51,7 +28,8 @@ follow a daily random walk with no additional covariates. Of course, **epidemia*
 is capable of more complex modeling, and other articles take a 
 step in this direction.
 
-```{r core-packages, message=FALSE}
+
+``` r
 library(epidemia)
 library(lubridate)
 ```
@@ -64,16 +42,30 @@ is particularly useful for this example because infection counts are low. We wil
 
 First use the following command, which ensures parallel execution if multiple cores 
 are available.
-```{r parallel}
+
+``` r
 options(mc.cores = parallel::detectCores())
 ```
 
 The case data is provided by the **R** package **EpiEstim**.
 
-```{r flu1918-load_packages, message = FALSE}
+
+``` r
 library(EpiEstim)
 data("Flu1918")
 print(Flu1918)
+```
+
+```
+## $incidence
+##  [1]   5   1   6  15   2   3   8   7   2  15   4  17   4  10  31  11  13  36  13
+## [20]  33  17  15  32  27  70  58  32  69  54  80 405 192 243 204 280 229 304 265
+## [39] 196 372 158 222 141 172 553 148  95 144  85 143  87  73  70  62 116  44  38
+## [58]  60  45  60  27  51  34  22  16  11  18  11  10   8  13   3   3   6   6  13
+## [77]   5   6   6   5   5   1   2   2   3   8   4   1   2   3   1   0
+## 
+## $si_distr
+##  [1] 0.000 0.233 0.359 0.198 0.103 0.053 0.027 0.014 0.007 0.003 0.002 0.001
 ```
 
 ## Data
@@ -87,7 +79,8 @@ example, no covariates are required. $R_t$ follows a daily random walk,
 with no additional covariates. In addition, the case ascertainment rate 
 will be assumed at 100\%, and so no covariates are used for this model either.
 
-```{r flu1918-data}
+
+``` r
 date <- as.Date("1918-01-01") + seq(0, along.with = c(NA, Flu1918$incidence))
 data <- data.frame(city = "Baltimore", cases = c(NA, Flu1918$incidence), 
                    date = date)
@@ -111,7 +104,8 @@ example, to define a weekly random walk. If unspecified, the increments are
 daily. The increments are modeled as half-normal with a scale hyperparameter. 
 The value of this is set using the `prior_scale` argument. This is used 
 in the snippet below.
-```{r flu1918-rt}
+
+``` r
 rt <- epirt(formula = R(city, date) ~ 1 + rw(prior_scale = 0.01),
             prior_intercept = normal(log(2), 0.2), link = 'log')
 ```
@@ -124,7 +118,8 @@ Multiple observational models can
 be collected into a list and passed to `epim()` as the `obs` 
 argument. In this case, only case data is used and so there is only one 
 such model.
-```{r flu1918-obs}
+
+``` r
 obs <-  epiobs(formula = cases ~ 0 + offset(rep(1,93)), link = "identity", 
                i2o = rep(.25,4))
 ```
@@ -145,7 +140,8 @@ Two infection models are considered. The first uses the renewal equation to prop
 adds variance to this process, and can be applied by using `latent = TRUE` 
 in the call to `epiinf()`.
 
-```{r flu1918-inf_modes}
+
+``` r
 inf <- epiinf(gen = Flu1918$si_distr)
 inf_ext <-  epiinf(gen = Flu1918$si_distr, latent = TRUE, 
                    prior_aux = normal(10,2))
@@ -162,7 +158,8 @@ infections have conditional variance around 10 times the conditional mean.
 
 We are left to collect all remaining arguments required for `epim()`. This 
 is done as follows.
-```{r flu1918-args}
+
+``` r
 args <- list(rt = rt, obs = obs, inf = inf, data = data, iter = 2e3,
              seed = 12345,
              control = list(max_treedepth = 12, adapt_delta = 0.95))
@@ -181,9 +178,873 @@ We wrap the calls to `epim()` in `system.time` in order to assess
 the computational cost of fitting the models. The snippet below fits both 
 versions of the model. `fm1` and `fm2`are the fitted basic model 
 and extended model respectively.
-```{r flu1918-fm, cache=TRUE, warning=FALSE}
+
+``` r
 system.time(fm1 <- do.call(epim, args))
+```
+
+```
+## Running MCMC with 4 parallel chains...
+## 
+## Chain 1 Iteration:    1 / 2000 [  0%]  (Warmup)
+```
+
+```
+## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 1
+```
+
+```
+## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 1
+```
+
+```
+## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[11, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 1
+```
+
+```
+## Chain 2 Iteration:    1 / 2000 [  0%]  (Warmup)
+```
+
+```
+## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 2
+```
+
+```
+## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[8, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 2
+```
+
+```
+## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[17, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 2
+```
+
+```
+## Chain 3 Iteration:    1 / 2000 [  0%]  (Warmup)
+```
+
+```
+## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 3
+```
+
+```
+## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 3
+```
+
+```
+## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[11, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 3
+```
+
+```
+## Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup)
+```
+
+```
+## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 4
+```
+
+```
+## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[8, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 4
+```
+
+```
+## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[17, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 4
+```
+
+```
+## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 4 finished in 19.0 seconds.
+## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 finished in 19.7 seconds.
+## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 finished in 20.7 seconds.
+## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 3 finished in 21.4 seconds.
+## 
+## All 4 chains finished successfully.
+## Mean chain execution time: 20.2 seconds.
+## Total execution time: 21.4 seconds.
+```
+
+```
+##    user  system elapsed 
+##  82.019   0.395  22.902
+```
+
+``` r
 system.time(fm2 <- do.call(epim, args_ext))
+```
+
+```
+## Running MCMC with 4 parallel chains...
+## 
+## Chain 1 Iteration:    1 / 2000 [  0%]  (Warmup)
+```
+
+```
+## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 1 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+```
+
+```
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+```
+
+```
+## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 1
+```
+
+```
+## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 1 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+```
+
+```
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+```
+
+```
+## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 1
+```
+
+```
+## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[23, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 1
+```
+
+```
+## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 1 Exception: normal_lpdf: Location parameter[47] is inf, but must be finite! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+```
+
+```
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+```
+
+```
+## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 1
+```
+
+```
+## Chain 2 Iteration:    1 / 2000 [  0%]  (Warmup)
+```
+
+```
+## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 2 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+```
+
+```
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+```
+
+```
+## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 2
+```
+
+```
+## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 2 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+```
+
+```
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+```
+
+```
+## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 2
+```
+
+```
+## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[16, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 2
+```
+
+```
+## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 2 Exception: normal_lpdf: Location parameter[28] is inf, but must be finite! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+```
+
+```
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+```
+
+```
+## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 2
+```
+
+```
+## Chain 3 Iteration:    1 / 2000 [  0%]  (Warmup)
+```
+
+```
+## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 3 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+```
+
+```
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+```
+
+```
+## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 3
+```
+
+```
+## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 3 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+```
+
+```
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+```
+
+```
+## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 3
+```
+
+```
+## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[23, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 3
+```
+
+```
+## Chain 4 Iteration:    1 / 2000 [  0%]  (Warmup)
+```
+
+```
+## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 4 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+```
+
+```
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+```
+
+```
+## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 4
+```
+
+```
+## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 4 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+```
+
+```
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+```
+
+```
+## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 4
+```
+
+```
+## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
+```
+
+```
+## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[23, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+```
+
+```
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+```
+
+```
+## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
+```
+
+```
+## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
+```
+
+```
+## Chain 4
+```
+
+```
+## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 3 finished in 3.8 seconds.
+## Chain 4 finished in 3.8 seconds.
+## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 1 finished in 4.1 seconds.
+## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 finished in 4.6 seconds.
+## 
+## All 4 chains finished successfully.
+## Mean chain execution time: 4.1 seconds.
+## Total execution time: 4.7 seconds.
+```
+
+```
+##    user  system elapsed 
+##  17.638   0.314   6.212
 ```
 Note the stark difference in running time. The extended model appears to fit 
 faster even though there are $87$ additional parameters being sampled (daily 
@@ -207,37 +1068,46 @@ has much wider credible intervals for $R_t$ when infections are low. This is int
 Posterior predictive checks are shown in the bottom panel of Figure \@ref(fig:flu1918-plots), 
 and show that both models are able to fit the data well.
 
-```{r flu1918-plots, echo = FALSE, message = FALSE, warning = FALSE, cache = TRUE, fig.width = 9, fig.width = 9, fig.height = 12, fig.cap = "Spaghetti plots showing the median (black) and sample paths (blue) from the posterior distribution. The **left** corresponds to the basic model, and the **right** panel is for the extended version. **Top**: inferred time-varying reproduction numbers, which have been smoothed over 7 days for illustration. **Middle**: Inferred latent infections. **Bottom**: observed cases, and cases simulated from the posterior. These align closely, and so do not flag problems with the model fit."}
-library(gridExtra)
-p1 <- spaghetti_rt(fm1, draws=100, alpha = 0.2, smooth=7)
-p2 <- spaghetti_rt(fm2, draws=100, alpha = 0.2, smooth=7)
-p3 <- spaghetti_infections(fm1, draws=10, alpha = 0.6, smooth=1)
-p4 <- spaghetti_infections(fm2, draws=10, alpha = 0.6, smooth=1)
-#p3 <- plot_infections(fm1, levels = c(30,60,90)) 
-#p4 <- plot_infections(fm2, levels = c(30,60,90)) 
-p5 <- spaghetti_obs(fm1, type = "cases", draws = 10, alpha=1, posterior_mean=T)
-p6 <- spaghetti_obs(fm2, type = "cases", draws = 10, alpha=1, posterior_mean=T)  + theme(legend.text = element_text(size=7), legend.title = element_text(size=8), legend.key.size = unit(0.3, "cm"))
 
-fonts <- theme(axis.text.x = element_text(size = 7), axis.text.y = element_text(size = 7), axis.title.y = element_text(size=8))
-
-bord <- theme(panel.border = element_rect(colour="black", fill=NA, size=1))
-
-#legend2 <- g_legend(p4)
-legend3 <- g_legend(p6)
-
-p1 <- p1 + fonts +theme(legend.position = "none" , plot.margin = margin(l=6, b=-2, r=5),) + ylim(0, 2.6) + bord + no_angle
-
-p2 <- p2 + fonts + theme(legend.position = "none", plot.margin = margin(b=-2, l=5)) + theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) + ylim(0,2.6) + bord + no_angle
-p3 <- p3 + fonts +theme(legend.position = "none" , plot.margin = margin(t = -2, b=-2, r=5)) + scale_y_continuous(limits = c(0,400), minor_breaks=NULL) + bord + no_angle
-p4 <- p4 + fonts + theme(legend.position = "none", plot.margin = margin(t = -2, b=-2,l=5)) +
-  scale_y_continuous(limits = c(0,400), minor_breaks=NULL)  + theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) + bord + no_angle
-p5 <- p5 + fonts + theme(legend.position = "none", plot.margin = margin(t = -2,b=-6, r=5)) + bord + no_angle
-p6 <- p6 + fonts + theme(legend.position = "none", plot.margin = margin(t= -2,b=-6, l=5)) + theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) + bord + no_angle
-
-grid.arrange(p1,p2,p3,p4,p5, p6, legend3,
-  layout_matrix = matrix(c(1,2,3,4,5,6,7,7), nrow=4, ncol=2, byrow=T),
-  heights = c(10,10,10,1), widths = c(1.08,1)
-) 
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
 ```
 
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+<div class="figure" style="text-align: center">
+<img src="figure/flu-flu1918-plots-1.png" alt="Spaghetti plots showing the median (black) and sample paths (blue) from the posterior distribution. The **left** corresponds to the basic model, and the **right** panel is for the extended version. **Top**: inferred time-varying reproduction numbers, which have been smoothed over 7 days for illustration. **Middle**: Inferred latent infections. **Bottom**: observed cases, and cases simulated from the posterior. These align closely, and so do not flag problems with the model fit." width="70%" />
+<p class="caption">(\#fig:flu1918-plots)Spaghetti plots showing the median (black) and sample paths (blue) from the posterior distribution. The **left** corresponds to the basic model, and the **right** panel is for the extended version. **Top**: inferred time-varying reproduction numbers, which have been smoothed over 7 days for illustration. **Middle**: Inferred latent infections. **Bottom**: observed cases, and cases simulated from the posterior. These align closely, and so do not flag problems with the model fit.</p>
 </div>
+
+:::

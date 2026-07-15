@@ -1,9 +1,13 @@
 # Build and deploy the pkgdown documentation site.
 #
-# The tutorial vignettes fit real Stan models, so the runner needs a working
-# CmdStan installation (installed and cached below). The site is published to
-# the gh-pages branch; after the first successful run, enable GitHub Pages once
-# under Settings -> Pages -> "Deploy from a branch" -> gh-pages / (root).
+# This job does NOT fit any models: the model-fitting tutorials are precomputed
+# (baked) by vignettes/precompute.R and committed, so the site renders quickly
+# and needs no CmdStan. When the modelling code changes, the separate
+# "refresh-vignettes" workflow re-bakes the tutorials and opens a PR.
+#
+# The site is published to the gh-pages branch; after the first successful run,
+# enable GitHub Pages once under Settings -> Pages -> "Deploy from a branch"
+# -> gh-pages / (root).
 on:
   push:
     branches: [main, master]
@@ -33,57 +37,22 @@ jobs:
         with:
           use-public-rspm: true
 
-      # cmdstanr lives on the Stan r-universe; add it so the Suggests resolves.
-      - name: Configure repositories
-        run: |
-          cat("options(repos = c(stan = 'https://stan-dev.r-universe.dev', getOption('repos')))\n",
-              file = "~/.Rprofile", append = TRUE)
-        shell: Rscript {0}
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # website deps + cmdstanr + the vignette Suggests + the package itself
-          # website deps + cmdstanr + everything the tutorial vignettes need
+          # website deps + what the conceptual articles need to render. No
+          # cmdstanr: the tutorials are already baked, so nothing is fit here.
           extra-packages: |
             any::pkgdown
-            any::cmdstanr
             any::tinytex
             any::magick
             any::pdftools
-            any::EpiEstim
-            any::lubridate
-            any::kableExtra
-            any::gridExtra
             any::bookdown
-            any::extrafont
+            any::kableExtra
             local::.
           needs: website
 
       - name: Install a LaTeX toolchain (for the schematic vignette)
         run: tinytex::install_tinytex()
-        shell: Rscript {0}
-
-      # Install + cache CmdStan (the slow part) into cmdstanr's DEFAULT location
-      # (~/.cmdstan/cmdstan-<version>). Installing there means cmdstanr auto-
-      # detects it in every subprocess, including the fresh R sessions pkgdown
-      # spawns to knit the (model-fitting) vignettes. The cache key pins the
-      # version so a toolchain bump invalidates it automatically.
-      - name: Cache CmdStan
-        id: cmdstan-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cmdstan
-          key: cmdstan-${{ runner.os }}-2.36.0
-
-      - name: Install CmdStan
-        if: steps.cmdstan-cache.outputs.cache-hit != 'true'
-        run: |
-          cmdstanr::check_cmdstan_toolchain(fix = TRUE)
-          cmdstanr::install_cmdstan(version = "2.36.0", cores = parallel::detectCores())
-        shell: Rscript {0}
-
-      - name: Check CmdStan is discoverable
-        run: cat("CmdStan:", cmdstanr::cmdstan_path(), "/", as.character(cmdstanr::cmdstan_version()), "\n")
         shell: Rscript {0}
 
       - name: Build site

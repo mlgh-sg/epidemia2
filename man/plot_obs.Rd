@@ -97,7 +97,8 @@ The user can control the interval levels (i.e. 30\%, 50\% etc.) and the plotted 
 This is a generic function.
 }
 \examples{
-\donttest{
+# Fitting requires an external CmdStan install (cmdstanr::install_cmdstan()).
+\dontrun{
 data("EuropeCovid2")
 data <- EuropeCovid2$data
 data <- dplyr::filter(data, date > date[which(cumsum(deaths) > 10)[1] - 30])

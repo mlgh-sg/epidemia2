@@ -31,7 +31,8 @@
 #'  the population adjustment to the reproduction number.
 #' @return A \code{ggplot} object which can be further modified.
 #' @examples
-#' \donttest{
+#' # Fitting requires an external CmdStan install (cmdstanr::install_cmdstan()).
+#' \dontrun{
 #' data("EuropeCovid2")
 #' data <- EuropeCovid2$data
 #' data <- dplyr::filter(data, date > date[which(cumsum(deaths) > 10)[1] - 30])

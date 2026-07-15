@@ -84,7 +84,8 @@ In general, the adaptive Hamiltonian Monte Carlo sampler should be used for fina
 Nonetheless, fitting these models using HMC is often computationally demanding, and variational Bayes can often be fruitful for quickly iterating models.
 }
 \examples{
-\donttest{
+# Fitting requires a CmdStan installation (see cmdstanr::install_cmdstan()).
+\dontrun{
 library(EpiEstim)
 data("Flu1918")
 

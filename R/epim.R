@@ -56,7 +56,8 @@
 #' @param ... Additional arguments (e.g. \code{iter}, \code{chains}, \code{warmup},
 #'  \code{seed}, \code{cores}, \code{control}) passed to the \pkg{cmdstanr} fitting method.
 #' @examples
-#' \donttest{
+#' # Fitting requires a CmdStan installation (see cmdstanr::install_cmdstan()).
+#' \dontrun{
 #' library(EpiEstim)
 #' data("Flu1918")
 #'

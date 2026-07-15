@@ -18,7 +18,30 @@ pkgdown:
 
 ::: {.article_container}
 
+```{r setup, include=FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(
+  out.width = 6, fig.height = 6, out.width = "70%", fig.align = "center"
+)
+library(ggplot2)
+library(kableExtra)
+library(gridExtra)
 
+extrafont::loadfonts()
+
+text_size <- 7
+leg <- theme(legend.text = element_text(size=text_size), legend.title = element_text(size=text_size), legend.key.size = unit(0.3, "cm"))
+bord <- theme(panel.border = element_rect(fill=NA, colour="black", size=1))
+font <- theme(axis.text.x = element_text(size=text_size), axis.text.y= element_text(size=text_size), plot.title = element_text(size=text_size),
+               strip.text.x =  element_text(size=text_size))
+marg <- theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
+no_angle <- theme(axis.text.x = element_text(angle=0, hjust = 0.5))
+
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+```
 
 
 # Tracking SARS-CoV-2 In England
@@ -60,8 +83,7 @@ and requires more intricate modeling to explain the full trajectory.
 First load required packages.
 
 
-
-``` r
+```{r core-packages, message=FALSE}
 library(epidemia)
 library(lubridate)
 library(dplyr)
@@ -76,8 +98,7 @@ counts of confirmed SARS-CoV-2 infections in England from the 1^st^
 January 2020 up to and including the 30^th^ May 2021. The data was
 downloaded from @PHE on the 4^nd^ of June 2021.
 
-
-``` r
+```{r eng-load-data}
 data("EnglandNewCases")
 data <- EnglandNewCases
 ```
@@ -87,8 +108,7 @@ count data, starting on the 1^st^ April. We take the first modeled date
 to be 20 days prior to this initial observation, which is the 12^th^
 March. This initial 20 days will be the seeding period.
 
-
-``` r
+```{r eng-trim-dates}
 data <- filter(data, date > max(date) - 80)
 data$cases[1:20] <- NA
 ```
@@ -103,8 +123,7 @@ provide a new column in `data` to control the random walk
 increments. This will allow us to "stop" the walk updating at dates
 after the 30^th^ May.
 
-
-``` r
+```{r eng-dtcol}
 data <- data %>% mutate(dt = replace(date, date < as.Date("2020-04-01"), NA))
 ```
 
@@ -125,8 +144,7 @@ under control at start of March. We have, however, provided a large
 scale to reflect uncertainty over the initial value. The full
 transmission model is represented as follows.
 
-
-``` r
+```{r eng-transmission}
 rt <- epirt(formula = R(region, date) ~ 1 + rw(time = dt, prior_scale=0.05), 
             link = scaled_logit(7), prior_intercept = normal(-1,1))
 ```
@@ -175,17 +193,16 @@ population.
 The population of England was estimated to be 56,286,961 as of mid-2019
 [@ons_pop]. This is added to `data` as a static variable.
 
-
-``` r
+```{r eng-pop}
 data$pop <- pop <-  56286961
 ```
 
 The infection model is expressed as follows.
 
-
-``` r
+```{r eng-infection}
 inf <- epiinf(gen = EuropeCovid$si, seed_days=20L, pop_adjust = TRUE, pops = pop, 
               prior_susc = normal(0.49, 0.1), prior_seeds = normal(15e3, 2e3))
+
 ```
 
 ## Observation Models
@@ -228,15 +245,14 @@ day of the week, and $\gamma_k \sim \mathcal{N}(0, 0.5)$ are associated
 weekday effects. These terms allow modeling weekly seasonality. First
 add the day-of-week factors to `data`.
 
-
-``` r
+```{r eng-add-day}
 data$day <- wday(data$date, label=T)
+
 ```
 
 The aforementioned model is defined as follows.
 
-
-``` r
+```{r}
 cases <- epiobs(formula = cases ~ 1 + factor(day, ordered = FALSE) +
                   rw(time = dt, prior_scale = 0.05),
                 i2o =  c(rep(0,3), rep(1/7,7)), link = "logit", 
@@ -253,8 +269,7 @@ We leverage this data for the week beginning the 28^th^ March, and for
 the subsequent 6 weeks. We arbitrarily use Thursday of each week as the
 representative date for the positivity rates.
 
-
-``` r
+```{r, eng-add-ons, message = FALSE}
 ons <- data.frame(date = as.Date("2021-04-01") + 7 * (0:6),
                   positivity = c(0.21, 0.17, 0.1, 0.08, 0.07, 0.09, 0.09))
 data <- left_join(data, ons)
@@ -286,8 +301,7 @@ ascertainment rate, and the infection weights $\pi_k$ do not form a
 probability distribution. Nonetheless, infections are still weighted
 linearly, and this model can be represented as follows.
 
-
-``` r
+```{r eng-ons, message=FALSE, warning=FALSE}
 data$off <- 1
 ons <- epiobs(formula = positivity ~ 0 + offset(off), 
               i2o = c(rep(0,3), rep(1,14)) * 100 / pop, link = "identity",
@@ -304,203 +318,9 @@ The model is fit with the NUTS sampler. In order to ensure a large
 enough effective sample size, we increase the maximum tree depth for the
 algorithm and use 4,000 iterations.
 
-
-``` r
+```{r eng-fit, cache=TRUE, message = FALSE, warning = FALSE}
 fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data, 
            iter = 4e3, control = list(max_treedepth = 12), seed=12345)
-```
-
-```
-## Running MCMC with 4 parallel chains...
-## 
-## Chain 1 Iteration:    1 / 4000 [  0%]  (Warmup)
-```
-
-```
-## Chain 2 Iteration:    1 / 4000 [  0%]  (Warmup)
-```
-
-```
-## Chain 3 Iteration:    1 / 4000 [  0%]  (Warmup)
-```
-
-```
-## Chain 4 Iteration:    1 / 4000 [  0%]  (Warmup)
-```
-
-```
-## Chain 2 Iteration:  100 / 4000 [  2%]  (Warmup) 
-## Chain 1 Iteration:  100 / 4000 [  2%]  (Warmup) 
-## Chain 3 Iteration:  100 / 4000 [  2%]  (Warmup) 
-## Chain 4 Iteration:  100 / 4000 [  2%]  (Warmup) 
-## Chain 4 Iteration:  200 / 4000 [  5%]  (Warmup) 
-## Chain 1 Iteration:  200 / 4000 [  5%]  (Warmup) 
-## Chain 2 Iteration:  200 / 4000 [  5%]  (Warmup) 
-## Chain 3 Iteration:  200 / 4000 [  5%]  (Warmup) 
-## Chain 4 Iteration:  300 / 4000 [  7%]  (Warmup) 
-## Chain 2 Iteration:  300 / 4000 [  7%]  (Warmup) 
-## Chain 1 Iteration:  300 / 4000 [  7%]  (Warmup) 
-## Chain 3 Iteration:  300 / 4000 [  7%]  (Warmup) 
-## Chain 4 Iteration:  400 / 4000 [ 10%]  (Warmup) 
-## Chain 2 Iteration:  400 / 4000 [ 10%]  (Warmup) 
-## Chain 3 Iteration:  400 / 4000 [ 10%]  (Warmup) 
-## Chain 1 Iteration:  400 / 4000 [ 10%]  (Warmup) 
-## Chain 4 Iteration:  500 / 4000 [ 12%]  (Warmup) 
-## Chain 2 Iteration:  500 / 4000 [ 12%]  (Warmup) 
-## Chain 3 Iteration:  500 / 4000 [ 12%]  (Warmup) 
-## Chain 1 Iteration:  500 / 4000 [ 12%]  (Warmup) 
-## Chain 4 Iteration:  600 / 4000 [ 15%]  (Warmup) 
-## Chain 2 Iteration:  600 / 4000 [ 15%]  (Warmup) 
-## Chain 3 Iteration:  600 / 4000 [ 15%]  (Warmup) 
-## Chain 1 Iteration:  600 / 4000 [ 15%]  (Warmup) 
-## Chain 4 Iteration:  700 / 4000 [ 17%]  (Warmup) 
-## Chain 2 Iteration:  700 / 4000 [ 17%]  (Warmup) 
-## Chain 3 Iteration:  700 / 4000 [ 17%]  (Warmup) 
-## Chain 4 Iteration:  800 / 4000 [ 20%]  (Warmup) 
-## Chain 1 Iteration:  700 / 4000 [ 17%]  (Warmup) 
-## Chain 2 Iteration:  800 / 4000 [ 20%]  (Warmup) 
-## Chain 3 Iteration:  800 / 4000 [ 20%]  (Warmup) 
-## Chain 1 Iteration:  800 / 4000 [ 20%]  (Warmup) 
-## Chain 4 Iteration:  900 / 4000 [ 22%]  (Warmup) 
-## Chain 2 Iteration:  900 / 4000 [ 22%]  (Warmup) 
-## Chain 3 Iteration:  900 / 4000 [ 22%]  (Warmup) 
-## Chain 1 Iteration:  900 / 4000 [ 22%]  (Warmup) 
-## Chain 4 Iteration: 1000 / 4000 [ 25%]  (Warmup) 
-## Chain 2 Iteration: 1000 / 4000 [ 25%]  (Warmup) 
-## Chain 3 Iteration: 1000 / 4000 [ 25%]  (Warmup) 
-## Chain 4 Iteration: 1100 / 4000 [ 27%]  (Warmup) 
-## Chain 1 Iteration: 1000 / 4000 [ 25%]  (Warmup) 
-## Chain 2 Iteration: 1100 / 4000 [ 27%]  (Warmup) 
-## Chain 3 Iteration: 1100 / 4000 [ 27%]  (Warmup) 
-## Chain 4 Iteration: 1200 / 4000 [ 30%]  (Warmup) 
-## Chain 1 Iteration: 1100 / 4000 [ 27%]  (Warmup) 
-## Chain 2 Iteration: 1200 / 4000 [ 30%]  (Warmup) 
-## Chain 3 Iteration: 1200 / 4000 [ 30%]  (Warmup) 
-## Chain 4 Iteration: 1300 / 4000 [ 32%]  (Warmup) 
-## Chain 1 Iteration: 1200 / 4000 [ 30%]  (Warmup) 
-## Chain 2 Iteration: 1300 / 4000 [ 32%]  (Warmup) 
-## Chain 3 Iteration: 1300 / 4000 [ 32%]  (Warmup) 
-## Chain 4 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
-## Chain 1 Iteration: 1300 / 4000 [ 32%]  (Warmup) 
-## Chain 2 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
-## Chain 3 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
-## Chain 4 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
-## Chain 1 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
-## Chain 2 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
-## Chain 3 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
-## Chain 1 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
-## Chain 4 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
-## Chain 2 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
-## Chain 1 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
-## Chain 3 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
-## Chain 4 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
-## Chain 2 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
-## Chain 1 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
-## Chain 3 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
-## Chain 4 Iteration: 1800 / 4000 [ 45%]  (Warmup) 
-## Chain 2 Iteration: 1800 / 4000 [ 45%]  (Warmup) 
-## Chain 1 Iteration: 1800 / 4000 [ 45%]  (Warmup) 
-## Chain 3 Iteration: 1800 / 4000 [ 45%]  (Warmup) 
-## Chain 4 Iteration: 1900 / 4000 [ 47%]  (Warmup) 
-## Chain 2 Iteration: 1900 / 4000 [ 47%]  (Warmup) 
-## Chain 1 Iteration: 1900 / 4000 [ 47%]  (Warmup) 
-## Chain 3 Iteration: 1900 / 4000 [ 47%]  (Warmup) 
-## Chain 4 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
-## Chain 4 Iteration: 2001 / 4000 [ 50%]  (Sampling) 
-## Chain 1 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
-## Chain 1 Iteration: 2001 / 4000 [ 50%]  (Sampling) 
-## Chain 2 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
-## Chain 2 Iteration: 2001 / 4000 [ 50%]  (Sampling) 
-## Chain 3 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
-## Chain 3 Iteration: 2001 / 4000 [ 50%]  (Sampling) 
-## Chain 1 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
-## Chain 4 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
-## Chain 2 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
-## Chain 3 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
-## Chain 1 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
-## Chain 4 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
-## Chain 2 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
-## Chain 1 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
-## Chain 3 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
-## Chain 4 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
-## Chain 1 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
-## Chain 2 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
-## Chain 3 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
-## Chain 4 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
-## Chain 1 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
-## Chain 2 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
-## Chain 3 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
-## Chain 1 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
-## Chain 4 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
-## Chain 2 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
-## Chain 3 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
-## Chain 1 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
-## Chain 4 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
-## Chain 2 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
-## Chain 3 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
-## Chain 1 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
-## Chain 4 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
-## Chain 1 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
-## Chain 2 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
-## Chain 3 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
-## Chain 4 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
-## Chain 2 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
-## Chain 3 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
-## Chain 4 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
-## Chain 2 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
-## Chain 3 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
-## Chain 1 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
-## Chain 4 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
-## Chain 1 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 3 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
-## Chain 2 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
-## Chain 4 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
-## Chain 1 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 3 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
-## Chain 2 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
-## Chain 4 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
-## Chain 1 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 3 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
-## Chain 2 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
-## Chain 4 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 1 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
-## Chain 3 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 2 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 1 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
-## Chain 4 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 3 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 2 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 1 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
-## Chain 4 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 3 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 2 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 1 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
-## Chain 4 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
-## Chain 1 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 1 finished in 103.9 seconds.
-## Chain 3 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
-## Chain 2 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
-## Chain 4 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
-## Chain 3 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
-## Chain 2 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
-## Chain 4 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
-## Chain 3 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
-## Chain 2 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
-## Chain 4 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
-## Chain 3 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
-## Chain 2 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
-## Chain 4 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 4 finished in 117.0 seconds.
-## Chain 3 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 3 finished in 117.7 seconds.
-## Chain 2 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 2 finished in 118.9 seconds.
-## 
-## All 4 chains finished successfully.
-## Mean chain execution time: 114.4 seconds.
-## Total execution time: 119.1 seconds.
 ```
 
 Figure \@ref(fig:eng-rt) plots credible intervals for $R_t$ over the two
@@ -510,25 +330,18 @@ to be rising as of the end of May. The credible intervals widen towards
 30^th^ May because there is a lag between reproduction numbers and
 recording cases.
 
-
+```{r eng-rt, message = FALSE, warning = FALSE, echo = FALSE, fig.width=5, fig.height=3, fig.cap = "$R_t$ in England over the period starting on the 1^st^ April 2021 and ending the 30^th^ May 2021"}
+p <- plot_rt(fm, dates = c("2021-04-01", NA))
+p <- p + bord + font + marg + no_angle
+p
 ```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
-```
-
-<div class="figure" style="text-align: center">
-<img src="figure/multiple-obs-eng-rt-1.png" alt="$R_t$ in England over the period starting on the 1^st^ April 2021 and ending the 30^th^ May 2021" width="70%" />
-<p class="caption">(\#fig:eng-rt)$R_t$ in England over the period starting on the 1^st^ April 2021 and ending the 30^th^ May 2021</p>
-</div>
 
 The role of the population adjustment in this model is best understood
 by looking at long term forecasts. As was shown in the multilevel example, to make forecasts we have to construct a new data
 frame. This can be passed as the `newdata` argument to
 `epidemia`'s plotting functions.
 
-
-``` r
+```{r eng-newdata, message = FALSE}
 fut <- tibble(date = max(data$date) + seq_len(150), region = "England", 
               cases = -1, dt = max(data$date), positivity = -1, off = 1, 
               pop = data$pop[1])
@@ -560,29 +373,18 @@ below $1$. The population adjustment serves to *constrain*
 long-term forecasts for the total size of the population. Without this
 adjustment infections could continue to rise exponentially over time.
 
+```{r eng-proj-rt, echo=FALSE, warning=FALSE, message = FALSE, out.width = "100%", fig.width = 6, fig.height = 2, fig.cap = "Long term forecasts for $R_t$ and infections, continuing until the 27^th^ October 2021. The median is plotted in black, while sample paths are in blue. **Left** shows the unadjusted $R_t$, while the **center** shows adjusted $R_t$. The **right** plot shows projected infections over time. These plots are produced with **epidemia**'s spaghetti plot functions."}
+set.seed(12345)
 
+scale <- scale_x_date(labels = scales::date_format("%e %b"))
+rt_unadj <- spaghetti_rt(fm, dates = c("2021-04-01",NA), newdata=newdata, smooth=7, draws=10, alpha=0.8, adjusted=F) 
+rt_adj <- spaghetti_rt(fm, dates = c("2021-04-01",NA), newdata=newdata, smooth=7, draws=10, alpha=0.8)
+inf <- spaghetti_infections(fm, dates = c("2021-04-01", NA), newdata=newdata, draws=100, alpha=0.3, cumulative=T)
+rt_unadj <- rt_unadj + scale + bord + font + marg + no_angle + theme(axis.title.y = element_blank())
+rt_adj <- rt_adj + scale + bord + font + marg + no_angle + theme(axis.title.y = element_blank())
+inf <- inf + scale + bord + font + marg + no_angle + scale_y_continuous() + theme(axis.title.y = element_blank())
+grid.arrange(rt_unadj,rt_adj,inf, nrow=1)
 ```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
-```
-
-```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
-```
-
-```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
-```
-
-<div class="figure" style="text-align: center">
-<img src="figure/multiple-obs-eng-proj-rt-1.png" alt="Long term forecasts for $R_t$ and infections, continuing until the 27^th^ October 2021. The median is plotted in black, while sample paths are in blue. **Left** shows the unadjusted $R_t$, while the **center** shows adjusted $R_t$. The **right** plot shows projected infections over time. These plots are produced with **epidemia**'s spaghetti plot functions." width="100%" />
-<p class="caption">(\#fig:eng-proj-rt)Long term forecasts for $R_t$ and infections, continuing until the 27^th^ October 2021. The median is plotted in black, while sample paths are in blue. **Left** shows the unadjusted $R_t$, while the **center** shows adjusted $R_t$. The **right** plot shows projected infections over time. These plots are produced with **epidemia**'s spaghetti plot functions.</p>
-</div>
 
 The top panel of Figure \@ref(fig:eng-proj-obs) shows the IAR over time.
 The IAR exhibits strong weekday effects, and appears to increase during
@@ -591,23 +393,21 @@ because we have stopped the random walk. The bottom two plots
 demonstrate that the model is able to fit the observed data well. These
 plots have been generated with `plot_linpred()` and `plot_obs()`.
 
+```{r eng-proj-obs, echo = FALSE, warning=FALSE, message = FALSE, out.width="60%", fig.width = 4, fig.height = 6, fig.cap = "Historical estimates for IAR, daily cases, and positivity rates. Also included are 1 month forecasts for each quantity. The **top** panel presents the IAR over time. For illustration, the daily effects have been excluded from this. The **center** shows daily case counts, and the **bottom** gives positivity."}
+proj_iar <- plot_linpred(fm, type = "cases", newdata=newdata, dates = c("2021-04-01", "2021-07-01"), transform=TRUE, levels = c(50,95))
+proj_cases <- plot_obs(fm, type = "cases", newdata=newdata, dates = c("2021-04-01", "2021-07-01"), levels = c(50,95))
+proj_pos <- plot_obs(fm, type = "positivity", newdata=newdata, dates = c("2021-04-01", "2021-07-01"), levels = c(50,95))
 
-```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
-```
 
+left_marg <- theme(plot.margin = unit(c(0,0.45,0,0.45), "cm"))
+marg <- theme(plot.margin = unit(c(0,0.45,0,0), "cm"))
+leg <- g_legend(proj_cases)
+proj_iar <- proj_iar + bord + left_marg + no_angle + theme(legend.position = "none", strip.text = element_blank(),axis.text.x = element_text(size=text_size), axis.text.y= element_text(size=text_size))
+proj_cases <- proj_cases + bord + font + marg + no_angle + theme(legend.position = "none") + scale_y_continuous()
+proj_pos <- proj_pos + bord + font + left_marg + no_angle + theme(legend.position = "none") 
+grid.arrange(proj_iar, proj_cases, proj_pos, leg,  layout_matrix = matrix(c(1,2,3,4), ncol=1), heights = c(1,1,1,0.2))
+while (!is.null(dev.list()))  invisible(dev.off())
 ```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
-```
-
-<div class="figure" style="text-align: center">
-<img src="figure/multiple-obs-eng-proj-obs-1.png" alt="Historical estimates for IAR, daily cases, and positivity rates. Also included are 1 month forecasts for each quantity. The **top** panel presents the IAR over time. For illustration, the daily effects have been excluded from this. The **center** shows daily case counts, and the **bottom** gives positivity." width="60%" />
-<p class="caption">(\#fig:eng-proj-obs)Historical estimates for IAR, daily cases, and positivity rates. Also included are 1 month forecasts for each quantity. The **top** panel presents the IAR over time. For illustration, the daily effects have been excluded from this. The **center** shows daily case counts, and the **bottom** gives positivity.</p>
-</div>
 
 The primary purpose of this example is to demonstrate advanced modeling
 in **epidemia**. The model itself has many limitations, These include

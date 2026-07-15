@@ -64,3 +64,13 @@ docs
 inst/stan/epidemia_base
 inst/stan/epidemia_pp_base
 inst/stan/*.hpp
+
+# knitr precompute caches/intermediates (vignettes/figure/ IS committed)
+vignettes/*_cache/
+vignettes/*_files/
+vignettes/cache/
+
+# ...but the PRECOMPUTED vignette outputs (baked by vignettes/precompute.R) and
+# the precompute script itself ARE tracked, unlike the old live-build artifacts.
+!vignettes/precompute.R
+!vignettes/*.png

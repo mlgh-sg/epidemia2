@@ -61,7 +61,8 @@ where \code{group} and \code{date} refer to variables representing the region an
 The right hand side can consist of fixed effects, random effects, and autocorrelation terms.
 }
 \examples{
-\donttest{
+# Fitting requires an external CmdStan install (cmdstanr::install_cmdstan()).
+\dontrun{
 library(epidemia)
 library(ggplot2)
 data("EuropeCovid")

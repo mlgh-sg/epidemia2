@@ -84,7 +84,8 @@ the time-varying reproduction rates. The user can control the interval levels (i
 which groups/regions to plot for. This is a generic function.
 }
 \examples{
-\donttest{
+# Fitting requires an external CmdStan install (cmdstanr::install_cmdstan()).
+\dontrun{
 data("EuropeCovid2")
 data <- EuropeCovid2$data
 data <- dplyr::filter(data, date > date[which(cumsum(deaths) > 10)[1] - 30])
