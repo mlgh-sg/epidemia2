@@ -86,7 +86,8 @@ Description: Flexibly specify and fit Bayesian statistical models for epidemics.
     package has been inspired by, and has borrowed from, 'rstanarm' (Goodrich et al., 2020) <https://mc-stan.org/rstanarm/>. Models are fit
     using 'Stan' via the 'cmdstanr' back end, with posterior draws handled through the 'posterior' package.
 License: GPL-3
-URL: https://github.com/ImperialCollegeLondon/epidemia/
+URL: https://github.com/mlgh-sg/epidemia2, https://mlgh-sg.com/epidemia2/
+BugReports: https://github.com/mlgh-sg/epidemia2/issues
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
