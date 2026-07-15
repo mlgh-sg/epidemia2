@@ -80,8 +80,9 @@ Authors@R: c(
 	   )
 Description: Flexibly specify and fit Bayesian statistical models for epidemics. 'epidemia' leverages Rs formula interface so
     that users can parameterize reproduction numbers and ascertainment rates in terms of predictors. Infections are propagated over
-    time using self-exciting point processes. Multiple regions can be modeled simultaneously with multilevel models. The models and framework behind
-    the package are described in Bhatt et al. (2023) <doi:10.1111/rssa.12988> and Bhatt et al. (2020) <arXiv:2012.00394>. The design of the
+    time using self-exciting point processes. Multiple regions can be modeled simultaneously with multilevel models. The package is described in
+    the software paper Scott et al. (2021) <arXiv:2110.12461>; the underlying framework is developed in Bhatt et al. (2020) <arXiv:2012.00394> and
+    applied in Mishra et al. (2022) <doi:10.1111/rssa.12988>. The design of the
     package has been inspired by, and has borrowed from, 'rstanarm' (Goodrich et al., 2020) <https://mc-stan.org/rstanarm/>. Models are fit
     using 'Stan' via the 'cmdstanr' back end, with posterior draws handled through the 'posterior' package.
 License: GPL-3

@@ -9,7 +9,7 @@ package to build epidemic models, see `llms.txt` and the vignettes.
 daily infections are propagated by a discrete **renewal process** (a self-exciting
 point process); the time-varying reproduction number `R_t` and observation
 ascertainment rates are modelled as (possibly multilevel) regressions. Inference is
-done in **Stan**. Reference: Scott et al. (2023), *JRSS-A*, doi:10.1111/rssa.12988.
+done in **Stan**. Software paper: Scott et al. (2021), *Epidemia: An R Package for Semi-Mechanistic Bayesian Modelling of Infectious Diseases using Point Processes*, arXiv:2110.12461. Applied companion: Mishra et al. (2022), *A COVID-19 Model for Local Authorities of the United Kingdom*, JRSS-A, doi:10.1111/rssa.12988.
 
 ## Toolchain (important)
 

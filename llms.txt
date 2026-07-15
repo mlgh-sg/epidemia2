@@ -5,7 +5,7 @@
 > process); the time-varying reproduction number R_t and observation ascertainment
 > rates are modelled as (optionally multilevel) regressions; multiple observation
 > series (deaths, cases, prevalence) are fit jointly. Inference is via Stan
-> (CmdStanR backend). Paper: Scott et al. (2023) JRSS-A, doi:10.1111/rssa.12988.
+> (CmdStanR backend). Software paper: Scott et al. (2021), arXiv:2110.12461. Applied companion: Mishra et al. (2022) JRSS-A, doi:10.1111/rssa.12988.
 
 This file is a compact, self-contained guide for LLMs/agents that need to USE the
 package. For working ON the source, see `AGENTS.md`.

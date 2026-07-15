@@ -4,10 +4,12 @@ epidemia  <img src='man/figures/logo.png' width="120" align="right"/>
 The epidemia package allows researchers to flexibly specify and fit
 Bayesian epidemiological models in the style of [Flaxman et
 al. (2020)](https://www.nature.com/articles/s41586-020-2405-7). The package
-and its statistical framework are described in the software paper [Scott et
-al. (2023)](https://doi.org/10.1111/rssa.12988) (*Journal of the Royal
-Statistical Society Series A*; preprint
-[arXiv:2110.12461](https://arxiv.org/abs/2110.12461)). The
+itself is described in the software paper [Scott et al. (2021), *Epidemia: An
+R Package for Semi-Mechanistic Bayesian Modelling of Infectious Diseases using
+Point Processes*](https://arxiv.org/abs/2110.12461), and the framework is
+applied in [Mishra et al. (2022), *A COVID-19 Model for Local Authorities of
+the United Kingdom*](https://doi.org/10.1111/rssa.12988) (*Journal of the
+Royal Statistical Society Series A*). The
 package leverages R’s formula interface to parameterize the time-varying
 reproduction rate as a function of covariates. Multiple populations can
 be modeled simultaneously with hierarchical models. The design of the
