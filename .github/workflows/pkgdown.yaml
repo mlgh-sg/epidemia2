@@ -37,6 +37,16 @@ jobs:
         with:
           use-public-rspm: true
 
+      # cmdstanr is a Suggests and lives on the Stan r-universe. The docs build
+      # does not fit anything (tutorials are baked, examples are \dontrun), but
+      # dependency resolution still needs to find and install the cmdstanr R
+      # package. CmdStan itself is never installed here.
+      - name: Configure repositories
+        run: |
+          cat("options(repos = c(stan = 'https://stan-dev.r-universe.dev', getOption('repos')))\n",
+              file = "~/.Rprofile", append = TRUE)
+        shell: Rscript {0}
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           # website deps + what the conceptual articles need to render. No
