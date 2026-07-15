@@ -2,23 +2,16 @@
 
 A Python counterpart of the R package `epidemia`. Latent daily infections are
 propagated by a renewal process; the reproduction number and observations are
-modelled with NumPyro, and inference uses a fast NUTS backend (nutpie by
-default, or BlackJAX / NumPyro).
+modelled with PyMC and fit with nutpie's fast NUTS.
 """
 
 from __future__ import annotations
 
-# 64-bit precision keeps the renewal recursion and NUTS numerically stable.
-# Must run before JAX creates any arrays; this package is imported first.
-import jax as _jax
-
-_jax.config.update("jax_enable_x64", True)
-
-from . import plots  # noqa: E402
-from .data import EpiData, flu1918  # noqa: E402
-from .infer import fit  # noqa: E402
-from .model import EpiConfig, link_inv, renewal_model  # noqa: E402
-from .renewal import (  # noqa: E402
+from . import plots
+from .data import EpiData, flu1918
+from .infer import fit
+from .model import EpiConfig, build_model
+from .renewal import (
     expected_observations,
     infectiousness,
     random_walk,
@@ -28,14 +21,13 @@ from .renewal import (  # noqa: E402
 __all__ = [
     "EpiConfig",
     "EpiData",
+    "build_model",
     "expected_observations",
     "fit",
     "flu1918",
     "infectiousness",
-    "link_inv",
     "plots",
     "random_walk",
     "renewal_infections",
-    "renewal_model",
 ]
 __version__ = "0.1.0"

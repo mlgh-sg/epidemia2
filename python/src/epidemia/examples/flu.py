@@ -40,26 +40,27 @@ def build():
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Fit the 1918 flu renewal model.")
-    parser.add_argument("--sampler", default="nutpie",
-                        choices=["nutpie", "numpyro", "blackjax"])
     parser.add_argument("--draws", type=int, default=1000)
     parser.add_argument("--tune", type=int, default=1000)
     parser.add_argument("--chains", type=int, default=4)
     parser.add_argument("--seed", type=int, default=12345)
+    parser.add_argument("--backend", default="numba", choices=["numba", "jax"],
+                        help="log-density backend (jax enables GPU on Linux)")
+    parser.add_argument("--adaptation", default="diag",
+                        choices=["diag", "low_rank", "flow"])
     parser.add_argument("--save", default=None, help="path prefix to save plots (PNG)")
     args = parser.parse_args(argv)
 
-    import jax
-    print(f"epidemia {epi.__version__} | JAX backend: {jax.default_backend()} "
-          f"| devices: {jax.devices()}")
+    print(f"epidemia {epi.__version__} | nutpie backend: {args.backend}")
 
     y, config = build()
-    print(f"Fitting flu model with sampler={args.sampler} "
-          f"(draws={args.draws}, tune={args.tune}, chains={args.chains}) ...")
+    print(f"Fitting flu model with nutpie "
+          f"(draws={args.draws}, tune={args.tune}, chains={args.chains}, "
+          f"adaptation={args.adaptation}) ...")
     import time
     t0 = time.time()
-    idata = epi.fit(y, config, sampler=args.sampler, draws=args.draws,
-                    tune=args.tune, chains=args.chains, seed=args.seed)
+    idata = epi.fit(y, config, draws=args.draws, tune=args.tune, chains=args.chains,
+                    seed=args.seed, backend=args.backend, adaptation=args.adaptation)
     print(f"done in {time.time() - t0:.1f}s")
 
     import arviz as az

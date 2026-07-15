@@ -1,24 +1,23 @@
-"""Core renewal-process dynamics in JAX.
+"""Core renewal-process dynamics (NumPy reference implementation).
 
 The (discrete) renewal equation propagates latent daily infections as a
 self-exciting point process::
 
     i_t = R_t * sum_{s=1..L} i_{t-s} * g_s
 
-where ``g`` is the generation-interval PMF and ``R_t`` the reproduction number.
-Observations are linked to infections through a delay/ascertainment
+where ``g`` is the generation-interval kernel and ``R_t`` the reproduction
+number. Observations are linked to infections through a delay/ascertainment
 convolution::
 
     y_t = alpha_t * sum_{k=0..K-1} i_{t-k} * pi_k
 
-All functions are pure JAX and differentiable, so they compose inside a NUTS
-target.
+These NumPy functions are used for forward/prior simulation and testing; the
+model fit in :mod:`epidemia.model` implements the same recursion in PyTensor.
 """
 
 from __future__ import annotations
 
-import jax
-import jax.numpy as jnp
+import numpy as np
 
 
 def renewal_infections(R, seeds, gen):
@@ -27,84 +26,57 @@ def renewal_infections(R, seeds, gen):
     Parameters
     ----------
     R : array (N,)
-        Reproduction number on each of the ``N`` modelled days. Values before
-        the end of the seeding window are ignored.
+        Reproduction number on each of the ``N`` modelled days (values before
+        the end of the seeding window are ignored).
     seeds : array (v,)
-        Seeded infections for the first ``v`` days (parameters of the model).
+        Seeded infections for the first ``v`` days.
     gen : array (L,)
-        Generation-interval PMF; ``gen[s-1]`` is the probability that a
-        secondary infection occurs ``s`` days after the primary one.
+        Generation kernel; ``gen[s-1]`` is the weight of infections ``s`` days ago.
 
     Returns
     -------
     infections : array (N,)
         Latent daily infections, with the first ``v`` entries equal to ``seeds``.
     """
-    R = jnp.asarray(R)
-    seeds = jnp.asarray(seeds)
-    gen = jnp.asarray(gen)
+    R = np.asarray(R, dtype=float)
+    seeds = np.asarray(seeds, dtype=float)
+    gen = np.asarray(gen, dtype=float)
     L = gen.shape[0]
     v = seeds.shape[0]
+    N = R.shape[0]
 
-    # Buffer of the most recent ``L`` infections, most-recent-first, so that
-    # dot(buffer, gen) == sum_{s=1..L} i_{t-s} * gen[s-1].
-    rev = seeds[::-1]
-    if v >= L:
-        buf0 = rev[:L]
-    else:
-        buf0 = jnp.concatenate([rev, jnp.zeros(L - v, dtype=seeds.dtype)])
-
-    def step(buf, R_t):
-        i_t = R_t * jnp.dot(buf, gen)
-        new_buf = jnp.concatenate([i_t[None], buf[:-1]])
-        return new_buf, i_t
-
-    _, infections_after_seed = jax.lax.scan(step, buf0, R[v:])
-    return jnp.concatenate([seeds, infections_after_seed])
+    # This recursion is a *time-varying* linear filter (R_t changes each step and
+    # feeds back), so it has no convolution/FFT form -- it must stay sequential.
+    # We keep it allocation-free: read the window straight out of `infections`
+    # (views, no copies) and take one BLAS dot per step.
+    infections = np.empty(N)
+    infections[:v] = seeds
+    for t in range(v, N):
+        lo = t - L if t >= L else 0
+        window = infections[lo:t][::-1]           # i_{t-1}, i_{t-2}, ... (view)
+        infections[t] = R[t] * np.dot(window, gen[: t - lo])
+    return infections
 
 
 def infectiousness(infections, gen):
     """Total infectiousness ``sum_{s} i_{t-s} * gen_s`` (the renewal weight)."""
-    infections = jnp.asarray(infections)
-    gen = jnp.asarray(gen)
+    infections = np.asarray(infections, dtype=float)
+    gen = np.asarray(gen, dtype=float)
     N = infections.shape[0]
-    # shift by one day so day t uses only past infections
-    shifted = jnp.concatenate([jnp.zeros(1, infections.dtype), infections[:-1]])
-    return jnp.convolve(shifted, gen)[:N]
+    shifted = np.concatenate([[0.0], infections[:-1]])  # day t uses only past
+    return np.convolve(shifted, gen)[:N]
 
 
 def expected_observations(infections, i2o, ascertainment=1.0):
-    """Expected observations from infections via an infection-to-observation delay.
-
-    Parameters
-    ----------
-    infections : array (N,)
-        Latent daily infections.
-    i2o : array (K,)
-        Infection-to-observation delay distribution; ``i2o[k]`` weights
-        infections ``k`` days before the observation. Need not sum to one (it
-        can also encode an overall ascertainment scale).
-    ascertainment : float or array (N,)
-        Time-varying multiplier (e.g. an ascertainment/IFR rate).
-
-    Returns
-    -------
-    y : array (N,)
-        Expected observations on each day.
-    """
-    infections = jnp.asarray(infections)
-    i2o = jnp.asarray(i2o)
+    """Expected observations via a causal infection-to-observation convolution."""
+    infections = np.asarray(infections, dtype=float)
+    i2o = np.asarray(i2o, dtype=float)
     N = infections.shape[0]
-    conv = jnp.convolve(infections, i2o)[:N]  # causal: sum_k i2o[k] * i_{t-k}
-    return jnp.asarray(ascertainment) * conv
+    conv = np.convolve(infections, i2o)[:N]  # causal: sum_k i2o[k] * i_{t-k}
+    return np.asarray(ascertainment) * conv
 
 
 def random_walk(scale, noise, intercept):
-    """Build a random-walk linear predictor ``intercept + cumsum(scale * noise)``.
-
-    ``noise`` are standardised (unit-normal) increments — a *non-centred*
-    parameterisation, which gives the sampler a far easier geometry than
-    drawing the increments directly at the unknown ``scale``.
-    """
-    steps = jnp.asarray(scale) * jnp.asarray(noise)
-    return jnp.asarray(intercept) + jnp.cumsum(steps)
+    """Non-centred random walk ``intercept + cumsum(scale * noise)``."""
+    steps = np.asarray(scale) * np.asarray(noise, dtype=float)
+    return np.asarray(intercept) + np.cumsum(steps)

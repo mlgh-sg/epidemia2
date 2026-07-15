@@ -7,27 +7,33 @@ point process); the time-varying reproduction number `R_t` is modelled with a
 random walk (and, in future, covariates), and observations are linked to
 infections through a delay/ascertainment convolution.
 
-The model is specified with **NumPyro** (JAX) and fit with a fast NUTS backend —
-**nutpie** by default, with **BlackJAX** and NumPyro's own NUTS as alternatives.
+The model is specified with **[PyMC](https://www.pymc.io/)** and fit with
+**[nutpie](https://github.com/pymc-devs/nutpie)** — a fast Rust NUTS with
+Fisher-information mass-matrix adaptation — returning an ArviZ `InferenceData`.
 
 ## Install (with `uv`)
 
 ```bash
 cd python
-uv python pin 3.12            # broad wheel availability
-uv sync                       # CPU JAX everywhere (the optimized default on Apple Silicon)
+uv python pin 3.12   # broad wheel availability
+uv sync              # PyMC + nutpie, compiled with the numba CPU backend
 ```
 
-**GPU / accelerators**
+The default `numba` backend is the recommended optimized path on **all**
+platforms, including **Apple Silicon** — it compiles the log-density to native
+code with no per-call Python overhead.
 
-- **Linux + NVIDIA GPU:** `uv sync --extra cuda` (pulls `jax[cuda12]`; JAX uses the GPU automatically).
-- **Apple Silicon:** the CPU build *is* the recommended optimized path — XLA's ARM CPU backend is fast and fully correct (float64, `lax.scan`). `jax-metal` is available via `uv sync --extra metal` but is experimental and **not recommended for this model** (no float64, and it segfaults on `lax.scan`, which the renewal recursion relies on).
+**GPU (Linux + NVIDIA):**
 
-Check the active backend:
-
-```python
-import jax; print(jax.default_backend(), jax.devices())
+```bash
+uv sync --extra gpu                       # pulls jax[cuda12]
+# then compile the log-density with the JAX backend so it runs on the GPU:
+idata = epi.fit(y, config, backend="jax")
 ```
+
+**Hard posteriors:** `uv sync --extra flow` enables nutpie's normalizing-flow
+adaptation (`epi.fit(..., adaptation="flow")`); `adaptation="low_rank"` needs no
+extra.
 
 ## Quick start
 
@@ -38,9 +44,10 @@ d = epi.flu1918()
 y = np.concatenate([[np.nan], d.incidence])            # 1st day explained by seeding
 config = epi.EpiConfig(
     gen=d.generation, i2o=np.repeat(0.25, 4), seed_days=6,
-    link="log", intercept_loc=np.log(2.0), intercept_scale=0.2, rw_prior_scale=0.1,
+    link="log", family="neg_binom",
+    intercept_loc=np.log(2.0), intercept_scale=0.2, rw_prior_scale=0.1,
 )
-idata = epi.fit(y, config, sampler="nutpie", draws=1000, tune=1000, chains=4)
+idata = epi.fit(y, config, draws=1000, tune=1000, chains=4)
 
 epi.plots.plot_rt(idata)          # reproduction number over time
 epi.plots.plot_obs(idata, y)      # posterior predictive vs observed
@@ -50,8 +57,22 @@ epi.plots.plot_infections(idata)  # latent infections
 Or run the packaged example:
 
 ```bash
-uv run epidemia-flu --sampler nutpie --save flu
+uv run epidemia-flu --save flu                 # numba (default)
+uv run epidemia-flu --backend jax --save flu   # JAX backend (GPU on Linux)
 ```
+
+## Performance
+
+The model is vectorised wherever the mathematics allows:
+
+- the **random walk** on `log R_t` is a single `cumsum` (no loop);
+- the **infection→observation delay** is a *time-invariant* filter and is computed
+  as a **vectorised convolution** (a sum of shifted infection series);
+- the **renewal recursion** is a *time-varying* linear filter (`R_t` changes each
+  step and the output feeds back), so it has **no** convolution/FFT form and stays
+  a sequential scan — but each step is a single BLAS dot product (the renewal
+  weight). Every comparable tool (the R `epidemia` Stan model, EpiNow2,
+  epinowcast) uses the same sequential loop.
 
 ## Notes
 

@@ -58,7 +58,8 @@ src/*.cc
 # avoid rstantools generated files
 src/stanExports*.h
 
-docs
+# R pkgdown output at the repo root (anchored so python/docs/ stays tracked)
+/docs
 
 # Compiled CmdStan executables / generated C++ (built on first use, cached in user dir)
 inst/stan/epidemia_base

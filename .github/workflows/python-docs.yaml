@@ -1,0 +1,43 @@
+name: python-docs
+
+# Builds the Python (mkdocs) site and publishes it to the gh-pages branch under
+# /python/, so it is served at <pages-domain>/epidemia2/python/ ALONGSIDE the R
+# pkgdown site at the root. keep_files: true means it never touches the R site
+# (or the CNAME) already on gh-pages -- it only overwrites the python/ subtree.
+
+on:
+  push:
+    branches: [python-epidemia]
+    paths:
+      - 'python/**'
+      - '.github/workflows/python-docs.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build site (strict)
+        working-directory: python
+        run: |
+          uv sync
+          uv run python scripts/build_llms_full.py
+          uv run mkdocs build --strict
+
+      - name: Deploy to gh-pages/python
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: python/site
+          destination_dir: python
+          keep_files: true

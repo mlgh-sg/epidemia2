@@ -1,35 +1,30 @@
 [project]
 name = "epidemia"
 version = "0.1.0"
-description = "Bayesian semi-mechanistic modelling of infectious diseases (renewal processes) in JAX, with NumPyro model specification and a fast nutpie / BlackJAX (NUTS) sampler backend. Python counterpart of the R package 'epidemia'."
+description = "Bayesian semi-mechanistic modelling of infectious diseases (renewal processes) in PyMC, fit with the fast nutpie (NUTS) sampler. Python counterpart of the R package 'epidemia'."
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 license = { text = "GPL-3.0-or-later" }
 authors = [
   { name = "epidemia authors" },
 ]
-keywords = ["epidemiology", "bayesian", "renewal-process", "reproduction-number", "jax", "numpyro", "nutpie"]
+keywords = ["epidemiology", "bayesian", "renewal-process", "reproduction-number", "pymc", "nutpie"]
 dependencies = [
-  "jax>=0.4.34",          # CPU everywhere; this is the optimized default on Apple Silicon
-  "numpyro>=0.15",        # model specification; sampled with NumPyro NUTS by default
-  "blackjax>=1.2",        # alternative JAX sampler backend
+  "pymc>=5.16",       # model specification (PyTensor)
+  "nutpie>=0.13",     # fast Rust NUTS sampler -> ArviZ InferenceData
+  "numba>=0.59",      # CPU compilation backend for the log-density
   "numpy>=1.24",
   "arviz>=0.18",
-  "plotnine>=0.13",       # grammar-of-graphics plotting (ggplot2 for Python)
+  "plotnine>=0.13",   # grammar-of-graphics plotting (ggplot2 for Python)
 ]
 
 [project.optional-dependencies]
-# Fast Rust NUTS via an equivalent PyMC model:  uv sync --extra nutpie
-# (nutpie front-ends PyMC/Stan, not NumPyro; pulls pymc + numba)
-nutpie = ["nutpie>=0.13", "pymc>=5.16", "numba>=0.59"]
-# Linux + NVIDIA GPU:  uv sync --extra cuda   (the marker makes it a no-op off Linux)
-cuda = ["jax[cuda12]>=0.4.34; sys_platform == 'linux'"]
-# Apple Silicon Metal — EXPERIMENTAL and NOT recommended for this model: jax-metal
-# lacks float64 and segfaults on lax.scan (our renewal core). Prefer the CPU default.
-metal = [
-  "jax-metal>=0.1.1; sys_platform == 'darwin'",
-  "jax==0.4.34; sys_platform == 'darwin'",
-]
+# Linux + NVIDIA GPU: compile the log-density with the JAX backend and run on GPU.
+#   uv sync --extra gpu   (then fit(..., backend="jax"))
+gpu = ["jax[cuda12]>=0.4.34; sys_platform == 'linux'"]
+# Normalizing-flow ("Fisher HMC") adaptation for hard posteriors.
+#   uv sync --extra flow  (then fit(..., adaptation="flow"))
+flow = ["nutpie[nnflow]>=0.13"]
 
 [project.scripts]
 epidemia-flu = "epidemia.examples.flu:main"
@@ -38,14 +33,9 @@ epidemia-flu = "epidemia.examples.flu:main"
 dev = [
   "pytest>=8",
   "ruff>=0.5",
-  "pdoc>=14",
-]
-
-[tool.uv]
-# cuda and metal pin JAX differently and never coexist; declare them conflicting so
-# the universal lockfile resolves each branch independently instead of failing.
-conflicts = [
-  [{ extra = "cuda" }, { extra = "metal" }],
+  "mkdocs>=1.6",
+  "mkdocs-material>=9.5",
+  "mkdocstrings[python]>=0.25",
 ]
 
 [build-system]

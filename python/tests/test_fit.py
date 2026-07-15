@@ -1,7 +1,6 @@
-"""End-to-end smoke test: a tiny fit produces a well-shaped InferenceData."""
+"""End-to-end smoke test: a tiny nutpie fit produces a well-shaped InferenceData."""
 
 import numpy as np
-import pytest
 
 import epidemia as epi
 
@@ -17,10 +16,9 @@ def _tiny_problem():
     return y, config
 
 
-@pytest.mark.parametrize("sampler", ["numpyro", "blackjax"])
-def test_fit_runs_and_exposes_latent_series(sampler):
+def test_fit_runs_and_exposes_latent_series():
     y, config = _tiny_problem()
-    idata = epi.fit(y, config, sampler=sampler, draws=80, tune=80, chains=2, seed=1)
+    idata = epi.fit(y, config, draws=80, tune=80, chains=2, seed=1)
     N = y.shape[0]
     for var in ("Rt", "infections", "E_obs"):
         assert var in idata.posterior, f"missing {var}"

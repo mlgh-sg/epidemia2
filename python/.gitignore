@@ -11,6 +11,14 @@ __pycache__/
 build/
 dist/
 
+# The user's global ~/.gitignore_global excludes docs/ everywhere; the mkdocs
+# sources live under docs/, so re-include them (build output site/ stays ignored).
+!docs/
+!docs/**
+
+# mkdocs build output
+site/
+
 # jax / matplotlib artifacts
 *.png
 !docs/**/*.png
