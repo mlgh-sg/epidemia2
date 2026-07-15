@@ -163,14 +163,19 @@ infections have conditional variance around 10 times the conditional mean.
 We are left to collect all remaining arguments required for `epim()`. This 
 is done as follows.
 ```{r flu1918-args}
-args <- list(rt = rt, obs = obs, inf = inf, data = data, iter = 2e3, 
-             seed = 12345)
+args <- list(rt = rt, obs = obs, inf = inf, data = data, iter = 2e3,
+             seed = 12345,
+             control = list(max_treedepth = 12, adapt_delta = 0.95))
 args_ext <- args; args_ext$inf <- inf_ext
 ```
 
 The arguments `iter` and `seed` set the number of MCMC iterations
 and seeds respectively, and are passed directly on to the `$sample()`
-method of the **cmdstanr** model.
+method of the **cmdstanr** model. The random-walk parameterisation of
+$R_t$ gives a posterior geometry that the sampler explores more reliably
+with a slightly larger `max_treedepth` and `adapt_delta`; these are passed
+through `control` (mirroring the **rstan** interface) and forwarded to the
+sampler.
 
 We wrap the calls to `epim()` in `system.time` in order to assess 
 the computational cost of fitting the models. The snippet below fits both 
