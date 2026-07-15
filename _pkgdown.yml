@@ -1,9 +1,8 @@
-url: https://imperialcollegelondon.github.io/epidemia/
+url: https://mlgh-sg.github.io/epidemia2/
 title: epidemia
 template:
   params:
     bootswatch: flatly
-    ganalytics: UA-186908163-1
 
 navbar:
   structure:
