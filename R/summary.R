@@ -1,8 +1,7 @@
 
 #' Summary method for epimodel objects
 #' 
-#' Provides a summary of parameter estimates and MCMC diagnostics. Similar
-#' to \code{\link[rstanarm]{summary.stanreg}} in \pkg{rstanarm}.
+#' Provides a summary of parameter estimates and MCMC diagnostics.
 #' 
 #' @export
 #' @method summary epimodel
@@ -19,7 +18,6 @@
 #'   
 #' @return An object of class \code{"summary.epimodel"}.
 #' 
-#' @importMethodsFrom rstan summary
 summary.epimodel <- function(object,
                              pars = NULL,
                              regex_pars = NULL,

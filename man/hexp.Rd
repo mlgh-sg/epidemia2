@@ -4,12 +4,12 @@
 \alias{hexp}
 \title{A hierarchical model for seeded infections}
 \usage{
-hexp(prior_aux = rstanarm::exponential(0.03))
+hexp(prior_aux = exponential(0.03))
 }
 \arguments{
 \item{prior_aux}{Specifies the prior distribution on the auxiliary parameter.
-This can be a call to \code{\link[rstanarm]{normal}}, \code{\link[rstanarm]{student_t}}
-or \code{\link[rstanarm]{exponential}}.}
+This can be a call to \code{\link{normal}}, \code{\link{student_t}}
+or \code{\link{exponential}}.}
 }
 \value{
 A named list to be parsed internally by \code{\link[epidemia]{epim}}.

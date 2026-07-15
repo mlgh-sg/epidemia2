@@ -132,7 +132,7 @@ standata_reg <- function(object, ...) {
     out$q <- ncol(Z)
     out$len_theta_L <- sum(choose(p, 2), p)
 
-    parts <- rstan::extract_sparse_parts(Z)
+    parts <- extract_sparse_parts(Z)
     out$num_non_zero <- length(parts$w)
     out$w <- parts$w
     out$v <- parts$v - 1L

@@ -9,8 +9,31 @@ reproduction rate as a function of covariates. Multiple populations can
 be modeled simultaneously with hierarchical models. The design of the
 package has been inspired by, and has borrowed from,
 [rstanarm](https://mc-stan.org/rstanarm/) (Goodrich et al. 2020).
-epidemia uses [rstan](https://mc-stan.org/rstan/) (Stan Development Team
-2020) as the backend for fitting models.
+epidemia fits models with [Stan](https://mc-stan.org/) via the
+[cmdstanr](https://mc-stan.org/cmdstanr/) backend, and represents
+posterior draws with the [posterior](https://mc-stan.org/posterior/)
+package. The Stan models are compiled on first use and cached, so no
+compilation happens at install time.
+
+## Installation
+
+epidemia fits models with [CmdStanR](https://mc-stan.org/cmdstanr/). Install
+CmdStanR and CmdStan first, then install epidemia from GitHub:
+
+```r
+# 1. CmdStanR + CmdStan (needs a C++ toolchain)
+install.packages("cmdstanr",
+  repos = c("https://stan-dev.r-universe.dev", getOption("repos")))
+cmdstanr::check_cmdstan_toolchain(fix = TRUE)
+cmdstanr::install_cmdstan()
+
+# 2. epidemia
+# install.packages("remotes")
+remotes::install_github("ImperialCollegeLondon/epidemia")
+```
+
+The Stan models are compiled the first time they are used and then cached. You
+can optionally precompile them with `epidemia::compile_epidemia()`.
 
 ## Disclaimer
 

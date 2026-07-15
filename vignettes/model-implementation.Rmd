@@ -39,7 +39,6 @@ used as an example throughout.
 ```{r model-imp-load-packages, message=FALSE}
 library(dplyr)
 library(epidemia)
-library(rstanarm)
 data("EuropeCovid")
 ```
 
@@ -64,10 +63,10 @@ In addition to taking a model description and a data frame,
 `epim()` has various additional arguments which specify how the model should be
 fit. If `algorithm = "sampling"` then the model 
 will be fit using **Stan**'s adaptive Hamiltonian Monte Carlo sampler [@hoffman_2014]. This 
-is done internally by calling `sampling()` from **rstan**. If instead this is `"meanfield"` or `"fullrank"`, then **Stan**'s Variational Bayes 
-algorithms [@Kucukelbir_2015; @Kucukelbir_2017] are employed by calling `vb()` from **rstan**. Any unnamed 
-arguments in the call to `epim()` are passed directly onto the **rstan**
-sampling function. `epim()` returns a fitted model object of class 
+is done internally by calling the `$sample()` method of a **cmdstanr** model. If instead this is `"meanfield"` or `"fullrank"`, then **Stan**'s Variational Bayes 
+algorithms [@Kucukelbir_2015; @Kucukelbir_2017] are employed by calling the model's `$variational()` method. Any additional
+arguments in the call to `epim()` are translated and forwarded to the relevant **cmdstanr**
+fitting method. `epim()` returns a fitted model object of class 
 `epimodel`, which contains posterior samples from the model along with other 
 useful objects.
 
@@ -97,14 +96,14 @@ description <- c(
     paste0("Either an object of class `epiobs`, or a list of such objects. Each of these define a model for an observation vector in `data`, and result from a call to `epiobs()`.",
        " Each element of the list defines a model for an observed variable."),
     paste0("A dataframe with all data required for fitting the model. This includes all observations and covariates specified in the model."),
-    paste0("One of `\"sampling\"`, `\"meanfield\"` or `\"fullrank\"`. This determines the **rstan** sampling ",
-    "function to use for fitting the model. `\"sampling\"` corresponds to HMC, while ",
+    paste0("One of `\"sampling\"`, `\"meanfield\"` or `\"fullrank\"`. This determines the **cmdstanr** ",
+    "method used for fitting the model. `\"sampling\"` corresponds to HMC, while ",
     "`\"meanfield\"` and `\"fullrank\"` are Variational Bayes algorithms."),
     "If specified, a character vector naming a subset of groups/populations to include in the model.",
     paste0("If `TRUE`, parameters are sampled from their prior distributions. This is ",
     "useful for prior predictive checks. Defaults to `FALSE`."),
-    paste0("Additional arguments to pass to the **rstan** function used to fit the model. If ", 
-           "`algorithm = \"sampling\"`, then this function is `sampling()`. Otherwise `vb()` is used.")
+    paste0("Additional arguments, which are translated and forwarded to the **cmdstanr** method used to fit the model. If ", 
+           "`algorithm = \"sampling\"`, then this method is `$sample()`. Otherwise `$variational()` is used.")
 )
 df <- data.frame(Argument = arguments, Description = description)
 knitr::kable(df, caption = "Formal arguments for the model fitting function `epim()`. The first three arguments listed below define the model to be fitted.", booktabs=TRUE, escape = FALSE) %>%
@@ -167,7 +166,7 @@ description <- c(
     paste0("If `TRUE`, covariates specified in `formula` are centered to have mean zero. All priors should then be ",
     "interpreted as priors on the centered covariates."),
     paste0("Same as in `stan_glm()` from **rstanarm**. Defines the prior on fixed effects $\\beta$. ", 
-    "Priors provided by **rstanarm** can be used, and additionally `shifted_gamma`. **Note**: ",
+    "Priors provided by **epidemia** can be used, including `shifted_gamma`. **Note**: ",
 "if `autoscale = TRUE` in the call to the prior function, then automatic rescaling takes place."),
     "Same as in `stan_glm()` from **rstanarm**. Prior for the regression intercept $\\beta_0$ (if it exists).",
     paste0("Same as in `stan_glmer()` from **rstanarm**. Defines the prior on the covariance matrix ",
@@ -230,14 +229,14 @@ arguments <- c(
 description <- c(
     paste0("A numeric vector giving the probability mass function $g_k$ for the generation time of the disease (must be a probability vector)."),
     "An integer giving the number of days $v + 1$ for which to seed infections. Defaults to 6L.",
-    "Prior distribution on the seed parameter $i$. Defaults to  `hexp(prior_aux = rstanarm::exponential(0.03))`.",
+    "Prior distribution on the seed parameter $i$. Defaults to  `hexp(prior_aux = exponential(0.03))`.",
     "If `TRUE`, treat infections as latent parameters.",
     "Specifies the family for the infection distribution $p(i'_t, d)$. Only used if `latent = TRUE`, and defaults to `\"normal\"`.",
     "Prior on the auxiliary variable $d$ of $p(i'_t,d)$. This is either the variance-to-mean ratio or the coefficient of variation, depending on the value of `fixed_vtm`. Only used if `latent = TRUE`.",
     "If `TRUE`, then $p(i'_t, d)$ has a fixed variance-to-mean ratio, i.e. variance is $\\sigma^2 = d i'_t$; In this case, $d$ refers to the *variance-to-mean ratio*. Id `FALSE` then instead standard deviation is assumed proportional to the mean, in which case $d$ is the *coefficient of variation*. Only used if `latent = TRUE`.", 
     "If `TRUE`, applies the population adjustment to the infection process.",
     "A character vector giving the population variable. Only used if `pop_adjust = TRUE`.",
-    "Prior on $S_{v-1} / P$, the initial susceptible population as a proportion of the population size. If `NULL`, this is assumed to be equal to 1 (i.e. everyone is initially susceptible). Otherwise, can be a call to `normal()` from **rstanarm**, which assigns a normal prior truncated to $[0,1]$. Only used if `pop_adjust = TRUE`.",
+    "Prior on $S_{v-1} / P$, the initial susceptible population as a proportion of the population size. If `NULL`, this is assumed to be equal to 1 (i.e. everyone is initially susceptible). Otherwise, can be a call to `normal()`, which assigns a normal prior truncated to $[0,1]$. Only used if `pop_adjust = TRUE`.",
     "A character vector giving the variable corresponding to $v_t$, i.e. the proportion of $S_t$ to remove at time $t$. Only used if `pop_adjust = TRUE`.",
     "Prior on the parameter $\\xi$, which controls noise around $v_t$. If `NULL`, no noise is added. Only used if `pop_adjust = TRUE`."
 )

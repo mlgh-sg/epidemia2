@@ -1,0 +1,147 @@
+# epidemia
+
+> Bayesian semi-mechanistic modelling of infectious diseases in R. Latent daily
+> infections are propagated by a discrete renewal process (self-exciting point
+> process); the time-varying reproduction number R_t and observation ascertainment
+> rates are modelled as (optionally multilevel) regressions; multiple observation
+> series (deaths, cases, prevalence) are fit jointly. Inference is via Stan
+> (CmdStanR backend). Paper: Scott et al. (2023) JRSS-A, doi:10.1111/rssa.12988.
+
+This file is a compact, self-contained guide for LLMs/agents that need to USE the
+package. For working ON the source, see `AGENTS.md`.
+
+## Setup (once)
+
+```r
+install.packages("cmdstanr", repos = c("https://stan-dev.r-universe.dev", getOption("repos")))
+cmdstanr::install_cmdstan()                 # needs a C++ toolchain
+remotes::install_github("ImperialCollegeLondon/epidemia")
+library(epidemia)
+# optional: epidemia::compile_epidemia()    # precompile; else compiles on first epim()
+```
+
+## Mental model: a model is 3 parts, fit by 1 function
+
+- `epirt(formula, link, prior, prior_intercept, prior_covariance)` — the
+  **transmission** model for R_t. LHS of `formula` MUST be `R(group, date)`.
+- `epiinf(gen, seed_days, prior_seeds, latent, pop_adjust, pops, prior_susc, ...)` —
+  the **infection** model (renewal process). `gen` = generation-time PMF (simplex).
+- `epiobs(formula, i2o, family, link, prior, prior_intercept, prior_aux)` — an
+  **observation** model. LHS names the observed column; RHS models the ascertainment
+  rate. `i2o` = infection-to-observation delay PMF. Pass one or a `list()` of these.
+- `epim(rt, inf, obs, data, algorithm, group_subset, prior_PD, ...)` — assembles and
+  **fits**. Returns an `epimodel`. `...` (iter, chains, warmup, seed, cores,
+  control=list(adapt_delta=, max_treedepth=)) is forwarded to the CmdStanR method.
+
+### Data rules (important)
+`data` is one long-format data frame. For each group the rows are consecutive daily
+dates; the **first date is the first day of seeding** (so the observed series should
+start a little after the first date — set early observations to `NA`). The `group`
+and `date` columns named in `R(group, date)` must exist. Every covariate and observed
+column referenced in any formula must be present.
+
+## Minimal complete example (single region)
+
+```r
+library(epidemia); library(EpiEstim); data("Flu1918")
+date <- as.Date("1918-01-01") + seq(0, along.with = c(NA, Flu1918$incidence))
+data <- data.frame(city = "Baltimore", cases = c(NA, Flu1918$incidence), date = date)
+
+rt  <- epirt(R(city, date) ~ 1 + rw(prior_scale = 0.1),   # intercept + daily random walk
+             prior_intercept = normal(log(2), 0.2), link = "log")
+obs <- epiobs(cases ~ 0 + offset(rep(1, 93)),             # full ascertainment (alpha = 1)
+              link = "identity", i2o = rep(0.25, 4))       # infection observed over next 4 days
+inf <- epiinf(gen = Flu1918$si_distr)                     # basic (deterministic) renewal
+
+fm  <- epim(rt = rt, inf = inf, obs = obs, data = data, iter = 1500, chains = 3, seed = 12345)
+
+summary(fm)                       # posterior quantiles + Rhat / n_eff
+plot_rt(fm); plot_obs(fm, type = "cases"); plot_infections(fm)
+```
+
+## Links, families, priors
+
+- `epirt` link: `"log"` (default), `"identity"`, or `scaled_logit(K)` to cap R_t in
+  `[0, K]` (e.g. `scaled_logit(6.5)`).
+- `epiobs` family: `"poisson"`, `"neg_binom"`, `"quasi_poisson"`, `"normal"`,
+  `"log_normal"`. link: `"logit"` (default), `"probit"`, `"cauchit"`, `"cloglog"`,
+  `"identity"`, or `scaled_logit(K)` (e.g. `scaled_logit(0.02)` to cap an IFR at 2%).
+- Prior constructors provided by epidemia (identical to the same-named rstanarm
+  functions): `normal()`, `student_t()`, `cauchy()`, `exponential()`, `laplace()`,
+  `lasso()`, `hs()`, `hs_plus()`, `product_normal()`, `lkj()`, `decov()`. Plus
+  epidemia-specific `shifted_gamma()` (one-sided NPI effects) and `hexp()`
+  (hierarchical seeding). Check the realised priors with `prior_summary(fm)`.
+
+## Recipes
+
+### Multilevel / partial pooling across regions
+lme4 syntax in the `epirt` formula: `(expr | factor)` = correlated partial pooling
+(`prior_covariance = decov(...)`); `(expr || factor)` = independent; `expr:factor` =
+no pooling; plain `expr` = full pooling.
+```r
+rt <- epirt(
+  R(country, date) ~ 0 + (1 + lockdown || country) + lockdown,
+  prior = shifted_gamma(shape = 1/6, scale = 1, shift = log(1.05)/6),
+  prior_covariance = decov(shape = c(2, 0.5), scale = 0.25),
+  link = scaled_logit(6.5))
+```
+
+### Multiple observation series (fit jointly)
+```r
+deaths <- epiobs(deaths ~ 1, i2o = inf2death, family = "poisson", link = scaled_logit(0.02))
+cases  <- epiobs(cases  ~ 1 + rw(time = week), i2o = inf2case, family = "quasi_poisson")
+fm <- epim(rt, inf, obs = list(deaths, cases), data = data, iter = 2000)
+```
+
+### Latent infections (over-dispersion, good for low counts)
+```r
+inf <- epiinf(gen = si, latent = TRUE, family = "normal", prior_aux = normal(10, 2))
+```
+
+### Population / susceptible depletion (realistic long-range forecasts)
+```r
+data$pop <- 56e6
+inf <- epiinf(gen = si, pop_adjust = TRUE, pops = "pop", prior_susc = normal(0.9, 0.05))
+# posterior_rt(fm) returns the susceptibility-ADJUSTED R_t; posterior_rt(fm, adjusted = FALSE) the raw R_t
+```
+
+### Prior predictive check (no data used)
+```r
+fm_prior <- epim(rt, inf, obs, data, prior_PD = TRUE, algorithm = "sampling", iter = 1000)
+```
+
+### Forecasting / counterfactuals — just pass modified `newdata`
+Extend the data frame with future dates (placeholder observation values), or alter
+covariates, and hand it to any posterior/plot function. No separate predict API.
+```r
+plot_obs(fm, type = "deaths", newdata = future_data, groups = "Italy", cumulative = TRUE)
+```
+
+### Variational Bayes for fast iteration
+```r
+fm <- epim(rt, inf, obs, data, algorithm = "fullrank", iter = 5e4, tol_rel_obj = 1e-3)
+```
+
+## Post-processing / extraction
+
+- Draws of latent series: `posterior_rt()`, `posterior_infections()`,
+  `posterior_infectious()`, `posterior_linpred()`, `posterior_latent()`.
+- Posterior predictive of observations: `posterior_predict(fm, type = ...)`.
+- Parameters: `as.matrix(fm, par_models=, par_types=, regex_pars=, par_groups=)`,
+  `summary(fm)`, `prior_summary(fm)`, `posterior_sample_size(fm)`.
+- Plots: `plot_rt`, `plot_obs`, `plot_infections`, `plot_infectious`, `plot_linpred`,
+  and spaghetti/trajectory variants `spaghetti_rt`/`spaghetti_infections`/`spaghetti_obs`
+  (args: `levels=`, `step=`, `adjusted=`, `cumulative=`, `newdata=`, `groups=`).
+- Diagnostics: `plot(fm, "trace")`, `plot(fm, "areas")`, etc. (bayesplot interface).
+- Forecast evaluation: `evaluate_forecast()`, `posterior_coverage()`,
+  `posterior_metrics()` (CRPS / MAE), `plot_coverage()`, `plot_metrics()`.
+
+## Gotchas
+
+- `epirt` LHS must be exactly `R(group, date)`; `epiobs` LHS is the observed column.
+- The date column must be `Date`-coercible (not numeric).
+- `i2o` and `gen` are per-day PMF vectors; `i2o` need not sum to 1 (it also encodes
+  ascertainment scaling), `gen` should be a simplex.
+- Set early per-group observations to `NA` so the seeding period is not treated as data.
+- Fitting compiles Stan on first use (slow once, then cached).
+```

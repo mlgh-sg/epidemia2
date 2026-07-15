@@ -25,11 +25,13 @@ knitr::opts_chunk$set(echo = TRUE)
 # Priors on Model Parameters {#sec:priors}
 <hr>
 
-**epidemia** aims to 
-give the user a high degree of control over setting prior distributions. It does this 
-by leveraging the functionality provided by **rstanarm**, which provides functions 
-representing a number of different prior families. These include for example student-t, Laplace, 
-and hierarchical shrinkage families. In this article, we provide 
+**epidemia** aims to
+give the user a high degree of control over setting prior distributions. It does this
+by providing a number of functions
+representing different prior families. These include for example student-t, Laplace,
+and hierarchical shrinkage families. These prior functions are provided directly by
+**epidemia** itself, and have identical behaviour to the equivalently-named functions
+that were previously imported from **rstanarm**. In this article, we provide
 a brief introduction to the available families, and discuss some important quirks 
 to be aware of when defining priors. We use the same mathematical notation as in the 
 model description [article](model-description.html).
@@ -58,9 +60,9 @@ appear in the model, and what distributions are available for them.
 Intercepts can appear in the linear predictor $\eta$ for the reproduction numbers 
 $R$ and in the linear predictors for multipliers $\alpha$. The prior 
 distribution is specified using an argument `prior_intercept`. This appears in 
-both `epirt()` and `epiobs()`. `prior_intercept` must be a call to an 
-**rstanarm** function that represents a student-t family: i.e. one of 
-`normal()`, `student_t()` or `cauchy()` from **rstanarm**. `prior_intercept`
+both `epirt()` and `epiobs()`. `prior_intercept` must be a call to a
+function that represents a student-t family: i.e. one of
+`normal()`, `student_t()` or `cauchy()`, all of which are provided by **epidemia**. `prior_intercept`
 is of course only used if the formula specifies an intercept. Please note that 
 the interpretation of `prior_intercept` depends on the `center` argument to 
 `epirt()` and `epiobs()`. Please see Section \@ref(sec:centering) for more details.
@@ -74,7 +76,7 @@ prior distribution is set using the `prior` argument, which, similarly to
 this *does not* set the prior for the group-specific effects $b$, which 
 are instead controlled by `prior_covariance`.
 
-`prior` can be a call to one of **rstanarm**'s prior functions. These can be broadly 
+`prior` can be a call to one of **epidemia**'s prior functions. These can be broadly
 grouped into four families: student-t, hierarchical shrinkage, Laplace and 
 the product normal family. Note that *all effects must follow the same 
 family*; for example, it is not possible for $\beta_1$ to have
@@ -88,9 +90,9 @@ R(group, date) ~ 1 + cov1 + cov2
 ```
 Consider the following two prior specifications in the call to `epirt()`.
 
-  - `prior = rstanarm::normal(location=0,scale=1)` gives a standard normal prior 
+  - `prior = normal(location=0,scale=1)` gives a standard normal prior
   to both covariate effects.
-  - `prior = rstanarm::normal(location=c(0,1),scale=c(1,2))` sets priors 
+  - `prior = normal(location=c(0,1),scale=c(1,2))` sets priors
   $\beta_1 \sim N(0,1)$ and $\beta_2 \sim N(1,2)$, where $\beta_1$ and $\beta_2$ are the effects for `cov1` and `cov2` respectively. To give different prior locations and or scales for each covariate, we simply pass numeric vectors instead of scalars. 
 
 The interpretation of `prior` depends on whether covariates are being centered, 
@@ -99,7 +101,7 @@ and whether automatic scale adjustments are occurring. Please see Section
 
 ### Additional Priors
 
-In addition to **rstanarm**'s prior functions, **epidemia** offers additional 
+In addition to the prior functions described above, **epidemia** offers additional
 prior families for regression coefficients. Currently the only additional 
 prior available is `shifted_gamma`. 
 This represents a gamma distribution that can be shifted to have support 
@@ -131,8 +133,8 @@ the call to `epiinf()`). Auxiliary parameters are always non-negative in **epide
 
 Priors for auxiliary parameters are set using the `prior_aux` argument in the 
 `epiobs()` and `epiinf()` modeling functions. It is not used when 
-`family = "poisson"` in the call to `epiobs()` or when `latent = FALSE` in the call to `epiinf()`. `prior_aux` can be a call to one of `normal()`, 
-`student_t()`, `cauchy()` or `exponential()` from **rstanarm**.
+`family = "poisson"` in the call to `epiobs()` or when `latent = FALSE` in the call to `epiinf()`. `prior_aux` can be a call to one of `normal()`,
+`student_t()`, `cauchy()` or `exponential()`, all provided by **epidemia**.
 
 ## Priors on Covariance Matrices {#sec:priorscov}
 <hr>
@@ -147,11 +149,11 @@ Although the Inverse-Wishart prior is a popular prior for covariance matrices,
 it does not cleanly separate shape and scale [@tokuda2011]. A general approach 
 is to decompose the prior on the covariance matrix into a prior on 
 the correlation matrix and a vector of variances. This is the approach taken 
-by **rstanarm**, which has functions `decov()` and `lkj()` which 
-represent priors for covariance matrices. These are also used by **epidemia** 
-for the same purpose.
+by the functions `decov()` and `lkj()`, which
+represent priors for covariance matrices. These are provided by **epidemia**
+for this purpose.
 
-We briefly describe **rstanarm**'s decov prior, as it applies to partially 
+We briefly describe the decov prior, as it applies to partially
 pooled parameters in the regression for $R_t$. Suppose the formula for $R_t$ contains a term of the form `(expr | factor)`, and 
 that `expr` evaluates to a model matrix with $p$ columns, and `factor` has $L$ 
 levels. Let $\theta_l$ denote the $p$-vector of parameters for the $l$^th^ 
@@ -214,7 +216,7 @@ no longer has an easily intuited interpretation.
 
 ### Autoscaling {#sec:autoscale}
 
-**rstanarm**'s prior functions have an argument called `autoscale`. 
+**epidemia**'s prior functions have an argument called `autoscale`.
 If `autoscale = TRUE`, then **epidemia** automatically adjusts the prior scale to 
 account for the scale of the covariates. This only applies to priors on 
 fixed effects, and not to the intercepts. **epidemia** rescales according to the 

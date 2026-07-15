@@ -109,7 +109,7 @@ rt <- epirt(
      public_events + schools_universities + self_isolating_if_ill + 
      social_distancing_encouraged + lockdown,
   prior = shifted_gamma(shape=1/6, scale = 1, shift = log(1.05)/6),
-  prior_covariance = rstanarm::decov(shape = c(2, rep(0.5, 5)),scale=0.25),
+  prior_covariance = decov(shape = c(2, rep(0.5, 5)),scale=0.25),
   link = scaled_logit(6.5)
 )
 
@@ -118,7 +118,7 @@ inf <- epiinf(gen = EuropeCovid$si, seed_days = 6)
 deaths <- epiobs(
   formula = deaths ~ 1,
   i2o = EuropeCovid2$inf2death,
-  prior_intercept = rstanarm::normal(0,0.2),
+  prior_intercept = normal(0,0.2),
   link = scaled_logit(0.02)
 )
 

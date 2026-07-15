@@ -17,13 +17,13 @@
 #' @param gen A numeric vector representing the probability mass function for the generation time of the disease (must be a
 #'  probability vector).
 #' @param seed_days An integer giving the number of days for which to seed infections. Defaults to \code{6L}.
-#' @param prior_seeds The prior distribution on seeded infections. This may be a call to \code{\link[rstanarm]{normal}}, \code{\link[rstanarm]{student_t}}, \code{\link[rstanarm]{exponential}}, or to \code{\link[epidemia]{hexp}}. The latter 
+#' @param prior_seeds The prior distribution on seeded infections. This may be a call to \code{\link{normal}}, \code{\link{student_t}}, \code{\link{exponential}}, or to \code{\link[epidemia]{hexp}}. The latter 
 #' distribution allows hierarchical modeling of seeded infections.
 #' @param latent If \code{TRUE}, treat infections as latent parameters using the extensions described in Section 5.2 \href{https://imperialcollegelondon.github.io/epidemia/articles/model-description.html}{here}.
 #' @param family 	Specifies the family for the prior distribution on daily infections. Only used if \code{latent = TRUE}, and currently restricted to \code{normal}.
 #' @param prior_aux Prior distribution for the auxiliary variable in the distribution for latent infections. Only used if \code{latent = TRUE}. If \code{fixed_vtm = TRUE}, then 
-#' this refers to the variance-to-mean ratio. If \code{fixed_vtm = FALSE}, it is instead the coefficient of variation. Can be a call to \code{\link[rstanarm]{exponential}}, 
-#' \code{\link[rstanarm]{normal}}, \code{\link[rstanarm]{student_t}} or \code{\link[rstanarm]{cauchy}}. These result in half-normal, half-t and half-cauchy priors.
+#' this refers to the variance-to-mean ratio. If \code{fixed_vtm = FALSE}, it is instead the coefficient of variation. Can be a call to \code{\link{exponential}}, 
+#' \code{\link{normal}}, \code{\link{student_t}} or \code{\link{cauchy}}. These result in half-normal, half-t and half-cauchy priors.
 #' @param fixed_vtm If \code{TRUE}, then the prior variance-to-mean ratio for latent infections is fixed, i.e. the auxiliary 
 #' variable refers to the coefficient of dispersion. If \code{FALSE}, then the prior ratio of standard deviation to mean is fixed instead,
 #' and the auxiliary variable refers to the coefficient of variation.
@@ -33,27 +33,27 @@
 #' population in that group that are removed at that point by some means other than infection; i.e. vaccination. Only used if \code{pop_adjust=TRUE}.
 #' @param prior_susc Prior distribution on the initial susceptible population at time 0, expressed as a proportion of the total population size.
 #' This quantity lies between 0 and 1, and is useful when the first modeled date is after the true beginning of an epidemic. Only used when \code{pop_adjust = TRUE}.
-#' If unspecified, then the entire population is assumed to be susceptible at time 0.  If specified, should be a call to \code{\link[rstanarm]{normal}}.
+#' If unspecified, then the entire population is assumed to be susceptible at time 0.  If specified, should be a call to \code{\link{normal}}.
 #' @param prior_rm_noise Removal from the susceptible population (to account for vaccinations) can be applied using the \code{rm} argument. However, in practice, it 
 #' is difficult to specify the proportion of the susceptible class removed at any point in time. \code{prior_rm_noise} 
-#' helps to model noise around this. If specified, should be a call to \code{\link[rstanarm]{normal}}.
+#' helps to model noise around this. If specified, should be a call to \code{\link{normal}}.
 #' @return An object of class \code{epiinf}.
 #' @examples 
 #' data(EuropeCovid)
 #' inf <- epiinf(
 #'  gen = EuropeCovid$si,
 #'  seed_days = 6L,
-#'  prior_seeds = hexp(rstanarm::exponential(0.02))
+#'  prior_seeds = hexp(exponential(0.02))
 #' )
 #' @export
 
 epiinf <- function(
   gen,
   seed_days = 6L,
-  prior_seeds = hexp(prior_aux = rstanarm::exponential(0.03)),
+  prior_seeds = hexp(prior_aux = exponential(0.03)),
   latent = FALSE,
   family = "normal",
-  prior_aux = rstanarm::normal(10,5),
+  prior_aux = normal(10,5),
   fixed_vtm = 1,
   pop_adjust = FALSE,
   pops = NULL,

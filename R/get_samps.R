@@ -35,29 +35,32 @@ get_samps <- function(prefit, n) {
     stop("n must be less than the total number of samples", call.=FALSE)
   
   idx <- sample(seq_len(l), n)
-  allsamps <- rstan::extract(prefit$stanfit, permuted = TRUE, inc_warmup = FALSE)
+
+  # draw the raw (parameters-block) variables from the CmdStanR fit; these are
+  # exactly the quantities needed to warm-start a subsequent run via `init`.
+  fit <- prefit$cmdstanfit
+  mod <- epidemia_stan_model("epidemia_base")
+  par_names <- names(mod$variables()$parameters)
+  par_names <- intersect(par_names, fit$metadata()$stan_variables)
+
+  rv <- posterior::as_draws_rvars(fit$draws(variables = par_names))
+
   lapply(idx,
     function(i) {
-      res <- lapply(
-        allsamps,
-        function(x) {
-          if (length(dim(x)) == 1) {
-            as.array(x[i])
-          }
-          else if (length(dim(x)) == 2) {
-            x[i, ]
+      lapply(
+        rv,
+        function(v) {
+          d <- posterior::draws_of(v)  # dims: draws x (parameter dims)
+          nd <- length(dim(d))
+          if (nd == 1) {
+            as.array(d[i])
+          } else if (nd == 2) {
+            d[i, ]
           } else {
-            x[i, , ]
+            array(d[i, , ], dim = dim(d)[-1])
           }
         }
       )
-      for (j in names(res)) {
-        if (length(res[j]) == 1) {
-          res[[j]] <- as.array(res[[j]])
-        }
-      }
-      res$tau_raw <- c(res$tau_raw)
-      res
     }
   )
 }

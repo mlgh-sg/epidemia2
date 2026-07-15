@@ -1,21 +1,42 @@
-year <- sub("-.*", "", meta$Date)
 version_note <- sprintf("R package version %s", meta$Version)
 
 citHeader("To cite epidemia in publications please use the following citation entry.")
-          
-citEntry(entry = "Misc", 
-         title = "epidemia: Modeling of Epidemics using Hierarchical Bayesian Models",
-         author = c(person("James A.", "Scott"),
-                    person("Axel", "Gandy"),
-                    person("Swapnil", "Mishra"),
-                    person("Juliette", "Unwin"),
-		    person("Seth", "Flaxman"),
-		    person("Samir", "Bhatt")),
-         note = version_note,
-         year = 2020,
-         url = "https://imperialcollegelondon.github.io/epidemia/",
-	 textVersion =
-           paste0("Scott J. A., Gandy A., Mishra, S., Unwin J., Flaxman S. & Bhatt S. (2020). ",
-                 title = "epidemia: Modeling of Epidemics using Hierarchical Bayesian Models.",
-                 version_note, " https://imperialcollegelondon.github.io/epidemia/")
+
+bibentry(
+  bibtype = "Article",
+  title   = "epidemia: An R Package for Semi-Mechanistic Bayesian Modelling of Infectious Diseases using Point Processes",
+  author  = c(person("James A.", "Scott"),
+              person("Axel", "Gandy"),
+              person("Swapnil", "Mishra"),
+              person("Juliette", "Unwin"),
+              person("Seth", "Flaxman"),
+              person("Samir", "Bhatt")),
+  journal = "Journal of the Royal Statistical Society Series A: Statistics in Society",
+  year    = 2023,
+  doi     = "10.1111/rssa.12988",
+  textVersion = paste0(
+    "Scott, J. A., Gandy, A., Mishra, S., Unwin, J., Flaxman, S. & Bhatt, S. (2023). ",
+    "epidemia: An R Package for Semi-Mechanistic Bayesian Modelling of Infectious ",
+    "Diseases using Point Processes. Journal of the Royal Statistical Society Series A. ",
+    "doi:10.1111/rssa.12988"
+  )
+)
+
+bibentry(
+  bibtype = "Misc",
+  title   = "epidemia: Modeling of Epidemics using Hierarchical Bayesian Models",
+  author  = c(person("James A.", "Scott"),
+              person("Axel", "Gandy"),
+              person("Swapnil", "Mishra"),
+              person("Juliette", "Unwin"),
+              person("Seth", "Flaxman"),
+              person("Samir", "Bhatt")),
+  note    = version_note,
+  year    = 2023,
+  url     = "https://imperialcollegelondon.github.io/epidemia/",
+  textVersion = paste0(
+    "Scott J. A., Gandy A., Mishra, S., Unwin J., Flaxman S. & Bhatt S. (2023). ",
+    "epidemia: Modeling of Epidemics using Hierarchical Bayesian Models. ",
+    version_note, ". https://imperialcollegelondon.github.io/epidemia/"
+  )
 )

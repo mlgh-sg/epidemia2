@@ -6,15 +6,14 @@
 #' \code{as.matrix}, \code{as.array} and \code{as.data.frame} each return
 #' a sample of parameter draws from objects of class \code{epimodel}. The 
 #' returned parameters include those in the regression for \eqn{R_{tm}}$, but also 
-#' other parameters in the model. These methods closely resemble those 
-#' for \code{stanreg} objects in \pkg{rstanarm}. Please see \code{\link[rstanarm]{as.matrix.stanreg}} 
-#' for a general explanation of these methods.
+#' other parameters in the model. These methods closely resemble the analogous
+#' methods for fitted regression objects in \pkg{rstanarm}.
 #' @inheritParams plot.epimodel
 #' @templateVar epimodelArg x
 #' @template args-epimodel-object
 #' @param ... Not used.
-#' @param pars Character vector of parameter names to return. Same as \link[rstanarm]{as.matrix.stanreg}
-#' @param regex_pars Character vector of regular expressions against which to match parameter names.Same as \link[rstanarm]{as.matrix.stanreg}
+#' @param pars Character vector of parameter names to return. Same as for \code{as.matrix} methods of \pkg{rstanarm} regression objects.
+#' @param regex_pars Character vector of regular expressions against which to match parameter names.Same as for \code{as.matrix} methods of \pkg{rstanarm} regression objects.
 #' @return A \code{matrix}, \code{array} or \code{data.frame} object.
 #' @export
 as.matrix.epimodel <- function(x, ..., pars = NULL, regex_pars = NULL, par_models = NULL,

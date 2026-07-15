@@ -28,17 +28,18 @@ element in the list defines a model for the specified observation vector. See \c
 \item{data}{A dataframe with all data required for fitting the model. This includes all observation variables and covariates specified in the models for the reproduction number and ascertainment rates.}
 
 \item{algorithm}{One of \code{"sampling"}, \code{"meanfield"} or
-\code{"fullrank"}. This specifies which \pkg{rstan} function to use for
-fitting the model. For \code{"sampling"} this is \code{\link[rstan]{sampling}}, otherwise
-this is \code{\link[rstan]{vb}}.}
+\code{"fullrank"}. This specifies which \pkg{cmdstanr} fitting method to use.
+For \code{"sampling"} this is the \code{$sample()} method (adaptive HMC/NUTS);
+otherwise variational Bayes is used via the \code{$variational()} method.}
 
 \item{group_subset}{If specified, a character vector naming a subset of regions to include in the model.}
 
-\item{prior_PD}{Same as in \code{\link[rstanarm]{stan_glm}}. If \code{TRUE},
+\item{prior_PD}{If \code{TRUE},
 samples all parameters from the joint prior distribution. This is useful for
 prior predictive checks. Defaults to \code{FALSE}.}
 
-\item{...}{Additional arguments to pass to the \pkg{rstan} function used to fit the model.}
+\item{...}{Additional arguments (e.g. \code{iter}, \code{chains}, \code{warmup},
+\code{seed}, \code{cores}, \code{control}) passed to the \pkg{cmdstanr} fitting method.}
 }
 \value{
 An object of class \code{epimodel}.
@@ -69,10 +70,13 @@ This dataframe must be compatible with the model components, in the sense that i
 In addition to taking a model description and a dataframe, \code{\link{epim}} has various
 additional arguments which specify how the model should be fit. If \code{algorithm = "sampling"}
 then the model will be fit using \pkg{Stan}’s adaptive Hamiltonian Monte Carlo sampler.
-This is done internally by calling \code{\link[rstan]{sampling}}. If
+This is done internally by calling the \code{$sample()} method of a \pkg{cmdstanr} model. If
 \code{algorithm = "meanfield"} or \code{algorithm = "fullrank"}, then
-\pkg{Stan}’s variational Bayes algorithms are used instead, by calling \code{\link[rstan]{vb}}.
-Any unnamed arguments in the call to \code{\link{epim}} are passed directly on to the \pkg{rstan} sampling function.
+\pkg{Stan}’s variational Bayes algorithms are used instead, via the \code{$variational()} method.
+Any additional named arguments in the call to \code{\link{epim}} (for example \code{iter},
+\code{chains}, \code{warmup}, \code{seed}, \code{cores} or
+\code{control = list(adapt_delta=, max_treedepth=)}) are translated and passed on to
+the underlying \pkg{cmdstanr} fitting method.
 \code{\link{epim}} returns a fitted model object of class \code{epimodel}, which contains posterior samples from the model along with other useful objects.
 
 In general, the adaptive Hamiltonian Monte Carlo sampler should be used for final inference.
@@ -93,13 +97,13 @@ data <- data.frame(
 
 rt <- epirt(
  formula = R(city, date) ~ rw(time = week, prior_scale = 0.1),
- prior_intercept = rstanarm::normal(log(2), 0.2),
+ prior_intercept = normal(log(2), 0.2),
  link = 'log'
 )
 
 obs <-  epiobs(
  formula = cases ~ 1,
- prior_intercept = rstanarm::normal(location=1, scale=0.01),
+ prior_intercept = normal(location=1, scale=0.01),
  link = "identity",
  i2o = rep(.25,4)
 )

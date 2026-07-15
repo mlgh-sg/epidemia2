@@ -19,7 +19,7 @@
 \item{x}{A fitted model object returned by \code{\link{epim}}.
 See \code{\link{epimodel-objects}}.}
 
-\item{plotfun}{Same as in \code{\link[rstanarm]{plot.stanreg}}.
+\item{plotfun}{Same as in \code{\link{plot.epimodel}}.
 A character string giving the name of the \pkg{bayesplot}
 \link[bayesplot:MCMC-overview]{MCMC} function to use. These can be
 listed using \code{\link[bayesplot]{available_mcmc}}. Defaults to "interval"}
@@ -56,12 +56,12 @@ Either a ggplot object that can be further customized using the
 Provides an interface to the \link[bayesplot:MCMC-overview]{MCMC} module
 in the \pkg{\link{bayesplot}} package, and allows seamless plotting of
 MCMC draws along with various diagnostics. This method relies heavily
-on the code base for the \code{\link[rstanarm]{plot.stanreg}} method
+on the code base for the \code{\link{plot.epimodel}} method
 in \pkg{rstanarm}.
 }
 \seealso{
 \itemize{
-\item \code{\link[rstanarm]{plot.stanreg}}.
+\item \code{\link{plot.epimodel}}.
 \item \pkg{bayesplot} vignettes for examples.
 \item \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for plotting
 function documentation.

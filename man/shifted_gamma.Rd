@@ -11,7 +11,7 @@ shifted_gamma(shape = 1, scale = 1, shift = 0, autoscale = TRUE)
 
 \item{shift}{The Gamma prior can be shifted to allow for positive support.}
 
-\item{autoscale}{Same as in \code{\link[rstanarm]{priors}}.}
+\item{autoscale}{Same as in \code{\link{priors}}.}
 }
 \value{
 A named list to be parsed internally by \code{\link[epidemia]{epim}}.
@@ -21,7 +21,7 @@ A gamma prior distribution which can be shifted.
 }
 \details{
 \pkg{rstanarm} provides a set of distributions
-(see \code{\link[rstanarm]{priors}}) which can be used for the priors
+(see \code{\link{priors}}) which can be used for the priors
 on regression parameters. Intuitively, non-pharmaceutical interventions are
 unlikely to a-priori cause a large increase in the reproduction number.
 A shifted gamma prior can

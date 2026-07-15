@@ -3,7 +3,7 @@
 #' A gamma prior distribution which can be shifted.
 #' 
 #' \pkg{rstanarm} provides a set of distributions 
-#' (see \code{\link[rstanarm]{priors}}) which can be used for the priors 
+#' (see \code{\link{priors}}) which can be used for the priors 
 #' on regression parameters. Intuitively, non-pharmaceutical interventions are 
 #' unlikely to a-priori cause a large increase in the reproduction number.
 #'  A shifted gamma prior can 
@@ -16,7 +16,7 @@
 #' 
 #' @param shape,scale Sets the shape and scale parameters of the Gamma prior.
 #' @param shift The Gamma prior can be shifted to allow for positive support.
-#' @param autoscale Same as in \code{\link[rstanarm]{priors}}.
+#' @param autoscale Same as in \code{\link{priors}}.
 #' 
 #' @return A named list to be parsed internally by \code{\link[epidemia]{epim}}.
 #' 
@@ -40,15 +40,15 @@ shifted_gamma <- function(shape = 1, scale = 1, shift = 0, autoscale = TRUE) {
 #' \code{\link[epidemia]{epiinf}}.
 #'
 #' @param prior_aux Specifies the prior distribution on the auxiliary parameter. 
-#' This can be a call to \code{\link[rstanarm]{normal}}, \code{\link[rstanarm]{student_t}} 
-#' or \code{\link[rstanarm]{exponential}}.
+#' This can be a call to \code{\link{normal}}, \code{\link{student_t}} 
+#' or \code{\link{exponential}}.
 #' 
 #' @return A named list to be parsed internally by \code{\link[epidemia]{epim}}.
 #' 
 #' @references
 #' \insertAllCited{}
 #' @export
-hexp <- function(prior_aux = rstanarm::exponential(0.03)) {
+hexp <- function(prior_aux = exponential(0.03)) {
   check_prior(prior_aux)
   check_in_set(prior_aux$dist, ok_aux_dists)
   out <- nlist(dist = "hexp", prior_aux)

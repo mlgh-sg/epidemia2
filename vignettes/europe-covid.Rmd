@@ -79,12 +79,12 @@ parameters in **epidemia** and how to infer their effect sizes. We
 also show how to forecast observations into the future, and how to
 undertake counterfactual analyses.
 
-Begin by loading required packages. **dplyr** will be used to manipulate 
-the data set, while **rstanarm** is used to define prior distributions.
+Begin by loading required packages. **dplyr** will be used to manipulate
+the data set. The prior distributions used below are provided directly by
+**epidemia**.
 ```{r load-packages, message = FALSE}
 library(dplyr)
 library(epidemia)
-library(rstanarm)
 ```
 
 

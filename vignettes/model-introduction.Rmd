@@ -24,8 +24,9 @@ pkgdown:
 The open-source R [@rcore_2011] package **epidemia** provides a framework for 
 Bayesian, regression-oriented modeling of the temporal dynamics of infectious diseases. Typically, but not exclusively, these models are fit to areal time-series; i.e. aggregated event counts for a given population and period. Disease dynamics are described explicitly; observed data are linked to latent infections, which are in turn modeled as a self-exciting process tempered by time-varying reproduction numbers. Regression models are specified for several objects in the model. For example, 
 reproduction numbers are expressed as a transformed predictor, which may include 
-both covariates and autoregressive terms. A range of prior distributions 
-can be specified for unknown parameters by leveraging the functionality of **rstanarm**
+both covariates and autoregressive terms. A range of prior distributions
+can be specified for unknown parameters using prior distribution functions provided
+directly by **epidemia**, which follow the design of **rstanarm**
 [@goodrich_2020]. Multilevel models are supported by partially pooling covariate effects
 appearing in the predictor for reproduction numbers between multiple populations.
 
@@ -109,9 +110,9 @@ used extensively to specify and fit Bayesian models for disease transmission
 during the Covid-19 pandemic. Examples analyses include @Flaxman2020, @Hauser_2020 and 
 @Doremalen_2020. For tutorials on implementing such models, see for example 
 @Grinsztajn_2021 or @Chatzilena_2019. **epidemia** uses the framework offered by **Stan** to 
-both specify and fit models. User-specified models are internally translated into data 
-that is passed to a precompiled **Stan** program. The models are fit using 
-sampling methods from **rstan** [@rstan_2020].
+both specify and fit models. User-specified models are internally translated into data
+that is passed to a **Stan** program, which is compiled on first use and cached. The models are fit using
+**CmdStanR**, the **R** interface to **CmdStan** [@stan_2020].
 
 # References
 <hr>

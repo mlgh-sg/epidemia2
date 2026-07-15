@@ -6,17 +6,6 @@
 \alias{ngrps}
 \alias{posterior_predict}
 \alias{prior_summary}
-\alias{normal}
-\alias{student_t}
-\alias{cauchy}
-\alias{hs}
-\alias{hs_plus}
-\alias{laplace}
-\alias{lasso}
-\alias{product_normal}
-\alias{exponential}
-\alias{decov}
-\alias{lkj}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -25,8 +14,6 @@ below to see their documentation.
 
 \describe{
   \item{lme4}{\code{\link[lme4]{ngrps}}}
-
-  \item{rstanarm}{\code{\link[rstanarm:priors]{cauchy}}, \code{\link[rstanarm:priors]{decov}}, \code{\link[rstanarm:priors]{exponential}}, \code{\link[rstanarm:priors]{hs}}, \code{\link[rstanarm:priors]{hs_plus}}, \code{\link[rstanarm:priors]{laplace}}, \code{\link[rstanarm:priors]{lasso}}, \code{\link[rstanarm:priors]{lkj}}, \code{\link[rstanarm:priors]{normal}}, \code{\link[rstanarm:priors]{product_normal}}, \code{\link[rstanarm:priors]{student_t}}}
 
   \item{rstantools}{\code{\link[rstantools]{posterior_predict}}, \code{\link[rstantools]{prior_summary}}}
 }}

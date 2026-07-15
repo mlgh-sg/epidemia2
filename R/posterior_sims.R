@@ -79,9 +79,22 @@ posterior_sims <- function(object,
     groups = levels(data$group)
   )
 
-  sims <- rstan::gqs(stanmodels$epidemia_pp_base,
-    data = standata,
-    draws = stanmat
+  # CmdStan's standalone generated-quantities requires the fitted-parameter
+  # draws to correspond exactly to the pp model's parameters block, in the same
+  # declaration order. Keep only those columns (pp_stanmat has padded them to
+  # the pp dimensions) and order them by (parameter, index).
+  pp_mod <- epidemia_stan_model("epidemia_pp_base")
+  pp_pars <- names(pp_mod$variables()$parameters)
+  cont <- sub("\\[.*$", "", colnames(stanmat))
+  keep <- cont %in% pp_pars
+  stanmat <- stanmat[, keep, drop = FALSE]
+  cont <- cont[keep]
+  idx  <- as.integer(sub("^[^\\[]*\\[([0-9]+)\\]$", "\\1", colnames(stanmat)))
+  stanmat <- stanmat[, order(match(cont, pp_pars), idx), drop = FALSE]
+
+  sims <- pp_mod$generate_quantities(
+    fitted_params = posterior::as_draws_matrix(stanmat),
+    data = clean_standata(standata, model_data_vars(pp_mod))
   )
 
   # get list of indices for slicing result of gqs
@@ -117,11 +130,18 @@ posterior_sims <- function(object,
 # @param n An integer vector giving number of observations 
 # of each type
 # @param obs List of epiobs_ objects
+# Extract a generated-quantities variable from a CmdStanGQ object as a plain
+# array with the draws in the first margin (matching rstan::extract()[[1]]).
+gq_extract <- function(sims, nme) {
+  rv <- posterior::as_draws_rvars(sims$draws(nme))[[nme]]
+  posterior::draws_of(rv, with_chains = FALSE)
+}
+
 parse_obs <- function(sims, nme, n, obs) {
   if (!length(n)) {
     return(NULL)
   }
-  draws <- rstan::extract(sims, nme)[[1]]
+  draws <- gq_extract(sims, nme)
   # split draws into components for each type
   i <- lapply(n, function(x) 1:x)
   i <- Map(function(x, y) x + y, i, utils::head(c(0,cumsum(n)),-1))
@@ -150,7 +170,7 @@ parse_obs <- function(sims, nme, n, obs) {
 # @param ind A list giving the indices at which to extract for each group
 # @param rt An epirt_ object
 parse_latent <- function(sims, nme, ind, rt) {
-  draws <- rstan::extract(sims, nme)[[1]]
+  draws <- gq_extract(sims, nme)
   ng <- dim(draws)[3]
   draws <- lapply( # 3d array to list of matrices
     seq_len(ng),

@@ -8,8 +8,8 @@ An S3 class representing a fitted epidemiological model.
 }
 \details{
 The workhorse function \code{epim} of the \pkg{epidemia} package returns an object
-of class \code{epimodel}. This is heavily based on the \code{stanreg} class in \pkg{rstanarm}
-(see \code{\link[rstanarm]{stanreg-objects}}). The internals are unimportant, but it is
+of class \code{epimodel}. This is inspired by the \code{stanreg} class in \pkg{rstanarm}.
+The internals are unimportant, but it is
 helpful to read the documentation to understand how to use methods operating on \code{epimodel}
 objects.
 }

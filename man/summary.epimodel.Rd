@@ -39,6 +39,5 @@ parameter estimates.}
 An object of class \code{"summary.epimodel"}.
 }
 \description{
-Provides a summary of parameter estimates and MCMC diagnostics. Similar
-to \code{\link[rstanarm]{summary.stanreg}} in \pkg{rstanarm}.
+Provides a summary of parameter estimates and MCMC diagnostics.
 }

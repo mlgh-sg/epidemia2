@@ -250,6 +250,10 @@ check_time_as_date <- function(object, data) {
   time <- .get_time(formula(object))
   x <- data[, time]
   msg <- paste0("column ", time, " in data should be coercible to class `Date` and have no NAs.")
+  # a numeric column is not a valid date (base R's as.Date() coercion of
+  # numerics is origin-dependent and version-dependent, so reject it explicitly)
+  if (is.numeric(x))
+    stop(msg, call. = FALSE)
   tryCatch(x <- as.Date(x, optional=TRUE), error = function(cond) stop(msg, call. = FALSE))
   if (anyNA(x))
     stop(msg, call. = FALSE)

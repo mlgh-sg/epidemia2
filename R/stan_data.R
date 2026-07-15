@@ -126,7 +126,7 @@ standata_autocor <- function(autocor) {
   out$ac_prior_scales <- as.array(autocor$prior_scale)
 
   # add sparse matrix representation
-  parts <- rstan::extract_sparse_parts(autocor$Z)
+  parts <- extract_sparse_parts(autocor$Z)
   out$ac_v <- parts$v - 1L
 
   # NA terms put to index negative 1

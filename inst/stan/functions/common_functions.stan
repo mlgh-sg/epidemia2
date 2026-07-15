@@ -16,7 +16,7 @@
    * @param z_T Vector used in the onion method for creating Cholesky factors
    * @return A vector that corresponds to theta in lme4
    */
-  vector make_theta_L(int len_theta_L, int[] p, real dispersion,
+  vector make_theta_L(int len_theta_L, array[] int p, real dispersion,
                       vector tau, vector scale, vector zeta,
                       vector rho, vector z_T) {
     vector[len_theta_L] theta_L;
@@ -85,7 +85,7 @@
   *   the RHS of each |
   * @return A vector of group-specific coefficients
   */
-  vector make_b(vector z_b, vector theta_L, int[] p, int[] l) {
+  vector make_b(vector z_b, vector theta_L, array[] int p, array[] int l) {
     vector[rows(z_b)] b;
     int b_mark = 1;
     int theta_L_mark = 1;
@@ -135,8 +135,8 @@
    * @return target()
    */
   real decov_lp(vector z_b, vector z_T, vector rho, vector zeta, vector tau,
-                real[] regularization, real[] delta, vector shape,
-                int t, int[] p) {
+                array[] real regularization, array[] real delta, vector shape,
+                int t, array[] int p) {
     int pos_reg = 1;
     int pos_rho = 1;
     target += normal_lpdf(z_b | 0, 1);
@@ -172,7 +172,7 @@
    * @param c2 A positive real number
    * @return A vector of coefficientes
    */
-  vector hs_prior(vector z_beta, real[] global, vector[] local, 
+  vector hs_prior(vector z_beta, array[] real global, array[] vector local, 
                   real global_prior_scale, real error_scale, real c2) {
     int K = rows(z_beta);
     vector[K] lambda = local[1] .* sqrt(local[2]);
@@ -193,7 +193,7 @@
    * @param c2 A positive real number
    * @return A vector of coefficientes
    */
-  vector hsplus_prior(vector z_beta, real[] global, vector[] local, 
+  vector hsplus_prior(vector z_beta, array[] real global, array[] vector local, 
                       real global_prior_scale, real error_scale, real c2) {
     int K = rows(z_beta);
     vector[K] lambda = local[1] .* sqrt(local[2]);
@@ -237,8 +237,8 @@
    * @param v An integer array with the indices of group membership
    * @return An two-dimensional integer array of group membership
    */
-  int[,] make_V(int N, int t, int[] v) {
-    int V[t,N];
+  array[,] int make_V(int N, int t, array[] int v) {
+    array[t,N] int V;
     int pos = 1;
     if (t > 0) for (j in 1:N) for (i in 1:t) {
       V[i,j] = v[pos] + 1;
@@ -247,20 +247,37 @@
     return V;
   }
 
-  /** 
-  * faster version of csr_matrix_times_vector
-  * declared here and defined in C++
+  /**
+  * CSR (compressed sparse row) matrix-vector product.
+  *
+  * Historically this was declared here and defined in external C++ (a faster
+  * variant of Stan's built-in csr_matrix_times_vector). External C++ user
+  * functions are not supported by the CmdStan backend, so it is now defined in
+  * pure Stan. It matches the convention used throughout epidemia in which the
+  * column indices `v` and row-start pointers `u` are stored 0-based (see how
+  * standata_reg.R subtracts 1 from rstan::extract_sparse_parts()). It is only
+  * ever called when t > 0, so `u` has length m + 1.
   *
   * @param m Integer number of rows
   * @param n Integer number of columns
-  * @param w Vector (see reference manual)
-  * @param v Integer array (see reference manual)
-  * @param u Integer array (see reference manual)
+  * @param w Vector of the non-zero values (length nnz)
+  * @param v 0-based column index of each non-zero (length nnz)
+  * @param u 0-based row-start pointers (length m + 1)
   * @param b Vector that is multiplied from the left by the CSR matrix
   * @return A vector that is the product of the CSR matrix and b
   */
-  vector csr_matrix_times_vector2(int m, int n, vector w, 
-                                int[] v, int[] u, vector b);
+  vector csr_matrix_times_vector2(int m, int n, vector w,
+                                array[] int v, array[] int u, vector b) {
+    vector[m] result = rep_vector(0.0, m);
+    for (row in 1:m) {
+      int lo = u[row] + 1;      // 1-based index of this row's first non-zero
+      int hi = u[row + 1];      // 1-based index of this row's last non-zero
+      for (k in lo:hi) {
+        result[row] += w[k] * b[v[k] + 1];
+      }
+    }
+    return result;
+  }
 
   /**
    * Calculate lower bound on intercept

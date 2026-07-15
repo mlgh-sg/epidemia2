@@ -14,18 +14,18 @@ test_that("epim runs through with various rt formula", {
   run_args <- args
 
   # just fixed effects
-  expect_warning(fm <- do.call(epim, run_args))
+  fm <- suppressWarnings(do.call(epim, run_args))
   expect_true(inherits(fm, "epimodel"))
 
   # random effects
   run_args$rt <- epirt(formula = R(country, date) ~ (lockdown | country))
-  expect_warning(fm <- do.call(epim, run_args))
+  fm <- suppressWarnings(do.call(epim, run_args))
   expect_true(inherits(fm, "epimodel"))
 
   # random walks
   run_args$data$week <- format(run_args$data$date,"%V")
   run_args$rt <- epirt(formula = R(country, date) ~ (lockdown | country) + rw(time=week) + rw(time=week, gr=country))
-  expect_warning(fm <- do.call(epim, run_args))
+  fm <- suppressWarnings(do.call(epim, run_args))
   expect_true(inherits(fm, "epimodel"))
 
 })
@@ -36,7 +36,7 @@ test_that("epim runs through with different algorithms", {
   run_args$iter <- 10
   run_args$seed <- 12345
   run_args$chains <- 1 
-  expect_warning(fm <- do.call(epim, run_args))
+  fm <- suppressWarnings(do.call(epim, run_args))
   expect_true(inherits(fm, "epimodel"))
 })
 

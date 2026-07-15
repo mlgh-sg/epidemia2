@@ -86,7 +86,6 @@ First load required packages.
 ```{r core-packages, message=FALSE}
 library(epidemia)
 library(lubridate)
-library(rstanarm)
 library(dplyr)
 options(mc.cores = parallel::detectCores())
 ```

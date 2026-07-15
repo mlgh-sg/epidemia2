@@ -10,9 +10,9 @@ epiobs(
   family = "neg_binom",
   link = "logit",
   center = FALSE,
-  prior = rstanarm::normal(scale = 0.2),
-  prior_intercept = rstanarm::normal(scale = 0.2),
-  prior_aux = rstanarm::normal(location = 10, scale = 5),
+  prior = normal(scale = 0.2),
+  prior_intercept = normal(scale = 0.2),
+  prior_aux = normal(location = 10, scale = 5),
   ...
 )
 }
@@ -35,16 +35,16 @@ Defaults to \code{"logit"}.}
 have mean zero. All of the priors are then interpreted as
 priors on the centered covariates. Defaults to \code{FALSE}.}
 
-\item{prior}{Same as in \code{\link[rstanarm]{stan_glm}}. \strong{Note:}
+\item{prior}{Same as in \code{\code{stan_glm}}. \strong{Note:}
 If \code{autoscale=TRUE} in the call to the prior distribution
 then automatic rescaling of the prior may take place.}
 
-\item{prior_intercept}{Same as in \code{\link[rstanarm]{stan_glm}}. Prior
+\item{prior_intercept}{Same as in \code{\code{stan_glm}}. Prior
 for the regression intercept, if one has been specified.}
 
 \item{prior_aux}{The prior distribution for the auxiliary parameter, if it exists.
-Only used if family is "neg_binom" (reciprocal dispersion), "quasi_poisson" (dispersion), "normal" (standard deviation) or "log_normal" (sigma parameter). Can be a call to \code{\link[rstanarm]{exponential}},
-\code{\link[rstanarm]{normal}}, \code{\link[rstanarm]{student_t}} or \code{\link[rstanarm]{cauchy}}. These result in half-normal, half-t and half-cauchy priors.}
+Only used if family is "neg_binom" (reciprocal dispersion), "quasi_poisson" (dispersion), "normal" (standard deviation) or "log_normal" (sigma parameter). Can be a call to \code{\link{exponential}},
+\code{\link{normal}}, \code{\link{student_t}} or \code{\link{cauchy}}. These result in half-normal, half-t and half-cauchy priors.}
 
 \item{...}{Additional arguments for \code{\link[stats]{model.frame}}}
 }

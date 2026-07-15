@@ -54,7 +54,6 @@ step in this direction.
 ```{r core-packages, message=FALSE}
 library(epidemia)
 library(lubridate)
-library(rstanarm)
 ```
 
 In addition to inferring $R_t$, this example demonstrates how to 
@@ -169,9 +168,9 @@ args <- list(rt = rt, obs = obs, inf = inf, data = data, iter = 2e3,
 args_ext <- args; args_ext$inf <- inf_ext
 ```
 
-The arguments `iter` and `seed` set the number of MCMC iterations 
-and seeds respectively, and are passed directly on to the `sampling()` 
-function from **rstan**.
+The arguments `iter` and `seed` set the number of MCMC iterations
+and seeds respectively, and are passed directly on to the `$sample()`
+method of the **cmdstanr** model.
 
 We wrap the calls to `epim()` in `system.time` in order to assess 
 the computational cost of fitting the models. The snippet below fits both 

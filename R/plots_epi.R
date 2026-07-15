@@ -43,7 +43,7 @@
 #'      public_events + schools_universities + self_isolating_if_ill + 
 #'      social_distancing_encouraged + lockdown,
 #'   prior = shifted_gamma(shape=1/6, scale = 1, shift = log(1.05)/6),
-#'   prior_covariance = rstanarm::decov(shape = c(2, rep(0.5, 5)),scale=0.25),
+#'   prior_covariance = decov(shape = c(2, rep(0.5, 5)),scale=0.25),
 #'   link = scaled_logit(6.5)
 #' )
 #' 
@@ -52,7 +52,7 @@
 #' deaths <- epiobs(
 #'   formula = deaths ~ 1,
 #'   i2o = EuropeCovid2$inf2death,
-#'   prior_intercept = rstanarm::normal(0,0.2),
+#'   prior_intercept = normal(0,0.2),
 #'   link = scaled_logit(0.02)
 #' )
 #' 
@@ -136,14 +136,14 @@ plot_rt.epimodel <-
         mapping = ggplot2::aes(x = .data$date, y = median), 
         data = df, 
         color = "black",
-        size=0.8
+        linewidth = 0.8
       )
     } else {
       p <- p + ggplot2::geom_line(
         mapping = ggplot2::aes(x = .data$date, y = median), 
         data = df, 
         color = "black",
-        size = 0.8
+        linewidth = 0.8
       )
     }
 
@@ -156,6 +156,8 @@ plot_rt.epimodel <-
       yintercept = 1,
       linetype = "dotted"
     )
+
+    p <- p + ggplot2::ylab(expression(R[t]))
 
     return(p)
 }
@@ -240,7 +242,7 @@ plot_obs.epimodel <- function(object, type, groups = NULL, dates = NULL,
   
   layer_fun <- if (bar) ggplot2::geom_bar else ggplot2::geom_point
   p <- p + layer_fun(
-    mapping = ggplot2::aes_string(x = "date", y = "obs", fill = "new"),
+    mapping = ggplot2::aes(x = .data$date, y = .data$obs, fill = .data$new),
     data = df,
     stat = "identity",
     alpha = if(bar) 0.7 else 1.0
@@ -425,11 +427,12 @@ spaghetti_rt <- function(
 
   obj <- rt
   obj$draws <- subsamp(object, rt$draws, draws)
-  
+
   p <- spaghetti_base(obj, log, alpha, dates, date_format, date_breaks, step)
+  p <- p + ggplot2::ylab(expression(R[t]))
 
   df <- data.frame(
-    date = rt$time, 
+    date = rt$time,
     median = apply(rt$draws, 2, function(x) quantile(x, 0.5)),
     group = rt$group
   )
@@ -439,11 +442,11 @@ spaghetti_rt <- function(
   if (step) {
     p <- p + ggplot2::geom_step(
       mapping = ggplot2::aes(x = .data$date, y = median), 
-      data = df, size = 0.8)
+      data = df, linewidth = 0.8)
   } else {
     p <- p + ggplot2::geom_line(
       mapping = ggplot2::aes(x = .data$date, y = median), 
-      data = df,  size = 0.8)
+      data = df,  linewidth = 0.8)
   }
   
   return(p)
@@ -481,11 +484,12 @@ spaghetti_infections <-
 
   obj <- inf
   obj$draws <- subsamp(object, inf$draws, draws)
-  
+
   p <- spaghetti_base(obj, log, alpha, dates, date_format, date_breaks)
+  p <- p + ggplot2::ylab("Infections")
 
   df <- data.frame(
-    date = inf$time, 
+    date = inf$time,
     median = apply(inf$draws, 2, function(x) quantile(x, 0.5)),
     group = inf$group
   )
@@ -494,7 +498,7 @@ spaghetti_infections <-
 
   p <- p + ggplot2::geom_line(
       mapping = ggplot2::aes(x = .data$date, y = median), 
-      data = df, size = 0.8)
+      data = df, linewidth = 0.8)
 
   nme <- "Infections"
   if (by_100k) nme <- paste(nme, "per 100k")
@@ -575,7 +579,7 @@ spaghetti_obs <- function(
 
   layer_fun <- if (bar) ggplot2::geom_bar else ggplot2::geom_point
   p <- p + layer_fun(
-    mapping = ggplot2::aes_string(x = "date", y = "obs", fill = "new"),
+    mapping = ggplot2::aes(x = .data$date, y = .data$obs, fill = .data$new),
     data = df,
     stat = "identity",
     alpha = if(bar) 0.7 else 1.0
@@ -732,7 +736,7 @@ add_median <- function(p, object) {
   
   p <- p + ggplot2::geom_line(
     mapping = ggplot2::aes(x = .data$date, y = median), 
-    data = df, size = 0.8)
+    data = df, linewidth = 0.8)
   return(p)
 }
 
@@ -982,12 +986,12 @@ check_alpha <- function(alpha) {
 base_plot <- function(qtl, log, date_breaks, step=FALSE) {
 
 
-   aes_str <- ggplot2::aes_string(
-        x = "date",
-        ymin = "lower",
-        ymax = "upper",
-        group = "tag",
-        fill = "tag")
+   aes_str <- ggplot2::aes(
+        x = .data$date,
+        ymin = .data$lower,
+        ymax = .data$upper,
+        group = .data$tag,
+        fill = .data$tag)
 
   p <- ggplot2::ggplot(qtl)
   if (step) {
@@ -1110,12 +1114,12 @@ plot_linpred.epimodel <-
 
     p <- ggplot2::ggplot(qtl) +
       ggplot2::geom_ribbon(
-        ggplot2::aes_string(
-          x = "date",
-          ymin = "lower",
-          ymax = "upper",
-          group = "tag",
-          fill = "tag"
+        ggplot2::aes(
+          x = .data$date,
+          ymin = .data$lower,
+          ymax = .data$upper,
+          group = .data$tag,
+          fill = .data$tag
       )) +
       ggplot2::xlab("") +
       ggplot2::scale_x_date(

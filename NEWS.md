@@ -1,3 +1,30 @@
+## epidemia 1.1.0
+
+### Modernised Stan toolchain (CmdStanR)
+
+* **Backend switched from `rstan` to `cmdstanr`.** Models are now fit with
+  [CmdStanR](https://mc-stan.org/cmdstanr/) and the latest CmdStan. This is
+  faster, tracks upstream Stan, and removes the fragile install-time C++
+  compilation. The Stan programs are compiled on first use and cached (see
+  `compile_epidemia()`).
+* **Stan programs updated to modern Stan syntax** (Stan 2.33+/CmdStan 2.36),
+  including the new array declaration syntax (`array[n] int x`) and the
+  vertical-bar CDF calls (`normal_cdf(x | mu, sigma)`). The external C++
+  `csr_matrix_times_vector2` helper is now implemented in pure Stan.
+* **Posterior draws are represented with the [`posterior`](https://mc-stan.org/posterior/)
+  package** rather than an `rstan` `stanfit` object. `as.matrix()`,
+  `as.array()`, `as.data.frame()`, `summary()`, `posterior_rt()`,
+  `posterior_predict()` etc. behave as before.
+* **`rstanarm` is no longer a dependency.** The prior constructors (`normal()`,
+  `student_t()`, `cauchy()`, `exponential()`, `laplace()`, `lasso()`, `hs()`,
+  `hs_plus()`, `product_normal()`, `lkj()`, `decov()`) are now provided directly
+  by `epidemia`, with identical behaviour. Existing code using these functions
+  continues to work unchanged.
+* Speed: chains run in parallel by default (`parallel_chains`), and models are
+  compiled once and cached.
+* No install-time compilation: the `src/`, `configure` and `LinkingTo`
+  machinery has been removed.
+
 ## epidemia 1.0.0
 * First version submitted to CRAN
 * Bug fixed for latent infections and first Rt with pop_adjust

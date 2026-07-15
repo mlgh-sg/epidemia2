@@ -22,13 +22,16 @@
 #' Each of these model components are described in terms of variables that are expected to live in a single dataframe, \code{data}. 
 #' This dataframe must be compatible with the model components, in the sense that it holds all variables defined in these models.
 #' 
-#' In addition to taking a model description and a dataframe, \code{\link{epim}} has various 
-#' additional arguments which specify how the model should be fit. If \code{algorithm = "sampling"} 
-#' then the model will be fit using \pkg{Stan}’s adaptive Hamiltonian Monte Carlo sampler. 
-#' This is done internally by calling \code{\link[rstan]{sampling}}. If 
-#' \code{algorithm = "meanfield"} or \code{algorithm = "fullrank"}, then 
-#' \pkg{Stan}’s variational Bayes algorithms are used instead, by calling \code{\link[rstan]{vb}}. 
-#' Any unnamed arguments in the call to \code{\link{epim}} are passed directly on to the \pkg{rstan} sampling function. 
+#' In addition to taking a model description and a dataframe, \code{\link{epim}} has various
+#' additional arguments which specify how the model should be fit. If \code{algorithm = "sampling"}
+#' then the model will be fit using \pkg{Stan}’s adaptive Hamiltonian Monte Carlo sampler.
+#' This is done internally by calling the \code{$sample()} method of a \pkg{cmdstanr} model. If
+#' \code{algorithm = "meanfield"} or \code{algorithm = "fullrank"}, then
+#' \pkg{Stan}’s variational Bayes algorithms are used instead, via the \code{$variational()} method.
+#' Any additional named arguments in the call to \code{\link{epim}} (for example \code{iter},
+#' \code{chains}, \code{warmup}, \code{seed}, \code{cores} or
+#' \code{control = list(adapt_delta=, max_treedepth=)}) are translated and passed on to
+#' the underlying \pkg{cmdstanr} fitting method.
 #' \code{\link{epim}} returns a fitted model object of class \code{epimodel}, which contains posterior samples from the model along with other useful objects.
 #' 
 #' In general, the adaptive Hamiltonian Monte Carlo sampler should be used for final inference. 
@@ -42,14 +45,15 @@
 #'  element in the list defines a model for the specified observation vector. See \code{\link{epiobs}} for more details.
 #' @param data A dataframe with all data required for fitting the model. This includes all observation variables and covariates specified in the models for the reproduction number and ascertainment rates.
 #' @param algorithm One of \code{"sampling"}, \code{"meanfield"} or
-#'  \code{"fullrank"}. This specifies which \pkg{rstan} function to use for
-#'  fitting the model. For \code{"sampling"} this is \code{\link[rstan]{sampling}}, otherwise 
-#'  this is \code{\link[rstan]{vb}}.
+#'  \code{"fullrank"}. This specifies which \pkg{cmdstanr} fitting method to use.
+#'  For \code{"sampling"} this is the \code{$sample()} method (adaptive HMC/NUTS);
+#'  otherwise variational Bayes is used via the \code{$variational()} method.
 #' @param group_subset If specified, a character vector naming a subset of regions to include in the model.
-#' @param prior_PD Same as in \code{\link[rstanarm]{stan_glm}}. If \code{TRUE},
-#'  samples all parameters from the joint prior distribution. This is useful for 
+#' @param prior_PD If \code{TRUE},
+#'  samples all parameters from the joint prior distribution. This is useful for
 #' prior predictive checks. Defaults to \code{FALSE}.
-#' @param ... Additional arguments to pass to the \pkg{rstan} function used to fit the model.
+#' @param ... Additional arguments (e.g. \code{iter}, \code{chains}, \code{warmup},
+#'  \code{seed}, \code{cores}, \code{control}) passed to the \pkg{cmdstanr} fitting method.
 #' @examples
 #' \donttest{
 #' library(EpiEstim)
@@ -65,13 +69,13 @@
 #'
 #' rt <- epirt(
 #'  formula = R(city, date) ~ rw(time = week, prior_scale = 0.1),
-#'  prior_intercept = rstanarm::normal(log(2), 0.2),
+#'  prior_intercept = normal(log(2), 0.2),
 #'  link = 'log'
 #' )
 #'
 #' obs <-  epiobs(
 #'  formula = cases ~ 1,
-#'  prior_intercept = rstanarm::normal(location=1, scale=0.01),
+#'  prior_intercept = normal(location=1, scale=0.01),
 #'  link = "identity",
 #'  i2o = rep(.25,4)
 #' )
@@ -139,37 +143,32 @@ epim <- function(
     }
   }
 
-  # better initial values
+  # better initial values (init range on the unconstrained scale)
   if (is.null(sampling_args$init_r))
     sampling_args$init_r <- 1e-6
 
-  args <- c(
-    sampling_args,
-    list(
-      object = stanmodels$epidemia_base,
-      pars = pars(sdat),
-      data = sdat
-    )
+  # fit with the CmdStanR backend
+  cmdfit <- fit_cmdstan(sdat, algorithm, sampling_args)
+
+  # build the human-named posterior-draws object used throughout the package
+  stanfit <- build_draws(
+    fit       = cmdfit,
+    sdat      = sdat,
+    rt        = rt,
+    obs       = obs,
+    data      = data,
+    monitor   = pars(sdat),
+    algorithm = algorithm
   )
-
-  fit <-
-    if (algorithm == "sampling") {
-      do.call(rstan::sampling, args)
-    } else {
-      args$algorithm <- algorithm
-      do.call(rstan::vb, args)
-    }
-
-  # replace names for the simulation
-  orig_names <- fit@sim$fnames_oi
-  fit@sim$fnames_oi <- new_names(sdat, rt, obs, fit, data)
-
+  orig_names <- stanfit$orig_names
 
   out <- nlist(
     rt_orig,
     obs_orig,
     call,
-    stanfit = fit,
+    stanfit,
+    cmdstanfit = cmdfit,
+    max_treedepth = sampling_args$control$max_treedepth %ORifNULL% 10,
     rt,
     inf,
     obs,
@@ -216,7 +215,6 @@ pars <- function(sdat) {
 make_Sigma_nms <- function(rt, sdat, fit) {
   if (sdat$len_theta_L) {
     cnms <- rt$group$cnms
-    fit <- transformTheta_L(fit, cnms)
 
     # names
     Sigma_nms <- lapply(cnms, FUN = function(grp) {
@@ -294,38 +292,6 @@ new_names <- function(sdat, rt, obs, fit, data) {
     return(out)
 }
 
-transformTheta_L <- function(stanfit, cnms) {
-  thetas <- rstan::extract(stanfit,
-    pars = "theta_L", inc_warmup = TRUE,
-    permuted = FALSE
-  )
-
-  nc <- sapply(cnms, FUN = length)
-  nms <- names(cnms)
-  Sigma <- apply(thetas, 1:2, FUN = function(theta) {
-    Sigma <- lme4::mkVarCorr(sc = 1, cnms, nc, theta, nms)
-    unlist(sapply(Sigma,
-      simplify = FALSE,
-      FUN = function(x) x[lower.tri(x, TRUE)]
-    ))
-  })
-  l <- length(dim(Sigma))
-  end <- tail(dim(Sigma), 1L)
-  shift <- grep("^theta_L", names(stanfit@sim$samples[[1]]))[1] - 1L
-  if (l == 3) {
-    for (chain in 1:end) {
-      for (param in 1:nrow(Sigma)) {
-        stanfit@sim$samples[[chain]][[shift + param]] <- Sigma[param, , chain]
-      }
-    }
-  } else {
-    for (chain in 1:end) {
-      stanfit@sim$samples[[chain]][[shift + 1]] <- Sigma[, chain]
-    }
-  }
-
-  return(stanfit)
-}
 
 make_obs_ac_nms <- function(obs) {
   nms <- c()

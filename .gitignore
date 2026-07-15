@@ -59,3 +59,8 @@ src/*.cc
 src/stanExports*.h
 
 docs
+
+# Compiled CmdStan executables / generated C++ (built on first use, cached in user dir)
+inst/stan/epidemia_base
+inst/stan/epidemia_pp_base
+inst/stan/*.hpp

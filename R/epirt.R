@@ -23,14 +23,14 @@
 #' @param center If \code{TRUE} then the covariates for the regression
 #'  are centered to have mean zero. All of the priors are then interpreted as
 #'  prior on the centered covariates. Defaults to \code{FALSE}.
-#' @param prior Same as in \code{\link[rstanarm]{stan_glm}}. In addition to the
-#'  \pkg{rstanarm} provided \link[rstanarm]{priors},
+#' @param prior Same as in \code{\code{stan_glm}}. In addition to the
+#'  \pkg{rstanarm} provided \link{priors},
 #'         a \link[epidemia]{shifted_gamma} can be used. **Note:** If
 #'  \code{autoscale=TRUE} in the call to the prior distribution then
 #'  automatic rescaling of the prior may take place.
-#' @param prior_intercept Same as in \code{\link[rstanarm]{stan_glm}}. Prior for
+#' @param prior_intercept Same as in \code{\code{stan_glm}}. Prior for
 #'  the regression intercept (if it exists).
-#' @param prior_covariance Same as in \code{\link[rstanarm]{stan_glmer}}. Only
+#' @param prior_covariance Same as in \code{\code{stan_glmer}}. Only
 #'  used if the \code{formula} argument specifies random effects.
 #' @param ... Additional arguments for \code{\link[stats]{model.frame}}
 #' @export
@@ -91,9 +91,9 @@
 epirt <- function(formula,
                   link = "log",
                   center = FALSE,
-                  prior = rstanarm::normal(scale = .5),
-                  prior_intercept = rstanarm::normal(scale = .5),
-                  prior_covariance = rstanarm::decov(scale = .5),
+                  prior = normal(scale = .5),
+                  prior_intercept = normal(scale = .5),
+                  prior_covariance = decov(scale = .5),
                   ...) {
   call <- match.call(expand.dots = TRUE)
 

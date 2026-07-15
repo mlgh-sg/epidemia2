@@ -40,8 +40,8 @@ used for a subset of regions in which the epidemic is modeled. Defaults to
 NULL in which case all regions are used.}
 
 \item{condition}{Same as \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}},
-except that the default is \code{accept_stat__}, as in \code{\link[rstanarm]{pairs.stanreg}}.
-Please see the documentation for \code{\link[rstanarm]{pairs.stanreg}} for more
+except that the default is \code{accept_stat__}, as in \code{\link{plot.epimodel}}.
+Please see the documentation for \code{\link{plot.epimodel}} for more
 details on this default.}
 
 \item{...}{Arguments passed to \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
@@ -54,7 +54,7 @@ Multiple \code{ggplot} objects in a grid using \code{\link[bayesplot]{bayesplot_
 \description{
 Interface to \pkg{bayesplot}'s
 \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}} function. Closely
-mirrors the functionality of \code{\link[rstanarm]{pairs.stanreg}}. Remember
+mirrors the functionality of \code{\link{plot.epimodel}}. Remember
 not to specify too many paramaters. They will render slowly, and be difficult
 to interpret.
 }

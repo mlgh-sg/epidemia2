@@ -17,3 +17,8 @@
 ^index\.Rmd$
 ^index\.md$
 ^CRAN-RELEASE$
+^inst/stan/epidemia_base$
+^inst/stan/epidemia_pp_base$
+^inst/stan/.*\.hpp$
+^AGENTS\.md$
+^llms\.txt$

@@ -3,14 +3,14 @@
 #' Provides an interface to the \link[bayesplot:MCMC-overview]{MCMC} module
 #' in the \pkg{\link{bayesplot}} package, and allows seamless plotting of
 #' MCMC draws along with various diagnostics. This method relies heavily
-#' on the code base for the \code{\link[rstanarm]{plot.stanreg}} method
+#' on the code base for the \code{\link{plot.epimodel}} method
 #' in \pkg{rstanarm}.
 #'
 #' @method plot epimodel
 #' @export
 #' @templateVar epimodelArg x
 #' @template args-epimodel-object
-#' @param plotfun Same as in \code{\link[rstanarm]{plot.stanreg}}.
+#' @param plotfun Same as in \code{\link{plot.epimodel}}.
 #' A character string giving the name of the \pkg{bayesplot}
 #' \link[bayesplot:MCMC-overview]{MCMC} function to use. These can be
 #' listed using \code{\link[bayesplot]{available_mcmc}}. Defaults to "interval"
@@ -38,7 +38,7 @@
 #'
 #' @seealso
 #' \itemize{
-#'  \item \code{\link[rstanarm]{plot.stanreg}}.
+#'  \item \code{\link{plot.epimodel}}.
 #'  \item \pkg{bayesplot} vignettes for examples.
 #'   \item \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for plotting
 #'   function documentation.
@@ -46,7 +46,7 @@
 #'   plotting color scheme.
 #' }
 #'
-#' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
+#' @importFrom ggplot2 ggplot aes xlab %+replace% theme
 plot.epimodel <- function(x, plotfun = "intervals", pars = NULL,
                           regex_pars = NULL, par_models = NULL,
                           par_types = c("fixed", "aux", "seeds"),
@@ -70,14 +70,14 @@ plot.epimodel <- function(x, plotfun = "intervals", pars = NULL,
 #'
 #' Interface to \pkg{bayesplot}'s
 #' \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}} function. Closely
-#' mirrors the functionality of \code{\link[rstanarm]{pairs.stanreg}}. Remember
+#' mirrors the functionality of \code{\link{plot.epimodel}}. Remember
 #' not to specify too many paramaters. They will render slowly, and be difficult
 #' to interpret.
 #'
 #' @inheritParams plot.epimodel
 #' @param condition Same as \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}},
-#' except that the default is \code{accept_stat__}, as in \code{\link[rstanarm]{pairs.stanreg}}.
-#' Please see the documentation for \code{\link[rstanarm]{pairs.stanreg}} for more
+#' except that the default is \code{accept_stat__}, as in \code{\link{plot.epimodel}}.
+#' Please see the documentation for \code{\link{plot.epimodel}} for more
 #' details on this default.
 #' @param ... Arguments passed to \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
 #' The arguments \code{np}, \code{lp}, and \code{max_treedepth} are automatically

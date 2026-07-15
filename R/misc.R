@@ -59,7 +59,7 @@ make_stan_summary <- function(stanfit) {
   levs <- c(0.5, 0.8, 0.95)
   qq <- (1 - levs) / 2
   probs <- sort(c(0.5, qq, 1 - qq))
-  rstan::summary(stanfit, probs = probs, digits = 10)$summary  
+  summary(stanfit, probs = probs)$summary
 }
 
 check_reTrms <- function(reTrms) {
@@ -141,8 +141,7 @@ posterior_sample_size <- function(object) {
 #' @rdname plot_linpred
 #' @export
 posterior_sample_size.epimodel <- function(object) {
-  return(sum(object$stanfit@sim$n_save
-         - object$stanfit@sim$warmup2))
+  ndraws_epimodel_draws(object$stanfit)
 }
 
 #' Get a list of all observation types used in a model

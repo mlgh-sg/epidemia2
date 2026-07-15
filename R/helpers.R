@@ -200,20 +200,15 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 
 
 .max_treedepth <- function(x) {
-  control <- x$stanfit@stan_args[[1]]$control
-  if (is.null(control)) {
+  max_td <- x$max_treedepth
+  if (is.null(max_td))
     max_td <- 10
-  } else {
-    max_td <- control$max_treedepth
-    if (is.null(max_td))
-      max_td <- 10
-  }
   return(max_td)
 }
 
 nuts_params.epimodel <- function (object, pars = NULL, inc_warmup = FALSE, ...) {
-  bayesplot::nuts_params(object$stanfit, pars = pars, inc_warmup = inc_warmup,
-                      ...)
+  bayesplot::nuts_params(object$cmdstanfit, pars = pars,
+                         inc_warmup = inc_warmup, ...)
 }
 
 rhat.epimodel <- function (object, pars = NULL, regex_pars = NULL, ...) {
@@ -226,7 +221,7 @@ rhat.epimodel <- function (object, pars = NULL, regex_pars = NULL, ...) {
 }
 
 log_posterior.epimodel <- function (object, inc_warmup = FALSE, ...) {
-  bayesplot::log_posterior(object$stanfit, inc_warmup = inc_warmup,
+  bayesplot::log_posterior(object$cmdstanfit, inc_warmup = inc_warmup,
                         ...)
 }
 
