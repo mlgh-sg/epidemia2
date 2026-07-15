@@ -52,6 +52,6 @@ have feature requests, please report them
 
 ## Package Website
 
-To get started, please see the [package website](https://mlgh-sg.github.io/epidemia2/index.html),
+To get started, please see the [package website](https://mlgh-sg.com/epidemia2/index.html),
 where you can find installation instructions, function documentation,
 and vignettes.
