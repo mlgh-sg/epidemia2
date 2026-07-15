@@ -85,7 +85,7 @@ Nonetheless, fitting these models using HMC is often computationally demanding, 
 }
 \examples{
 # Fitting requires a CmdStan installation (see cmdstanr::install_cmdstan()).
-\dontrun{
+\donttest{
 library(EpiEstim)
 data("Flu1918")
 

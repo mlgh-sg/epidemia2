@@ -62,7 +62,7 @@ The right hand side can consist of fixed effects, random effects, and autocorrel
 }
 \examples{
 # Fitting requires an external CmdStan install (cmdstanr::install_cmdstan()).
-\dontrun{
+\donttest{
 library(epidemia)
 library(ggplot2)
 data("EuropeCovid")
