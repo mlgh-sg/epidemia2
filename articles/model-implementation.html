@@ -101,7 +101,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/ImperialCollegeLondon/epidemia/" class="external-link">
+  <a href="https://github.com/mlgh-sg/epidemia2/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
 
   </a>
@@ -122,7 +122,7 @@
       <h1 data-toc-skip>Implementation</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/ImperialCollegeLondon/epidemia/blob/main/vignettes/model-implementation.Rmd" class="external-link"><code>vignettes/model-implementation.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mlgh-sg/epidemia2/blob/main/vignettes/model-implementation.Rmd" class="external-link"><code>vignettes/model-implementation.Rmd</code></a></small>
       <div class="hidden name"><code>model-implementation.Rmd</code></div>
 
     </div>
@@ -149,7 +149,7 @@ of binary indicators of non-pharmaceutical interventions. This is
 used as an example throughout.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ImperialCollegeLondon/epidemia/" class="external-link">epidemia</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mlgh-sg/epidemia2" class="external-link">epidemia</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"EuropeCovid"</span><span class="op">)</span></span></code></pre></div>
 <p>We begin by describing <code><a href="../reference/epim.html">epim()</a></code> in more detail, and then proceed to discuss the three modeling functions.</p>
 <div class="section level3" number="1.1">
@@ -676,28 +676,28 @@ not generally be used as such output is useful.</p>
 <span>           seed <span class="op">=</span> <span class="fl">12345</span>, refresh <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running MCMC with 4 chains, at most 2 in parallel...</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpFVDCu1/model-1cf650cb0cc.stan', line 154, column 8 to line 155, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpzbIo5U/model-1d5831ce8987.stan', line 154, column 8 to line 155, column 61)</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpFVDCu1/model-1cf650cb0cc.stan', line 154, column 8 to line 155, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpzbIo5U/model-1d5831ce8987.stan', line 154, column 8 to line 155, column 61)</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 finished in 11.7 seconds.</span></span>
+<pre><code><span><span class="co">## Chain 1 finished in 11.4 seconds.</span></span>
 <span><span class="co">## Chain 2 finished in 12.2 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 4 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpFVDCu1/model-1cf650cb0cc.stan', line 154, column 8 to line 155, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpzbIo5U/model-1d5831ce8987.stan', line 154, column 8 to line 155, column 61)</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 3 finished in 12.9 seconds.</span></span>
-<span><span class="co">## Chain 4 finished in 12.8 seconds.</span></span>
+<pre><code><span><span class="co">## Chain 3 finished in 12.8 seconds.</span></span>
+<span><span class="co">## Chain 4 finished in 12.6 seconds.</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## All 4 chains finished successfully.</span></span>
-<span><span class="co">## Mean chain execution time: 12.4 seconds.</span></span>
-<span><span class="co">## Total execution time: 25.2 seconds.</span></span></code></pre>
+<span><span class="co">## Mean chain execution time: 12.2 seconds.</span></span>
+<span><span class="co">## Total execution time: 25.0 seconds.</span></span></code></pre>
 <p>The print method for <code>epimodel</code> objects prints summary statistics for
 model parameters. These are obtained from the sampled posterior distribution.
 Parameter are displayed
