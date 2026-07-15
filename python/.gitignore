@@ -1,0 +1,16 @@
+# uv / virtualenv
+.venv/
+.python-version
+
+# python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# jax / matplotlib artifacts
+*.png
+!docs/**/*.png
