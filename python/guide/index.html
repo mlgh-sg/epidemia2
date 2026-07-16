@@ -390,6 +390,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Plotting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multi-region-multilevel-fits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-region (multilevel) fits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#effect-sizes-as-a-percent-reduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Effect sizes as a percent reduction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -505,6 +533,34 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Plotting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multi-region-multilevel-fits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-region (multilevel) fits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#effect-sizes-as-a-percent-reduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Effect sizes as a percent reduction
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -645,6 +701,79 @@ with publication-oriented defaults:</p>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_obs</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>  <span class="c1"># posterior predictive vs observed</span>
 </code></pre></div>
 <p>Each returns a <code>plotnine.ggplot</code> you can further theme or <code>.save(...)</code>.</p>
+<p><strong>Every plot is written to disk by default</strong> — into <code>./figures</code>, or
+<code>$EPIDEMIA_FIGDIR</code> if that is set. Pass <code>save=False</code> to turn it off, or
+<code>save="name"</code> / <code>save="path/to/file.png"</code> to choose the destination:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_rt</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>        <span class="c1"># render only, write nothing</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_rt</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;rt-final&quot;</span><span class="p">)</span>   <span class="c1"># -&gt; ./figures/rt-final.png</span>
+</code></pre></div>
+<h3 id="multi-region-multilevel-fits">Multi-region (multilevel) fits<a class="headerlink" href="#multi-region-multilevel-fits" title="Permanent link">&para;</a></h3>
+<p>As in R, the same three functions handle a multi-region fit — pass the
+<code>MultilevelData</code> you fitted as <code>data=</code> and you get <strong>one panel per region</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">fit</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">prepare_panel</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">epi</span><span class="o">.</span><span class="n">EUROPE_COVID_NPIS</span><span class="p">,</span> <span class="n">fit_until</span><span class="o">=</span><span class="s2">&quot;2020-05-05&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">idata</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">fit_multilevel</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_rt</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">)</span>                  <span class="c1"># every country, faceted</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_obs</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">)</span>                 <span class="c1"># deaths PPC, faceted</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_rt</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="s2">&quot;Italy&quot;</span><span class="p">)</span>   <span class="c1"># just one country</span>
+</code></pre></div>
+<p><code>data=</code> is required (not optional) for a multi-region fit, because each region's
+series is left-aligned to <em>its own</em> first modelled day — column <code>t</code> is a
+different calendar date in every region, and only <code>data</code> knows which. It also
+supplies each region's true length, so padded days are dropped rather than drawn.</p>
+<p>Effect sizes for a multilevel fit:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_effects</span><span class="p">(</span><span class="n">idata</span><span class="p">)</span>                       <span class="c1"># global beta_k</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_effects</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="s2">&quot;Italy&quot;</span><span class="p">)</span>        <span class="c1"># Italy&#39;s beta_k + b_k</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_region_effects</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="s2">&quot;lockdown&quot;</span><span class="p">)</span>    <span class="c1"># one NPI, every region</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">The global <code>beta_k</code> is not 'the effect in region m'</p>
+<p>Under partial pooling each region's effect is <code>beta_k + b[m, k]</code>. The global
+<code>beta_k</code> is the average across regions; <code>plot_effects(idata, group=...)</code> and
+<code>plot_region_effects</code> give the per-region quantity. And when covariates are
+collinear (as the COVID NPIs are), a <code>beta_k</code> interval covering zero means
+"not separately identifiable from the other covariates", not "no effect".</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Correlated covariates: use <code>adaptation="low_rank"</code>, and check <code>r_hat</code></p>
+<p>Divergences and <code>r_hat</code> are different failures with different cures.
+<code>fit_multilevel</code> already defaults <code>target_accept=0.95</code>, which handles the
+hierarchical funnel and warns if any divergences survive. But collinear
+covariates produce a long thin <em>correlation ridge</em> that the default diagonal
+mass matrix cannot follow — the sampler does not diverge, it just fails to
+mix, and the estimates come out biased.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">idata</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">fit_multilevel</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>                           <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;low_rank&quot;</span><span class="p">,</span> <span class="n">target_accept</span><span class="o">=</span><span class="mf">0.99</span><span class="p">)</span>
+</code></pre></div>
+<p>On the 11-country example, <code>"diag"</code> gives <code>beta[schools]</code> and
+<code>beta[social_distancing]</code> an <code>r_hat</code> of 1.08–1.11 with an <strong>ESS of 25–36 out
+of 4000</strong> — and their estimates move materially once <code>"low_rank"</code> lets the
+sampler traverse the ridge. A clean divergence count is <em>not</em> evidence the
+ridge is absent: always read <code>r_hat</code> and <code>ess_bulk</code> from <code>arviz.summary</code>.</p>
+</div>
+<h3 id="effect-sizes-as-a-percent-reduction">Effect sizes as a percent reduction<a class="headerlink" href="#effect-sizes-as-a-percent-reduction" title="Permanent link">&para;</a></h3>
+<p><a class="autorefs autorefs-internal" title="effect_table" href="../reference/#epidemia.multilevel.effect_table"><code>effect_table</code></a> converts the coefficients into the
+quantity most people want — <em>by what percent did this measure cut transmission?</em></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">tab</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">effect_table</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">)</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_percent_effects</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">)</span>
+</code></pre></div>
+<p>It returns one row per region × term: <code>kind="pct"</code> rows are percent reductions in
+<code>R_t</code>, <code>kind="R"</code> rows are the <code>R_0</code> (no measures) and <code>R_t</code> (all measures)
+reproduction numbers the percentage is derived from.</p>
+<div class="admonition warning">
+<p class="admonition-title"><code>1 - exp(beta)</code> is the wrong conversion here</p>
+<p>That is the answer for a <strong>log</strong> link. This model uses <code>scaled_logit(K)</code>, so
+<code>R = K * sigmoid(eta)</code> and a coefficient does <em>not</em> imply a constant
+multiplicative effect — the same <code>beta</code> buys a larger percentage where <code>R_0</code>
+is low than where it is high. On the Europe data the shortcut overstates
+lockdown by ~9 percentage points. <code>effect_table</code> does the counterfactual per
+posterior draw instead, which is also why it reports per region rather than
+one global figure.</p>
+</div>
+<p>Pass <code>data=</code> so each row is flagged with <code>enacted</code>: where a region never used a
+measure (Sweden and lockdown), the percentage is a counterfactual extrapolation
+from the pooled prior — that region's data say nothing about it —
+and <code>plot_percent_effects</code> greys it out.</p>
 <h2 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
 <p>The model is vectorised wherever the mathematics allows, and sequential only
 where it must be:</p>

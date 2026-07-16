@@ -164,6 +164,96 @@ epi.plots.plot_obs(idata, observed=y)  # posterior predictive vs observed
 
 Each returns a `plotnine.ggplot` you can further theme or `.save(...)`.
 
+**Every plot is written to disk by default** — into `./figures`, or
+`$EPIDEMIA_FIGDIR` if that is set. Pass `save=False` to turn it off, or
+`save="name"` / `save="path/to/file.png"` to choose the destination:
+
+```python
+epi.plots.plot_rt(idata, save=False)        # render only, write nothing
+epi.plots.plot_rt(idata, save="rt-final")   # -> ./figures/rt-final.png
+```
+
+### Multi-region (multilevel) fits
+
+As in R, the same three functions handle a multi-region fit — pass the
+`MultilevelData` you fitted as `data=` and you get **one panel per region**:
+
+```python
+fit = epi.prepare_panel(data, epi.EUROPE_COVID_NPIS, fit_until="2020-05-05")
+idata = epi.fit_multilevel(fit, config)
+
+epi.plots.plot_rt(idata, data=fit)                  # every country, faceted
+epi.plots.plot_obs(idata, data=fit)                 # deaths PPC, faceted
+epi.plots.plot_rt(idata, data=fit, group="Italy")   # just one country
+```
+
+`data=` is required (not optional) for a multi-region fit, because each region's
+series is left-aligned to *its own* first modelled day — column `t` is a
+different calendar date in every region, and only `data` knows which. It also
+supplies each region's true length, so padded days are dropped rather than drawn.
+
+Effect sizes for a multilevel fit:
+
+```python
+epi.plots.plot_effects(idata)                       # global beta_k
+epi.plots.plot_effects(idata, group="Italy")        # Italy's beta_k + b_k
+epi.plots.plot_region_effects(idata, "lockdown")    # one NPI, every region
+```
+
+!!! note "The global `beta_k` is not 'the effect in region m'"
+    Under partial pooling each region's effect is `beta_k + b[m, k]`. The global
+    `beta_k` is the average across regions; `plot_effects(idata, group=...)` and
+    `plot_region_effects` give the per-region quantity. And when covariates are
+    collinear (as the COVID NPIs are), a `beta_k` interval covering zero means
+    "not separately identifiable from the other covariates", not "no effect".
+
+!!! warning "Correlated covariates: use `adaptation="low_rank"`, and check `r_hat`"
+    Divergences and `r_hat` are different failures with different cures.
+    `fit_multilevel` already defaults `target_accept=0.95`, which handles the
+    hierarchical funnel and warns if any divergences survive. But collinear
+    covariates produce a long thin *correlation ridge* that the default diagonal
+    mass matrix cannot follow — the sampler does not diverge, it just fails to
+    mix, and the estimates come out biased.
+
+    ```python
+    idata = epi.fit_multilevel(fit, config, tune=2000,
+                               adaptation="low_rank", target_accept=0.99)
+    ```
+
+    On the 11-country example, `"diag"` gives `beta[schools]` and
+    `beta[social_distancing]` an `r_hat` of 1.08–1.11 with an **ESS of 25–36 out
+    of 4000** — and their estimates move materially once `"low_rank"` lets the
+    sampler traverse the ridge. A clean divergence count is *not* evidence the
+    ridge is absent: always read `r_hat` and `ess_bulk` from `arviz.summary`.
+
+### Effect sizes as a percent reduction
+
+[`effect_table`][epidemia.effect_table] converts the coefficients into the
+quantity most people want — *by what percent did this measure cut transmission?*
+
+```python
+tab = epi.effect_table(idata, config, data=fit)
+epi.plots.plot_percent_effects(idata, config, data=fit)
+```
+
+It returns one row per region × term: `kind="pct"` rows are percent reductions in
+`R_t`, `kind="R"` rows are the `R_0` (no measures) and `R_t` (all measures)
+reproduction numbers the percentage is derived from.
+
+!!! warning "`1 - exp(beta)` is the wrong conversion here"
+    That is the answer for a **log** link. This model uses `scaled_logit(K)`, so
+    `R = K * sigmoid(eta)` and a coefficient does *not* imply a constant
+    multiplicative effect — the same `beta` buys a larger percentage where `R_0`
+    is low than where it is high. On the Europe data the shortcut overstates
+    lockdown by ~9 percentage points. `effect_table` does the counterfactual per
+    posterior draw instead, which is also why it reports per region rather than
+    one global figure.
+
+Pass `data=` so each row is flagged with `enacted`: where a region never used a
+measure (Sweden and lockdown), the percentage is a counterfactual extrapolation
+from the pooled prior — that region's data say nothing about it —
+and `plot_percent_effects` greys it out.
+
 ## Performance
 
 The model is vectorised wherever the mathematics allows, and sequential only
@@ -198,6 +288,23 @@ The public API is re-exported from the top-level `epidemia` package.
 ## Inference
 
 ::: epidemia.infer.fit
+
+## Multilevel (multi-region, partially pooled)
+
+The hierarchical model behind the Europe/COVID and partial-pooling examples:
+several regions fit jointly, with covariate effects partially pooled across them.
+
+::: epidemia.multilevel.MultilevelConfig
+
+::: epidemia.multilevel.MultilevelData
+
+::: epidemia.multilevel.prepare_panel
+
+::: epidemia.multilevel.build_multilevel_model
+
+::: epidemia.multilevel.fit_multilevel
+
+::: epidemia.multilevel.effect_table
 
 ## Renewal dynamics (NumPy reference)
 
