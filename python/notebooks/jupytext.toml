@@ -1,0 +1,14 @@
+# Jupytext configuration for the example notebooks.
+# The notebooks are stored as plain .py files in the "percent" format (cells are
+# delimited by `# %%`). Pair them with .ipynb on the fly:
+#
+#   uv run jupytext --to notebook europe-covid.py     # create .ipynb
+#   uv run jupytext --sync europe-covid.py            # keep .py and .ipynb in sync
+#   uv run jupytext --execute --to notebook europe-covid.py   # run and save outputs
+#
+# With this config, opening a .py notebook in Jupyter/VS Code and saving it will
+# keep a paired .ipynb (git-ignored) up to date, while the .py stays the source
+# of truth under version control.
+formats = "py:percent,ipynb"
+notebook_metadata_filter = "-all"
+cell_metadata_filter = "-all"

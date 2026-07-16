@@ -16,6 +16,7 @@ dependencies = [
   "numpy>=1.24",
   "arviz>=0.18",
   "plotnine>=0.13",   # grammar-of-graphics plotting (ggplot2 for Python)
+  "pandas>=2.0",      # panel data for the multilevel (Europe COVID) example
 ]
 
 [project.optional-dependencies]
@@ -36,6 +37,9 @@ dev = [
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
   "mkdocstrings[python]>=0.25",
+  "jupytext>=1.16",   # pair the example notebooks (.py <-> .ipynb)
+  "nbconvert>=7.0",   # execute notebooks headless (jupytext --execute)
+  "ipykernel>=6.0",   # the Python kernel nbconvert runs cells in
 ]
 
 [build-system]
@@ -44,6 +48,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/epidemia"]
+artifacts = ["src/epidemia/data_files/*.csv"]
 
 [tool.ruff]
 line-length = 100

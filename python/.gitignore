@@ -22,3 +22,7 @@ site/
 # jax / matplotlib artifacts
 *.png
 !docs/**/*.png
+
+# jupytext-paired notebooks (the .py files in notebooks/ are the source of truth)
+notebooks/*.ipynb
+.ipynb_checkpoints/

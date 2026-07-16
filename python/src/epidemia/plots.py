@@ -61,7 +61,7 @@ def _interval_frame(draws, x, levels):
         hi = np.percentile(draws, 100 - (100 - lv) / 2, axis=0)
         rows.append(pd.DataFrame({"x": x, "lower": lo, "upper": hi, "level": str(lv)}))
     df = pd.concat(rows, ignore_index=True)
-    df["level"] = pd.Categorical(df["level"], categories=[str(l) for l in sorted(levels)])
+    df["level"] = pd.Categorical(df["level"], categories=[str(lv) for lv in sorted(levels)])
     return df
 
 
