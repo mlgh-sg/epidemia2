@@ -94,6 +94,14 @@ jobs:
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
+      # LLM-friendly docs: regenerate llms-full.txt from the current sources and
+      # copy both it and the curated llms.txt into the built site, so they are
+      # served at <site>/llms.txt and <site>/llms-full.txt (mirrors the Python side).
+      - name: Add LLM docs to the site
+        run: |
+          Rscript data-raw/build_llms.R
+          cp llms.txt llms-full.txt docs/
+
       - name: Deploy to GitHub Pages
         if: github.event_name != 'pull_request'
         uses: JamesIves/github-pages-deploy-action@v4.5.0

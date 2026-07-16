@@ -15,7 +15,7 @@ package. For working ON the source, see `AGENTS.md`.
 ```r
 install.packages("cmdstanr", repos = c("https://stan-dev.r-universe.dev", getOption("repos")))
 cmdstanr::install_cmdstan()                 # needs a C++ toolchain
-remotes::install_github("ImperialCollegeLondon/epidemia")
+remotes::install_github("mlgh-sg/epidemia2")
 library(epidemia)
 # optional: epidemia::compile_epidemia()    # precompile; else compiles on first epim()
 ```

@@ -3,7 +3,7 @@
 #' 
 #' \code{\link{epiinf}} defines a model for latent infections.
 #' For the basic version of the model, this defines the generation distribution of the disease, the number of days for which to seed infections, and the prior distribution on the parameter \eqn{\tau},
-#' as described in the \href{https://imperialcollegelondon.github.io/epidemia/articles/model-description.html}{model description} vignette. Recall that \eqn{\tau} is the prior mean on daily seeded infections. These three parameters are controlled by the arguments gen, seed_days and prior_seeds respectively.
+#' as described in the \href{https://mlgh-sg.com/epidemia2/articles/model-description.html}{model description} vignette. Recall that \eqn{\tau} is the prior mean on daily seeded infections. These three parameters are controlled by the arguments gen, seed_days and prior_seeds respectively.
 #'
 #' \code{\link{epiinf}} has additional arguments which allow the user to extend the basic model. 
 #' Using \code{latent=TRUE} replaces the renewal process with a model that treats latent infections as unknown parameters that are sampled along with other parameters. The \code{family} argument then gives the distribution family for 
@@ -11,7 +11,7 @@
 #' 
 #' Recall that one can adjust the infection process to explicitly model changes in infection rates as the remaining susceptible population is depleted. 
 #' In particular, the adjustment ensures that cumulative infections never breaches the initial susceptible population. 
-#' The adjustment was described in Section 5.3 of the \href{https://imperialcollegelondon.github.io/epidemia/articles/model-description.html}{model description} article. 
+#' The adjustment was described in Section 5.3 of the \href{https://mlgh-sg.com/epidemia2/articles/model-description.html}{model description} article. 
 #' It can be employed by setting \code{pop_adjust = TRUE} and using the \code{susceptibles} argument to point towards a variable in the dataframe which gives the susceptible population at each point in time. 
 #' 
 #' @param gen A numeric vector representing the probability mass function for the generation time of the disease (must be a
@@ -19,7 +19,7 @@
 #' @param seed_days An integer giving the number of days for which to seed infections. Defaults to \code{6L}.
 #' @param prior_seeds The prior distribution on seeded infections. This may be a call to \code{\link{normal}}, \code{\link{student_t}}, \code{\link{exponential}}, or to \code{\link[epidemia]{hexp}}. The latter 
 #' distribution allows hierarchical modeling of seeded infections.
-#' @param latent If \code{TRUE}, treat infections as latent parameters using the extensions described in Section 5.2 \href{https://imperialcollegelondon.github.io/epidemia/articles/model-description.html}{here}.
+#' @param latent If \code{TRUE}, treat infections as latent parameters using the extensions described in Section 5.2 \href{https://mlgh-sg.com/epidemia2/articles/model-description.html}{here}.
 #' @param family 	Specifies the family for the prior distribution on daily infections. Only used if \code{latent = TRUE}, and currently restricted to \code{normal}.
 #' @param prior_aux Prior distribution for the auxiliary variable in the distribution for latent infections. Only used if \code{latent = TRUE}. If \code{fixed_vtm = TRUE}, then 
 #' this refers to the variance-to-mean ratio. If \code{fixed_vtm = FALSE}, it is instead the coefficient of variation. Can be a call to \code{\link{exponential}}, 

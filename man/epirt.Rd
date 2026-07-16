@@ -46,7 +46,7 @@ An object of class \code{epirt}.
 }
 \description{
 \code{\link{epirt}} defines a model for reproduction rates. For more
-details on the model assumptions, please read the \href{https://imperialcollegelondon.github.io/epidemia/articles/model-description.html}{model description}
+details on the model assumptions, please read the \href{https://mlgh-sg.com/epidemia2/articles/model-description.html}{model description}
 vignette.
 }
 \details{

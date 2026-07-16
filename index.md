@@ -11,7 +11,7 @@ be modeled simultaneously with multilevel models. Key epidemiological quantities
 <div class="span12">
 <div class = "btn-toolbar">
   <div class="btn-group btn-group-sm">
-  <a class="btn btn-primary" href="https://github.com/ImperialCollegeLondon/epidemia">Source Code</a>
+  <a class="btn btn-primary" href="https://github.com/mlgh-sg/epidemia2">Source Code</a>
   <a class="btn btn-primary" href="https://www.r-project.org/Licenses/GPL-3">License : GPL-3</a>
   <a class="btn btn-primary" href="authors.html">Citation</a>
   <a class="btn btn-primary" href="authors.html">Authors</a>

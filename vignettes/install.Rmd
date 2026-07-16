@@ -51,7 +51,7 @@ if you run into toolchain issues.
 
 ```{r install, eval = FALSE}
 # install.packages("remotes")
-remotes::install_github("ImperialCollegeLondon/epidemia")
+remotes::install_github("mlgh-sg/epidemia2")
 ```
 
 will install the latest development version of **epidemia**.

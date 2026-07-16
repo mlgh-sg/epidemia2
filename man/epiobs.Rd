@@ -55,7 +55,7 @@ An object of class \code{epiobs}.
 \code{\link{epiobs}} defines a model for an observation vector. These observations
 are taken to be a function of the latent infections in the population.
 Examples include daily death or hospitalization rates. For more details on
-the model assumptions please refer to the \href{https://imperialcollegelondon.github.io/epidemia/articles/model-description.html}{model description}
+the model assumptions please refer to the \href{https://mlgh-sg.com/epidemia2/articles/model-description.html}{model description}
 vignette.
 }
 \details{

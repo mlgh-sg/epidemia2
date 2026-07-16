@@ -1,7 +1,7 @@
 #' Model Reproduction Rates
 #'
 #' \code{\link{epirt}} defines a model for reproduction rates. For more 
-#' details on the model assumptions, please read the \href{https://imperialcollegelondon.github.io/epidemia/articles/model-description.html}{model description} 
+#' details on the model assumptions, please read the \href{https://mlgh-sg.com/epidemia2/articles/model-description.html}{model description} 
 #' vignette.
 #' 
 #' \code{\link{epirt}} has a \code{formula} argument which defines the linear predictor, an argument \code{link} defining the link function, 

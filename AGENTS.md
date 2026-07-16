@@ -1,7 +1,47 @@
 # AGENTS.md — working on the epidemia codebase
 
-Guidance for AI agents (and humans) modifying this package. For *using* the
-package to build epidemic models, see `llms.txt` and the vignettes.
+Guidance for AI agents (and humans) modifying this package. For *using* the R
+package to build epidemic models, see `llms.txt` and the vignettes; for the
+Python port, see `python/README.md` and `python/docs/` (`python/docs/llms.txt`).
+
+## Two implementations — keep them in parity
+
+This repository ships **two implementations of the same model**, on one branch:
+
+- **R (repo root)** — the **reference** implementation. Feature-complete: the full
+  `epirt`/`epiinf`/`epiobs`/`epim` API, covariate formulas, multilevel/partial
+  pooling, multiple joint observation series, latent infections, population/
+  susceptibility adjustment, the full prior system, forecasting via `newdata`,
+  variational Bayes, and rich post-processing. Backend: **CmdStanR**.
+- **Python (`python/`)** — a **focused, fast core** port. Single-population renewal
+  model (`EpiConfig` + `build_model`), non-centred RW on `R_t`, log / scaled-logit
+  links, Poisson / neg-binom / normal families, `plotnine` plots, a NumPy renewal
+  reference. Backend: **PyMC + nutpie** (numba CPU, or JAX for GPU on Linux).
+
+What is **extra in each** (deliberately not yet mirrored):
+
+| Capability | R (root) | Python (`python/`) |
+|---|---|---|
+| Covariates / formula interface for `R_t` | ✅ | ❌ (intercept + RW only) |
+| Multilevel / partial pooling across groups | ✅ | ❌ |
+| Multiple observation series (joint) | ✅ | ❌ (single series) |
+| Latent infections, population/susceptibility adjustment | ✅ | ❌ |
+| Full prior system (rstanarm-style + `shifted_gamma`, `hexp`) | ✅ | ❌ (fixed priors on `EpiConfig`) |
+| Forecasting / counterfactuals, VB, forecast evaluation | ✅ | ❌ |
+| Non-centred RW parameterisation | ✅ | ✅ |
+| nutpie sampler + JAX/GPU backend option | ❌ | ✅ |
+| Grammar-of-graphics (`plotnine`) plots | ❌ (ggplot2 via R) | ✅ |
+
+**The rule: a model change to one language should be ported to the other.** When you
+add or change modelling behaviour (a new family, link, prior, the RW
+parameterisation, the renewal/observation recursion, seeding, …) in one
+implementation, port the equivalent change to the other so they stay in parity —
+and if a full port is out of scope for the change, **use agentic coding assistance
+(e.g. Claude Code) to do the port and integrate it**, then update the table above.
+Keep the two renewal cores mathematically identical: R's `inst/stan/*` recursion and
+Python's `python/src/epidemia/model.py` (PyTensor) + `renewal.py` (NumPy reference)
+must agree. If you intentionally leave a feature in only one language, say so in the
+table rather than letting the two silently drift.
 
 ## What this package is
 
