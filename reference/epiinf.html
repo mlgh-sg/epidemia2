@@ -97,7 +97,7 @@ as described in the model description vignette. Recall that \(\tau\) is the prio
     <div class="ref-description">
     <p><code>epiinf</code> defines a model for latent infections.
 For the basic version of the model, this defines the generation distribution of the disease, the number of days for which to seed infections, and the prior distribution on the parameter \(\tau\),
-as described in the <a href="https://imperialcollegelondon.github.io/epidemia/articles/model-description.html" class="external-link">model description</a> vignette. Recall that \(\tau\) is the prior mean on daily seeded infections. These three parameters are controlled by the arguments gen, seed_days and prior_seeds respectively.</p>
+as described in the <a href="https://mlgh-sg.com/epidemia2/articles/model-description.html">model description</a> vignette. Recall that \(\tau\) is the prior mean on daily seeded infections. These three parameters are controlled by the arguments gen, seed_days and prior_seeds respectively.</p>
     </div>
 
     <div id="ref-usage">
@@ -136,7 +136,7 @@ distribution allows hierarchical modeling of seeded infections.</p></dd>
 
 
 <dt id="arg-latent">latent<a class="anchor" aria-label="anchor" href="#arg-latent"></a></dt>
-<dd><p>If <code>TRUE</code>, treat infections as latent parameters using the extensions described in Section 5.2 <a href="https://imperialcollegelondon.github.io/epidemia/articles/model-description.html" class="external-link">here</a>.</p></dd>
+<dd><p>If <code>TRUE</code>, treat infections as latent parameters using the extensions described in Section 5.2 <a href="https://mlgh-sg.com/epidemia2/articles/model-description.html">here</a>.</p></dd>
 
 
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
@@ -191,7 +191,7 @@ Using <code>latent=TRUE</code> replaces the renewal process with a model that tr
 latent infections, while <code>prior_aux</code> defines the prior on the coefficient of dispersion \(d\) of this distribution.</p>
 <p>Recall that one can adjust the infection process to explicitly model changes in infection rates as the remaining susceptible population is depleted.
 In particular, the adjustment ensures that cumulative infections never breaches the initial susceptible population.
-The adjustment was described in Section 5.3 of the <a href="https://imperialcollegelondon.github.io/epidemia/articles/model-description.html" class="external-link">model description</a> article.
+The adjustment was described in Section 5.3 of the <a href="https://mlgh-sg.com/epidemia2/articles/model-description.html">model description</a> article.
 It can be employed by setting <code>pop_adjust = TRUE</code> and using the <code>susceptibles</code> argument to point towards a variable in the dataframe which gives the susceptible population at each point in time.</p>
     </div>
 
