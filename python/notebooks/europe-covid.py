@@ -37,13 +37,10 @@
 import numpy as np
 import pandas as pd
 import arviz as az
-from plotnine import (
-    aes, geom_col, geom_hline, geom_line, geom_ribbon, geom_pointrange,
-    ggplot, facet_wrap, labs, coord_flip,
-)
+from plotnine import aes, geom_col, geom_line, geom_ribbon, geom_vline, ggplot, labs
 
 import epidemia as epi
-from epidemia.plots import theme_epidemia
+from epidemia.plots import save_plot, theme_epidemia
 
 # %% [markdown]
 # ## Data
@@ -103,14 +100,26 @@ start_end
 # #### Infections
 #
 # Basic (deterministic) renewal dynamics: infections are seeded over 6 days and
-# propagated by the generation kernel `ec.si`.
+# propagated by the generation kernel `ec.si`. The seeds are themselves
+# **partially pooled** through a shared mean,
+# $\tau \sim \mathrm{Exp}(0.03)$ and $i^{(m)} \mid \tau \sim \mathrm{Exp}(\tau)$
+# — R's `prior_seeds = hexp(prior_aux = exponential(0.03))` — so a country with
+# little early death data borrows epidemic-size information from the others.
+#
+# Both kernels are **lag-1-first**: `ec.si[0]` weights infections one day back,
+# `ec.inf2death[0]` weights infections one day before the death. An infection is
+# never observed on the day it happens, matching R's Stan (which sums over
+# `infections[start .. t-1]` for both), so the vectors from the R data objects
+# drop in unchanged.
 #
 # #### Observations
 #
 # Deaths are modelled with a constant infection-fatality ratio (IFR),
 # $\mathrm{IFR} = 0.02 \cdot \mathrm{sigmoid}(\alpha)$, $\alpha \sim N(0, 0.2)$
 # (a prior mean IFR of $1\%$), convolved with `ec.inf2death`, and a
-# negative-binomial likelihood.
+# negative-binomial likelihood whose reciprocal dispersion is
+# $10 + 5\cdot\mathrm{HalfNormal}(1)$ — R's `epiobs` default
+# `prior_aux = normal(location = 10, scale = 5)`.
 #
 # All of this is captured by `MultilevelConfig`, whose defaults already match
 # the priors and links above.
@@ -132,64 +141,73 @@ config
 # publication-quality intervals increase `draws`/`tune` (e.g. 1000/1000) and use
 # 4 chains. This is genuine Hamiltonian Monte Carlo — **not** the Variational
 # Bayes used in the R vignette.
+#
+# **This takes a while** — roughly an hour for 11 countries at these settings, so
+# the progress bar is on by default (the compile step is announced separately,
+# since nutpie reports nothing during it and it is not fast either).
+#
+# `target_accept` defaults to **0.95**, not nutpie's 0.8. The funnel geometry of
+# a hierarchical model — the between-country SDs against the non-centred country
+# effects — gives hundreds of divergences at 0.8 here. `fit_multilevel` warns if
+# any survive; a divergent fit's intervals should not be quoted.
+#
+# **`adaptation="low_rank"` matters for this model**, and not for a cosmetic
+# reason. The NPI coefficients are strongly correlated *in the posterior* (they
+# are collinear in the data), which makes a long thin ridge that a diagonal mass
+# matrix cannot follow. With the default `"diag"`, `beta[schools]` and
+# `beta[social_distancing_encouraged]` come out at $\hat{R} \approx 1.08$–$1.11$
+# with an effective sample size of **25–36 out of 4000** — not converged, and
+# their point estimates are visibly *wrong* as a result (social distancing shifts
+# from $-1.11$ to $-1.35$ once the sampler can actually traverse the ridge).
+# `"low_rank"` estimates a low-rank correction to the mass matrix, which is
+# exactly the right tool for a correlated posterior, and brings every
+# $\hat{R} \le 1.04$.
+#
+# The lesson generalises: **divergences and $\hat{R}$ are different failures**.
+# Raising `target_accept` fixes the funnel; only a better mass matrix fixes the
+# ridge. Check both.
 
 # %%
 idata = epi.fit_multilevel(
-    fit, config, draws=1000, tune=1000, chains=4, seed=12345, progress_bar=True,
+    fit, config, draws=1000, tune=2000, chains=4, seed=12345,
+    adaptation="low_rank", target_accept=0.99,
 )
 print("divergences:", int(idata.sample_stats["diverging"].sum()))
-az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion"])
+az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed_tau"])
+
+# %% [markdown]
+# Check the diagnostics before reading anything off this fit — `r_hat` should be
+# $\le 1.01$ and `ess_bulk` in the hundreds at least. If `beta[...]` rows have a
+# poor `r_hat`, the effect estimates below are not trustworthy no matter how
+# reasonable they look.
+
+# %%
+summ = az.summary(idata, var_names=["beta", "sd"])
+bad = summ[(summ["r_hat"] > 1.01) | (summ["ess_bulk"] < 400)]
+if len(bad):
+    print("NOT CONVERGED — do not quote these:")
+    print(bad[["mean", "ess_bulk", "r_hat"]].to_string())
+else:
+    print(f"all clear: max r_hat = {summ['r_hat'].max():.3f}, "
+          f"min ess_bulk = {summ['ess_bulk'].min():.0f}")
 
 # %% [markdown]
 # ## Posterior predictive checks
 #
 # Expected deaths (posterior median and 50 %/95 % credible bands) against the
-# observed daily deaths, one panel per country. Because `Rt`, `infections` and
-# `E_deaths` are stored in the posterior indexed by `region`, we can build the
-# per-country plots directly.
-
+# observed daily deaths, **one panel per country** — the counterpart of the R
+# vignette's `plot_obs(fm, type = "deaths", levels = c(50, 95))`.
+#
+# `Rt`, `infections` and `E_deaths` are stored in the posterior indexed by
+# `region`, so `epi.plots` draws every country for you: pass the `fit` object
+# (the `prepare_panel` result) as `data=` and each region is placed on **its own
+# dates** — remember each region's column `t` is a *different* calendar day, and
+# each region's padded tail is dropped. Every plot is written to `figures/`
+# (override with `$EPIDEMIA_FIGDIR`); pass `save=False` to skip.
 
 # %%
-def _region_bands(idata, var, regions, dates, lengths, levels=(50, 95)):
-    """Long dataframe of per-region median + credible bands for a latent series."""
-    da = idata.posterior[var]                       # (chain, draw, region, time)
-    arr = np.asarray(da).reshape(-1, da.shape[-2], da.shape[-1])  # (draws, M, T)
-    rows = []
-    for m, r in enumerate(regions):
-        n = int(lengths[m])
-        x = pd.to_datetime(dates[m])
-        d = arr[:, m, :n]
-        row = {"date": x, "median": np.median(d, axis=0), "country": r}
-        for lv in levels:
-            row[f"lo{lv}"] = np.percentile(d, (100 - lv) / 2, axis=0)
-            row[f"hi{lv}"] = np.percentile(d, 100 - (100 - lv) / 2, axis=0)
-        rows.append(pd.DataFrame(row))
-    return pd.concat(rows, ignore_index=True)
-
-
-def _observed_frame(deaths, regions, dates, lengths):
-    rows = []
-    for m, r in enumerate(regions):
-        n = int(lengths[m])
-        rows.append(pd.DataFrame({
-            "date": pd.to_datetime(dates[m]), "deaths": deaths[m, :n], "country": r,
-        }))
-    return pd.concat(rows, ignore_index=True)
-
-
-bands = _region_bands(idata, "E_deaths", fit.regions, fit.dates, fit.lengths)
-obs = _observed_frame(fit.deaths, fit.regions, fit.dates, fit.lengths)
-
-(
-    ggplot(bands, aes("date"))
-    + geom_col(obs, aes("date", "deaths"), fill="#b2182b", alpha=0.5)
-    + geom_ribbon(aes(ymin="lo95", ymax="hi95"), fill="#6baed6", alpha=0.5)
-    + geom_ribbon(aes(ymin="lo50", ymax="hi50"), fill="#2171b5", alpha=0.6)
-    + geom_line(aes(y="median"), color="black", size=0.5)
-    + facet_wrap("country", scales="free_y")
-    + labs(x="", y="Daily deaths", title="Posterior predictive: deaths")
-    + theme_epidemia()
-)
+epi.plots.plot_obs(idata, data=fit, save="deaths-ppc",
+                   title="Posterior predictive: deaths")
 
 # %% [markdown]
 # ## Reproduction numbers
@@ -198,43 +216,36 @@ obs = _observed_frame(fit.deaths, fit.regions, fit.dates, fit.lengths)
 # it to fall below one in each country as measures come into force.
 
 # %%
-rt_bands = _region_bands(idata, "Rt", fit.regions, fit.dates, fit.lengths)
-(
-    ggplot(rt_bands, aes("date"))
-    + geom_ribbon(aes(ymin="lo95", ymax="hi95"), fill="#74c476", alpha=0.5)
-    + geom_ribbon(aes(ymin="lo50", ymax="hi50"), fill="#238b45", alpha=0.6)
-    + geom_line(aes(y="median"), color="black", size=0.5)
-    + geom_hline(yintercept=1.0, linetype="dotted", color="#555555")
-    + facet_wrap("country", scales="free_y")
-    + labs(x="", y="$R_t$", title="Inferred reproduction numbers")
-    + theme_epidemia()
-)
+epi.plots.plot_rt(idata, data=fit, save="rt-by-country",
+                  title="Inferred reproduction numbers")
+
+# %% [markdown]
+# Latent infections, likewise per country:
+
+# %%
+epi.plots.plot_infections(idata, data=fit, save="infections-by-country",
+                          title="Latent daily infections")
 
 # %% [markdown]
 # ## Effect sizes
 #
-# **Global** NPI effects $\beta_k$ (the average effect across countries). A large
-# negative coefficient means a strong reduction in transmission. As in the R
-# analysis, lockdown is the most effective on average.
+# **Global** NPI effects $\beta_k$ — the average effect of each measure across
+# countries. A large negative coefficient means a strong reduction in
+# transmission. As in the R analysis, lockdown is the most effective on average.
+#
+# > **How to read this plot — the measures are highly collinear.** Most countries
+# > enacted all five NPIs within a few days of each other (Germany banned public
+# > events on the *same day* it locked down), so the individual $\beta_k$ are only
+# > weakly identified: the data constrain their **sum** far better than the split
+# > between them. The R vignette makes the same point — *"when repeating this
+# > analysis with full MCMC, we observe that the intervals for all policies other
+# > than lockdown overlap with zero"*. So an interval that straddles zero here
+# > means **"not separately identifiable from the other measures"**, not "this
+# > measure did nothing". The cell after next quantifies exactly that.
 
 # %%
-beta = idata.posterior["beta"].stack(sample=("chain", "draw")).transpose("sample", "npi")
-beta = np.asarray(beta)                              # (draws, K)
 labels = ["Schools", "Isolating", "Events", "Distancing", "Lockdown"]
-eff = pd.DataFrame({
-    "npi": labels,
-    "median": np.median(beta, axis=0),
-    "lo": np.percentile(beta, 5, axis=0),
-    "hi": np.percentile(beta, 95, axis=0),
-})
-(
-    ggplot(eff, aes("npi", "median"))
-    + geom_hline(yintercept=0.0, linetype="dotted", color="#555555")
-    + geom_pointrange(aes(ymin="lo", ymax="hi"))
-    + coord_flip()
-    + labs(x="", y="Global effect on logit $R_t$", title="Global NPI effects $\\beta_k$")
-    + theme_epidemia()
-)
+epi.plots.plot_effects(idata, labels=labels, save="effects-global")
 
 # %% [markdown]
 # Because effects are *partially pooled*, the country-specific effect of measure
@@ -242,25 +253,97 @@ eff = pd.DataFrame({
 # we extract these for Italy (compare with the R vignette's Italy panel).
 
 # %%
-b_italy = idata.posterior["b"].sel(region="Italy").stack(sample=("chain", "draw"))
-b_italy = np.asarray(b_italy.transpose("sample", "npi"))   # (draws, K)
-b0_italy = np.asarray(idata.posterior["b0"].sel(region="Italy").stack(sample=("chain", "draw")))
-mat = np.column_stack([b0_italy, beta + b_italy])
-cols = ["Intercept"] + labels
-italy = pd.DataFrame({
-    "term": cols,
-    "median": np.median(mat, axis=0),
-    "lo": np.percentile(mat, 5, axis=0),
-    "hi": np.percentile(mat, 95, axis=0),
-})
-(
-    ggplot(italy, aes("term", "median"))
-    + geom_hline(yintercept=0.0, linetype="dotted", color="#555555")
-    + geom_pointrange(aes(ymin="lo", ymax="hi"))
-    + coord_flip()
-    + labs(x="", y="Effect (logit $R_t$ scale)", title="Italy-specific effects $\\beta_k + b^{(Italy)}_k$")
-    + theme_epidemia()
-)
+epi.plots.plot_effects(idata, group="Italy", labels=labels, save="effects-italy")
+
+# %% [markdown]
+# ### Collinearity: what *is* identified
+#
+# The individual coefficients trade off against one another, but their **total**
+# — the combined effect once every measure is in force — is pinned down by the
+# data. Comparing the two tells you how much of a small $\beta_k$ is a real
+# "no effect" and how much is just collinearity moving the effect to a neighbour.
+
+# %%
+beta = np.asarray(idata.posterior["beta"].stack(s=("chain", "draw")))     # (K, S)
+total = beta.sum(axis=0)
+print("Combined effect of all five measures (logit Rt scale):")
+print(f"  median {np.median(total):+.2f}  90% CI "
+      f"[{np.percentile(total, 5):+.2f}, {np.percentile(total, 95):+.2f}]")
+print("\nIndividual measures — note how much wider these are relative to their size:")
+for k, lab in enumerate(labels):
+    d = beta[k]
+    print(f"  {lab:11s} median {np.median(d):+.2f}  90% CI "
+          f"[{np.percentile(d, 5):+.2f}, {np.percentile(d, 95):+.2f}]"
+          f"   P(effect < 0) = {(d < 0).mean():.2f}")
+print("\nPosterior correlation between the coefficients (collinearity fingerprint):")
+print(pd.DataFrame(np.round(np.corrcoef(beta), 2), index=labels, columns=labels).to_string())
+
+# %% [markdown]
+# ### The per-country lockdown effect
+#
+# The global $\beta_\text{lockdown}$ is one number for all 11 countries. What
+# actually drives country $m$'s $R_t$ is $\beta_k + b^{(m)}_k$ — so this is the
+# plot to read if the question is *"did lockdown do anything **here**?"*
+# Sweden is the instructive case: it never locked down, so its lockdown column is
+# identically zero, its likelihood says nothing about the effect, and its
+# posterior is just the shared prior. The model explains Sweden through its
+# country-specific intercept instead — exactly the point the R vignette makes.
+
+# %%
+epi.plots.plot_region_effects(idata, "lockdown", save="lockdown-by-country")
+
+# %% [markdown]
+# ## Effect sizes as a percent reduction in transmission
+#
+# A coefficient on the logit scale is hard to feel. `epi.effect_table` converts
+# it into the quantity people actually want — *by what percent did this measure
+# cut transmission?*
+#
+# > **Why not just $1 - e^{\beta_k}$?** Because that is the answer for a **log**
+# > link, and this model uses `scaled_logit(6.5)`:
+# > $R = 6.5\,\operatorname{sigmoid}(\eta)$. A coefficient therefore does **not**
+# > map to a constant multiplicative effect — the same $\beta$ buys a bigger
+# > percentage in a country with a low $R_0$ than in one with a high $R_0$. On
+# > this data $1-e^{\beta}$ overstates lockdown by roughly 9 percentage points.
+# > `effect_table` instead does the counterfactual properly, per posterior draw:
+# > compare $6.5\,\operatorname{sigmoid}(b_0^{(m)})$ (no measures) with
+# > $6.5\,\operatorname{sigmoid}(b_0^{(m)} + \beta_k + b_k^{(m)})$ (measure $k$
+# > on). That is also why the answer is reported per country rather than as one
+# > global number.
+
+# %%
+tab = epi.effect_table(idata, config, data=fit)
+pct = tab[tab["kind"] == "pct"]
+
+print("Reduction in R_t (%), median [90% CI] — per country\n")
+piv = pct.pivot(index="region", columns="term", values="median")
+print(piv[[*fit.npis, "all measures"]].round(1).to_string())
+
+print("\n\nAll five measures combined:\n")
+for _, r in pct[pct["term"] == "all measures"].iterrows():
+    print(f"  {r['region']:16s} {r['median']:5.1f}%  [{r['lo']:5.1f}, {r['hi']:5.1f}]")
+
+print("\n\nR_0 -> R_t once every measure is in force:\n")
+R = tab[tab["kind"] == "R"]
+r0 = R[R["term"] == "R_0 (no measures)"].set_index("region")
+ra = R[R["term"] == "R_t (all measures)"].set_index("region")
+for reg in fit.regions:
+    print(f"  {reg:16s} {r0.loc[reg, 'median']:.2f}  ->  {ra.loc[reg, 'median']:.2f}")
+
+# %% [markdown]
+# The same thing as a plot. Measures a country **never enacted** are greyed out:
+# there, the percentage is a counterfactual drawn from the pooled prior ("what
+# lockdown *would* have done in Sweden"), not a measured effect, and it should
+# not be read alongside the others as if it were evidence.
+
+# %%
+epi.plots.plot_percent_effects(idata, config, data=fit, labels=labels,
+                               save="percent-effects-by-country")
+
+# %%
+epi.plots.plot_percent_effects(idata, config, data=fit, group="Italy", labels=labels,
+                               save="percent-effects-italy",
+                               title="Italy: reduction in transmission by measure")
 
 # %% [markdown]
 # ## Forecasting and counterfactuals
@@ -309,8 +392,10 @@ def posterior_deaths(idata, X_list, config, n_draws=400, seed=0):
             R = config.R_link_K / (1.0 + np.exp(-eta))
             seeds = np.full(v, seed_[j, m])
             infections = epi.renewal_infections(R, seeds, gen)
-            conv = np.convolve(infections, i2o)[:T]
-            deaths[j] = ifr[j] * conv
+            # Use the package's own reference rather than a hand-rolled
+            # convolution, so the forecast applies the *same* lag convention as
+            # the model that produced these draws.
+            deaths[j] = epi.expected_observations(infections, i2o, ifr[j])[:T]
         out.append(deaths)
     return out
 
@@ -338,17 +423,19 @@ uk_obs = pd.DataFrame({
     "date": uk_dates,
     "deaths": full.deaths[uk, : full.lengths[uk]],
 })
-cutoff = pd.Timestamp("2020-05-05")
-(
+p = (
     ggplot(uk_df, aes("date"))
     + geom_col(uk_obs, aes("date", "deaths"), fill="#b2182b", alpha=0.5)
     + geom_ribbon(aes(ymin="lo", ymax="hi"), fill="#6baed6", alpha=0.5)
     + geom_line(aes(y="median"), color="black", size=0.5)
-    + geom_hline(yintercept=0, color="white", size=0)  # keep y at 0
+    + geom_vline(xintercept=pd.Timestamp("2020-05-05"), linetype="dotted",
+                 color="#555555")
     + labs(x="", y="Daily deaths",
            title="United Kingdom: out-of-sample forecast (fit ends 5 May, dotted)")
     + theme_epidemia()
 )
+save_plot(p, "uk-forecast")
+p
 
 # %% [markdown]
 # **Counterfactual: all policies 3 days earlier.** We shift each NPI indicator
@@ -372,7 +459,7 @@ cmp = pd.concat([
                   "lo": np.percentile(cf, 2.5, axis=0),
                   "hi": np.percentile(cf, 97.5, axis=0), "scenario": "3 days earlier"}),
 ], ignore_index=True)
-(
+p = (
     ggplot(cmp, aes("date", color="scenario", fill="scenario"))
     + geom_ribbon(aes(ymin="lo", ymax="hi"), alpha=0.25, color=None)
     + geom_line(aes(y="median"), size=0.6)
@@ -380,6 +467,8 @@ cmp = pd.concat([
            title="United Kingdom: counterfactual (policies enacted 3 days earlier)")
     + theme_epidemia()
 )
+save_plot(p, "uk-counterfactual")
+p
 
 # %% [markdown]
 # As in the R vignette, enacting measures a few days earlier markedly lowers the
