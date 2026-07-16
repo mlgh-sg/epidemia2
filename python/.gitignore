@@ -23,6 +23,9 @@ site/
 *.png
 !docs/**/*.png
 
+# default output directory for plots (epidemia.plots.figure_dir / $EPIDEMIA_FIGDIR)
+figures/
+
 # jupytext-paired notebooks (the .py files in notebooks/ are the source of truth)
 notebooks/*.ipynb
 .ipynb_checkpoints/

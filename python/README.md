@@ -54,6 +54,23 @@ epi.plots.plot_obs(idata, y)      # posterior predictive vs observed
 epi.plots.plot_infections(idata)  # latent infections
 ```
 
+Every plot is also written to `./figures` (or `$EPIDEMIA_FIGDIR`); pass
+`save=False` to render without writing, or `save="name"` to choose the file.
+
+For a **multi-region** (multilevel) fit, pass the panel you fitted and each
+region gets its own panel — plus effect sizes as a percent reduction in
+transmission:
+
+```python
+fit = epi.prepare_panel(ec.data, epi.EUROPE_COVID_NPIS, fit_until="2020-05-05")
+idata = epi.fit_multilevel(fit, config)
+
+epi.plots.plot_rt(idata, data=fit)                       # every country, faceted
+epi.plots.plot_rt(idata, data=fit, group="Italy")        # just one
+epi.plots.plot_percent_effects(idata, config, data=fit)  # "% reduction in R_t"
+epi.effect_table(idata, config, data=fit)                # the same, as a table
+```
+
 Or run the packaged example:
 
 ```bash

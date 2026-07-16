@@ -9,7 +9,15 @@ where ``g`` is the generation-interval kernel and ``R_t`` the reproduction
 number. Observations are linked to infections through a delay/ascertainment
 convolution::
 
-    y_t = alpha_t * sum_{k=0..K-1} i_{t-k} * pi_k
+    y_t = alpha_t * sum_{k=1..K} i_{t-k} * pi_k
+
+Both sums start at lag **1**: an infection cannot generate a secondary infection
+or an observation on the day it happens. Both kernels are therefore stored
+lag-1-first -- ``gen[j]`` and ``i2o[j]`` (0-indexed) weight the infection ``j+1``
+days in the past. This matches the R package, whose Stan code sums
+``dot_product(infections[start:t-1], tail(reverse(vec), .))`` for both kernels
+and never touches lag 0, so a vector exported from R (e.g. ``EuropeCovid2$si``,
+``EuropeCovid2$inf2death``) drops straight in.
 
 These NumPy functions are used for forward/prior simulation and testing; the
 model fit in :mod:`epidemia.model` implements the same recursion in PyTensor.
@@ -68,11 +76,17 @@ def infectiousness(infections, gen):
 
 
 def expected_observations(infections, i2o, ascertainment=1.0):
-    """Expected observations via a causal infection-to-observation convolution."""
+    """Expected observations via a causal infection-to-observation convolution.
+
+    ``i2o[k]`` weights the infection ``k+1`` days before the observation, so the
+    sum runs over lags ``1..K`` and never lag 0 -- the same convention as ``gen``
+    and as the R package's Stan code.
+    """
     infections = np.asarray(infections, dtype=float)
     i2o = np.asarray(i2o, dtype=float)
     N = infections.shape[0]
-    conv = np.convolve(infections, i2o)[:N]  # causal: sum_k i2o[k] * i_{t-k}
+    shifted = np.concatenate([[0.0], infections[:-1]])  # day t uses only the past
+    conv = np.convolve(shifted, i2o)[:N]  # sum_k i2o[k] * i_{t-1-k}
     return np.asarray(ascertainment) * conv
 
 

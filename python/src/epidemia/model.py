@@ -27,7 +27,9 @@ class EpiConfig:
         days in the past (drop the same-day serial-interval entry).
     i2o : array (K,)
         Infection-to-observation delay distribution; ``i2o[k]`` weights
-        infections ``k`` days before the observation.
+        infections ``k+1`` days before the observation (lags run ``1..K``; an
+        infection is never observed on the day it happens). Same lag-1-first
+        convention as ``gen``.
     seed_days : int
         Number of initial days over which infections are seeded.
     link : str | tuple
@@ -127,10 +129,11 @@ def build_model(y, config: EpiConfig):
         # Expected observations: a *time-invariant* delay, so (unlike the renewal
         # above) it IS a convolution -- computed vectorised as a sum of K shifted
         # infection series, with no scan. The `for k` unrolls the K-tap kernel at
-        # graph-build time; it is not a runtime loop.
-        terms = [i2o[0] * infections]
-        for k in range(1, len(i2o)):
-            terms.append(i2o[k] * pt.concatenate([pt.zeros(k), infections[:-k]]))
+        # graph-build time; it is not a runtime loop. Lags run 1..K (i2o[k] is
+        # the weight for k+1 days earlier), matching `gen` and R's Stan.
+        terms = []
+        for k in range(1, len(i2o) + 1):
+            terms.append(i2o[k - 1] * pt.concatenate([pt.zeros(k), infections[:-k]]))
         E = (pt.add(*terms) if len(terms) > 1 else terms[0]) + 1e-6
         pm.Deterministic("E_obs", E)
 

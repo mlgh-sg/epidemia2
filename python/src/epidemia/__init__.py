@@ -15,6 +15,7 @@ from .multilevel import (
     MultilevelConfig,
     MultilevelData,
     build_multilevel_model,
+    effect_table,
     fit_multilevel,
     prepare_panel,
 )
@@ -34,6 +35,7 @@ __all__ = [
     "MultilevelData",
     "build_model",
     "build_multilevel_model",
+    "effect_table",
     "europe_covid2",
     "fit_multilevel",
     "prepare_panel",
