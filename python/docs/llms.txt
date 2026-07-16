@@ -1,0 +1,41 @@
+# epidemia (Python)
+
+> Bayesian semi-mechanistic renewal-process modelling of infectious diseases, in
+> PyMC + nutpie. A Python counterpart of the R package `epidemia`
+> (https://mlgh-sg.com/epidemia2/).
+
+Latent daily infections follow a discrete renewal process (a self-exciting point
+process). The time-varying reproduction number `R_t` is a non-centred random walk
+on the link scale; observations are a causal delay/ascertainment convolution of
+infections. Models are specified in PyMC and fit with nutpie (a fast Rust NUTS
+with Fisher-information mass-matrix adaptation), returning an ArviZ
+`InferenceData`.
+
+## Docs
+
+- [Home, install, quick start](index.md): install with `uv`; a minimal end-to-end fit.
+- [User guide](guide.md): model structure (transmission / infections / observations), `EpiConfig` options, `fit` arguments, plotting, and the performance design (what is vectorised vs. an irreducible sequential scan).
+- [API reference](reference.md): full public API — `EpiConfig`, `build_model`, `fit`, `renewal`, `data`, `plots`.
+- [Full docs, single file](llms-full.txt): all of the above concatenated for LLM ingestion.
+
+## Running the code
+
+- Install: `cd python && uv sync` (numba CPU backend; works on Apple Silicon). GPU on Linux: `uv sync --extra gpu` then `epi.fit(..., backend="jax")`.
+- Minimal fit:
+  ```python
+  import numpy as np, epidemia as epi
+  d = epi.flu1918()
+  y = np.concatenate([[np.nan], d.incidence])
+  config = epi.EpiConfig(gen=d.generation, i2o=np.repeat(0.25, 4), seed_days=6,
+                         link="log", family="neg_binom",
+                         intercept_loc=np.log(2.0), intercept_scale=0.2, rw_prior_scale=0.1)
+  idata = epi.fit(y, config, draws=1000, tune=1000, chains=4)
+  ```
+- Packaged example: `uv run epidemia-flu --save flu`.
+- Posterior contains latent series `Rt`, `infections`, `E_obs`; plot with `epi.plots.plot_rt(idata)`, `plot_infections`, `plot_obs(idata, observed=y)`.
+
+## Key model facts
+
+- Renewal: `i_t = R_t * sum_s gen[s-1] * i_{t-s}`, seeded over `seed_days`.
+- Transmission: `R_t = link^{-1}(intercept + cumsum(rw_scale * rw_noise))`, non-centred (avoids the funnel / divergences). Links: `"log"` or `("scaled_logit", K)`.
+- Observations: `E_t = sum_k i2o[k] * i_{t-k}`; families `"poisson"`, `"neg_binom"` (default), `"normal"`.

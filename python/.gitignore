@@ -1,0 +1,24 @@
+# uv / virtualenv
+.venv/
+.python-version
+
+# python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# The user's global ~/.gitignore_global excludes docs/ everywhere; the mkdocs
+# sources live under docs/, so re-include them (build output site/ stays ignored).
+!docs/
+!docs/**
+
+# mkdocs build output
+site/
+
+# jax / matplotlib artifacts
+*.png
+!docs/**/*.png
