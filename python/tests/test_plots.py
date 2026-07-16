@@ -5,6 +5,7 @@ plot that renders happily while showing the wrong thing.
 """
 
 import numpy as np
+import pandas as pd
 import pytest
 
 import epidemia as epi
@@ -176,6 +177,87 @@ def test_percent_effects_plot(fake_multilevel_idata, panel, tmp_path, monkeypatc
     epi.plots.plot_percent_effects(fake_multilevel_idata, config, data=panel,
                                    group="Italy")
     assert (tmp_path / "percent-effects_Italy.png").exists()
+
+
+def test_observed_frame_drops_masked_days_rather_than_plotting_zeros():
+    """A missing count must not be drawn as an observed zero-death day.
+
+    `deaths` is zero-filled on masked days; only `mask` records that the zero is
+    a placeholder. EuropeCovid2 has two real NaNs (Denmark 13/05, Italy 25/06),
+    both inside the window when fit_until is None.
+    """
+    from epidemia.plots import _observed_frame
+
+    ec = epi.europe_covid2()
+    with pytest.warns(UserWarning, match="missing"):
+        full = epi.prepare_panel(ec.data, epi.EUROPE_COVID_NPIS, seed_offset=30,
+                                 death_threshold=10, fit_until=None)
+    m = full.regions.index("Denmark")
+    n = int(full.lengths[m])
+    missing = np.where(~full.mask[m, :n])[0]
+    assert len(missing) == 1, "expected Denmark's one NaN inside the window"
+    gap = pd.to_datetime(full.dates[m][missing[0]])
+
+    df = _observed_frame(full, group="Denmark")
+    assert (df["x"] == gap).sum() == 0, "the missing day must not be plotted"
+    # its neighbours must survive -- we drop one point, not a range
+    assert (df["x"] == gap - pd.Timedelta(days=1)).sum() == 1
+    assert (df["x"] == gap + pd.Timedelta(days=1)).sum() == 1
+    assert len(df) == int(full.mask[m, :n].sum())
+
+
+def test_every_credible_band_is_actually_drawn(tmp_path, monkeypatch):
+    """Bands must be drawn widest-first, else the outermost hides the rest.
+
+    Regression test: the level categorical was ascending, so geom_ribbon drew the
+    narrow band first and painted the wide one over it -- leaving only the widest
+    visible while the legend still listed both.
+    """
+    import arviz as az
+    import xarray as xr
+    from PIL import Image
+
+    from epidemia.plots import _GREENS
+
+    monkeypatch.setenv("EPIDEMIA_FIGDIR", str(tmp_path))
+    rng = np.random.default_rng(0)
+    idata = az.InferenceData(posterior=xr.Dataset({
+        "Rt": (("chain", "draw", "time"), rng.normal(2, 0.5, (2, 400, 30))),
+    }))
+    p = epi.plots.plot_rt(idata, levels=(50, 95), save=False)
+    out = tmp_path / "bands.png"
+    p.save(out, width=6, height=4, dpi=100, verbose=False)
+
+    # Sample the PANEL only. The legend (top, per theme_epidemia) draws a swatch
+    # of every level, so scanning the whole image would find each colour whether
+    # or not its band was ever plotted -- the test would pass with the bug.
+    arr = np.asarray(Image.open(out).convert("RGB"))
+    panel = arr[int(arr.shape[0] * 0.35):, :, :]
+    seen = {"#%02x%02x%02x" % tuple(px) for px in panel.reshape(-1, 3)}
+    for lv in (50, 95):
+        assert _GREENS[lv] in seen, f"the {lv}% band was painted over / not drawn"
+
+
+def test_interval_frame_is_ordered_widest_first():
+    from epidemia.plots import _interval_frame
+
+    draws = np.random.default_rng(0).normal(0, 1, (400, 5))
+    df = _interval_frame(draws, np.arange(5), (50, 95))
+    assert list(df["level"].cat.categories) == ["95", "50"], "widest must draw first"
+
+
+def test_unlisted_level_does_not_raise(fake_multilevel_idata, panel):
+    """`levels` is public; a value outside the fixed palette must still render."""
+    p = epi.plots.plot_rt(fake_multilevel_idata, data=panel, group="Italy",
+                          levels=(10, 80), save=False)
+    assert p is not None
+
+
+def test_multiregion_plot_obs_rejects_an_observed_array(fake_multilevel_idata, panel):
+    """It used to accept `observed=` and silently ignore it."""
+    with pytest.raises(ValueError, match="observed"):
+        epi.plots.plot_obs(fake_multilevel_idata, observed=np.arange(5),
+                           data=panel, save=False)
 
 
 def test_single_population_path_still_works(tmp_path, monkeypatch):

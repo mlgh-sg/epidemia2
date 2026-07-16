@@ -42,6 +42,12 @@ class EpiConfig:
         Normal prior for the R_t intercept (on the link scale).
     seed_prior_mean : float
         Mean of the exponential prior on the (constant) seeded infections.
+    dispersion_loc, dispersion_scale : float
+        For ``family="neg_binom"``, the ``reciprocal_dispersion`` is
+        ``dispersion_loc + dispersion_scale * HalfNormal(1)``, i.e.
+        ``10 + 5 * HalfNormal(1)`` -- R's ``epiobs`` default
+        ``prior_aux = normal(location = 10, scale = 5)`` on a positive parameter.
+        Same convention as :class:`~epidemia.multilevel.MultilevelConfig`.
     rw_index : array (N,) | None
         For each day, the index of the random-walk step it belongs to. Defaults
         to a daily walk (``arange(N)``); pass e.g. a week index for a weekly walk.
@@ -56,6 +62,8 @@ class EpiConfig:
     intercept_loc: float = 0.0
     intercept_scale: float = 0.5
     seed_prior_mean: float = 10.0
+    dispersion_loc: float = 10.0
+    dispersion_scale: float = 5.0
     rw_index: object = None
     _extra: dict = field(default_factory=dict, repr=False)
 
@@ -142,7 +150,13 @@ def build_model(y, config: EpiConfig):
         if config.family == "poisson":
             pm.Poisson("y", mu=mu, observed=y_valid)
         elif config.family == "neg_binom":
-            phi = pm.HalfNormal("reciprocal_dispersion", 5.0)
+            # R's epiobs default: prior_aux = normal(10, 5) on a lower=0
+            # parameter => reciprocal_dispersion = 10 + 5 * HalfNormal(1).
+            phi_raw = pm.HalfNormal("reciprocal_dispersion_raw", 1.0)
+            phi = pm.Deterministic(
+                "reciprocal_dispersion",
+                config.dispersion_loc + config.dispersion_scale * phi_raw,
+            )
             pm.NegativeBinomial("y", mu=mu, alpha=phi, observed=y_valid)
         elif config.family == "normal":
             sigma = pm.HalfNormal("obs_sigma", 5.0)
