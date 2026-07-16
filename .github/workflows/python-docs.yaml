@@ -7,7 +7,7 @@ name: python-docs
 
 on:
   push:
-    branches: [python-epidemia]
+    branches: [main, master]
     paths:
       - 'python/**'
       - '.github/workflows/python-docs.yaml'
