@@ -22,3 +22,13 @@
 ^inst/stan/.*\.hpp$
 ^AGENTS\.md$
 ^llms\.txt$
+# The GPL-3 text is here for GitHub and for the repo as a whole, but R ships its
+# own canonical copy (share/licenses/GPL-3) and "Writing R Extensions" says not
+# to install another. A file named exactly LICENSE in a built tarball also means
+# "additional terms", which would require "License: GPL-3 + file LICENSE" --
+# it does not, so keep it out of the build.
+^LICENSE$
+# The Python port is a separate distribution (see python/pyproject.toml) and has
+# no business inside the R source tarball. Without this, R CMD build sweeps up
+# the whole tree -- ~887MB, almost all of it python/.venv.
+^python$
