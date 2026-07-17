@@ -41,7 +41,6 @@ Authors:
 
 Other contributors:
 \itemize{
-  \item Claude Code (AI assistant (Anthropic), https://claude.com/claude-code) [contributor]
   \item Jonathan Ish-Horowicz \email{jonathan.ish-horowicz17@imperial.ac.uk} (\href{https://orcid.org/0000-0002-5386-6620}{ORCID}) [contributor]
   \item Leon Wu \email{leon.wu16@imperial.ac.uk} [contributor]
   \item Ben Goodrich \email{benjamin.goodrich@columbia.edu} [contributor]

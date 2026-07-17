@@ -8,10 +8,6 @@ Authors@R: c(
            email = "swapnilmishra.anu@gmail.com",
            comment = c(ORCID = "0000-0002-8759-5902")
 	   ),
-    person(given = "Claude Code",
-           role = c("ctb"),
-           comment = "AI assistant (Anthropic), https://claude.com/claude-code"
-	   ),
     person(given = "James",
            family = "Scott",
            role = c("aut"),
@@ -91,7 +87,8 @@ Description: Flexibly specify and fit Bayesian statistical models for epidemics.
     applied in Mishra et al. (2022) <doi:10.1111/rssa.12988>. The design of the
     package has been inspired by, and has borrowed from, 'rstanarm' (Goodrich et al., 2020) <https://mc-stan.org/rstanarm/>. Models are fit
     using 'Stan' via the 'cmdstanr' back end, with posterior draws handled through the 'posterior' package. A Python port is included
-    under 'python/'.
+    under 'python/'. Parts of the continuation, including the Python port, were developed with the assistance of Claude Code
+    <https://claude.com/claude-code>, an AI coding tool from Anthropic.
 License: GPL-3
 URL: https://github.com/mlgh-sg/epidemia2, https://mlgh-sg.com/epidemia2/
 BugReports: https://github.com/mlgh-sg/epidemia2/issues
