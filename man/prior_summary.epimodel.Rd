@@ -7,21 +7,27 @@
 \method{prior_summary}{epimodel}(object, digits = 3, ...)
 }
 \arguments{
-\item{object}{The object to use.}
+\item{object}{An \code{epimodel} object, returned by \code{\link{epim}}.}
 
 \item{digits}{Number of digits used for rounding.}
 
-\item{...}{Arguments passed to methods. See the methods in the \pkg{rstanarm}
-package for examples.}
+\item{...}{Not used.}
 }
 \value{
-\code{prior_summary()} methods should return an object containing
-information about the prior distribution(s) used for the given model.
-The structure of this object will depend on the method.
-
-The default method just returns \code{object$prior.info}, which is
-\code{NULL} if there is no \code{'prior.info'} element.
+A named list with one element per regression in the model:
+  \code{"R"} for the reproduction number regression, and one named after each
+  observation type. Each element holds that regression's prior information and
+  has class \code{"prior_summary_reg.epimodel"}. The list itself has class
+  \code{"prior_summary.epimodel"}; both have print methods, so the result is
+  generally printed rather than used programmatically.
 }
 \description{
-Returns a summary of the prior distributions used
+Summarises the priors used for each regression in a fitted model: the one for
+reproduction numbers, and one for each observation type. The priors shown are
+those actually used in fitting, i.e. after any autoscaling has been applied,
+which can differ from the priors as specified. See \code{\link{priors}}.
+}
+\seealso{
+\code{\link{priors}} for specifying priors, and \code{\link{epim}}
+  for fitting the model they are used in.
 }
