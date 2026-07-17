@@ -146,3 +146,31 @@ The model is vectorised wherever the mathematics allows:
 - All latent series (`Rt`, `infections`, `E_obs`) are returned in the ArviZ
   `InferenceData` posterior, so `arviz` diagnostics and the plotting helpers work
   out of the box.
+
+## Authors and credit
+
+This Python package is written and maintained by **Swapnil Mishra**
+([ORCID](https://orcid.org/0000-0002-8759-5902)), with **[Claude
+Code](https://claude.com/claude-code)** (Anthropic).
+
+It is a **port, not a new method**. The model, its priors and links, the
+`EuropeCovid2` and `flu1918` data, and the design this follows are all from the R
+package **epidemia**, by James A. Scott, Axel Gandy, Swapnil Mishra, H. Juliette
+T. Unwin, Seth Flaxman and Samir Bhatt — and the statistical framework is
+Flaxman et al. (2020) and Bhatt et al. (2020). Please cite them, not this port:
+
+* **The R package / software paper** — Scott, J. A., Gandy, A., Mishra, S.,
+  Bhatt, S., Flaxman, S., Unwin, H. J. T. & Ish-Horowicz, J. (2021). *Epidemia:
+  An R Package for Semi-Mechanistic Bayesian Modelling of Infectious Diseases
+  using Point Processes.* [arXiv:2110.12461](https://arxiv.org/abs/2110.12461)
+* **The framework** — Bhatt, S. et al. (2020). *Semi-mechanistic Bayesian
+  modelling of COVID-19 with renewal processes.*
+  [arXiv:2012.00394](https://arxiv.org/abs/2012.00394)
+* **The application this package's examples reproduce** — Flaxman, S. et al.
+  (2020). *Estimating the effects of non-pharmaceutical interventions on COVID-19
+  in Europe.* [Nature 584, 257–261](https://www.nature.com/articles/s41586-020-2405-7)
+
+See [`inst/CITATION`](../inst/CITATION) in the repository root for the full,
+authoritative citation list.
+
+Licensed GPL-3.0-or-later, as the R package is.

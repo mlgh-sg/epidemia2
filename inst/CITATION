@@ -26,13 +26,16 @@ bibentry(
   )
 )
 
-# The R package itself
+# The R package itself. Maintained by Swapnil Mishra; the original authors keep
+# their authorship of the model and interface this continues. The two papers
+# above and below are published and their author lists are fixed -- do not edit
+# them here.
 bibentry(
   bibtype = "Misc",
   title   = "epidemia: Modeling of Epidemics using Hierarchical Bayesian Models",
-  author  = c(person("James A.", "Scott"),
+  author  = c(person("Swapnil", "Mishra"),
+              person("James A.", "Scott"),
               person("Axel", "Gandy"),
-              person("Swapnil", "Mishra"),
               person(c("H.", "Juliette", "T."), "Unwin"),
               person("Seth", "Flaxman"),
               person("Samir", "Bhatt")),
@@ -40,7 +43,7 @@ bibentry(
   note    = version_note,
   url     = "https://mlgh-sg.com/epidemia2/",
   textVersion = paste0(
-    "Scott J. A., Gandy A., Mishra S., Unwin H. J. T., Flaxman S. & Bhatt S. ",
+    "Mishra S., Scott J. A., Gandy A., Unwin H. J. T., Flaxman S. & Bhatt S. ",
     "epidemia: Modeling of Epidemics using Hierarchical Bayesian Models. ",
     version_note, ". https://mlgh-sg.com/epidemia2/"
   )

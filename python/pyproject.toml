@@ -6,7 +6,10 @@ readme = "README.md"
 requires-python = ">=3.10,<3.14"
 license = { text = "GPL-3.0-or-later" }
 authors = [
-  { name = "epidemia authors" },
+  { name = "Swapnil Mishra", email = "swapnilmishra.anu@gmail.com" },
+]
+maintainers = [
+  { name = "Swapnil Mishra", email = "swapnilmishra.anu@gmail.com" },
 ]
 keywords = ["epidemiology", "bayesian", "renewal-process", "reproduction-number", "pymc", "nutpie"]
 dependencies = [
@@ -18,6 +21,16 @@ dependencies = [
   "plotnine>=0.13",   # grammar-of-graphics plotting (ggplot2 for Python)
   "pandas>=2.0",      # panel data for the multilevel (Europe COVID) example
 ]
+
+# NOTE: keep [project.urls] and every other sub-table BELOW the key/value pairs
+# above. A `[table]` header captures everything after it, so putting it earlier
+# silently reparents `dependencies` into it and the build fails.
+[project.urls]
+Homepage = "https://mlgh-sg.com/epidemia2/"
+Repository = "https://github.com/mlgh-sg/epidemia2"
+Issues = "https://github.com/mlgh-sg/epidemia2/issues"
+"Original R package" = "https://github.com/ImperialCollegeLondon/epidemia"
+"Software paper (Scott et al. 2021)" = "https://arxiv.org/abs/2110.12461"
 
 [project.optional-dependencies]
 # Linux + NVIDIA GPU: compile the log-density with the JAX backend and run on GPU.

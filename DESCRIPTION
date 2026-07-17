@@ -2,9 +2,19 @@ Package: epidemia
 Title: Modeling of Epidemics using Hierarchical Bayesian Models
 Version: 1.0.0
 Authors@R: c(
+    person(given = "Swapnil",
+           family = "Mishra",
+           role = c("aut","cre"),
+           email = "swapnilmishra.anu@gmail.com",
+           comment = c(ORCID = "0000-0002-8759-5902")
+	   ),
+    person(given = "Claude Code",
+           role = c("ctb"),
+           comment = "AI assistant (Anthropic), https://claude.com/claude-code"
+	   ),
     person(given = "James",
            family = "Scott",
-           role = c("aut","cre"),
+           role = c("aut"),
            email = "james.scott15@imperial.ac.uk",
            comment = c(ORCID = "0000-0003-0106-5618")
 	   ),
@@ -13,12 +23,6 @@ Authors@R: c(
            role = c("aut"),
            email = "a.gandy@imperial.ac.uk",
            comment = c(ORCID = "0000-0002-6777-0451")
-	   ),
-    person(given = "Swapnil",
-           family = "Mishra",
-           role = c("aut"),
-           email = "swapnilmishra.anu@gmail.com",
-           comment = c(ORCID = "0000-0002-8759-5902")
 	   ),
 	person(given = "Juliette",
            family = "Unwin",
@@ -80,18 +84,20 @@ Authors@R: c(
 	   )
 Description: Flexibly specify and fit Bayesian statistical models for epidemics. 'epidemia' leverages Rs formula interface so
     that users can parameterize reproduction numbers and ascertainment rates in terms of predictors. Infections are propagated over
-    time using self-exciting point processes. Multiple regions can be modeled simultaneously with multilevel models. The package is described in
-    the software paper Scott et al. (2021) <arXiv:2110.12461>; the underlying framework is developed in Bhatt et al. (2020) <arXiv:2012.00394> and
+    time using self-exciting point processes. Multiple regions can be modeled simultaneously with multilevel models. This is the
+    continuation of the original 'epidemia' <https://github.com/ImperialCollegeLondon/epidemia>, now maintained by Swapnil Mishra;
+    the model, its priors and its interface are the original authors' work and are described in
+    the software paper Scott et al. (2021) <arXiv:2110.12461>. The underlying framework is developed in Bhatt et al. (2020) <arXiv:2012.00394> and
     applied in Mishra et al. (2022) <doi:10.1111/rssa.12988>. The design of the
     package has been inspired by, and has borrowed from, 'rstanarm' (Goodrich et al., 2020) <https://mc-stan.org/rstanarm/>. Models are fit
-    using 'Stan' via the 'cmdstanr' back end, with posterior draws handled through the 'posterior' package.
+    using 'Stan' via the 'cmdstanr' back end, with posterior draws handled through the 'posterior' package. A Python port is included
+    under 'python/'.
 License: GPL-3
 URL: https://github.com/mlgh-sg/epidemia2, https://mlgh-sg.com/epidemia2/
 BugReports: https://github.com/mlgh-sg/epidemia2/issues
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Depends:
     R (>= 3.5.0)
 Imports:
@@ -125,3 +131,4 @@ Additional_repositories:
     https://stan-dev.r-universe.dev
 RdMacros:
     Rdpack
+RoxygenNote: 7.3.3

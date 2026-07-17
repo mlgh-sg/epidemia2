@@ -88,3 +88,28 @@ uv run epidemia-flu --save flu
 - The [**user guide**](guide.md) walks through the model, the configuration
   options, and the performance design.
 - The [**API reference**](reference.md) documents every public function and class.
+
+## Authors and credit
+
+This Python package is written and maintained by **Swapnil Mishra**
+([ORCID](https://orcid.org/0000-0002-8759-5902)), with
+**[Claude Code](https://claude.com/claude-code)** (Anthropic).
+
+!!! note "Cite the original, not this port"
+    This is a port, not a new method. The model, its priors and links, the
+    example data, and the design it follows all come from the R package
+    **epidemia** — by James A. Scott, Axel Gandy, Swapnil Mishra,
+    H. Juliette T. Unwin, Seth Flaxman and Samir Bhatt — and the framework is
+    Bhatt et al. (2020), applied in Flaxman et al. (2020).
+
+    * Scott, J. A., Gandy, A., Mishra, S., Bhatt, S., Flaxman, S., Unwin, H. J. T.
+      & Ish-Horowicz, J. (2021). *Epidemia: An R Package for Semi-Mechanistic
+      Bayesian Modelling of Infectious Diseases using Point Processes.*
+      [arXiv:2110.12461](https://arxiv.org/abs/2110.12461)
+    * Bhatt, S. et al. (2020). *Semi-mechanistic Bayesian modelling of COVID-19
+      with renewal processes.* [arXiv:2012.00394](https://arxiv.org/abs/2012.00394)
+    * Flaxman, S. et al. (2020). *Estimating the effects of non-pharmaceutical
+      interventions on COVID-19 in Europe.*
+      [Nature 584, 257–261](https://www.nature.com/articles/s41586-020-2405-7)
+
+Licensed GPL-3.0-or-later, as the R package is.
