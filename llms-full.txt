@@ -216,6 +216,37 @@ To get started, please see the [package website](https://mlgh-sg.com/epidemia2/i
 where you can find installation instructions, function documentation,
 and vignettes.
 
+## Authors and credit
+
+This package — **epidemia2**, and the Python port under
+[`python/`](python/) — is maintained by **Swapnil Mishra**
+([ORCID](https://orcid.org/0000-0002-8759-5902)), with
+**[Claude Code](https://claude.com/claude-code)** (Anthropic).
+
+It continues the original **epidemia**
+([ImperialCollegeLondon/epidemia](https://github.com/ImperialCollegeLondon/epidemia)),
+whose authors are **James A. Scott, Axel Gandy, Swapnil Mishra, H. Juliette T.
+Unwin, Seth Flaxman and Samir Bhatt**. The model, its priors, its formula
+interface and the statistical framework are their work and remain credited as
+such in `DESCRIPTION`; this repository carries it forward rather than replacing
+it.
+
+**Please cite the papers, not the repository:**
+
+- **Software paper** — Scott, J. A., Gandy, A., Mishra, S., Bhatt, S., Flaxman,
+  S., Unwin, H. J. T. & Ish-Horowicz, J. (2021). *Epidemia: An R Package for
+  Semi-Mechanistic Bayesian Modelling of Infectious Diseases using Point
+  Processes.* [arXiv:2110.12461](https://arxiv.org/abs/2110.12461)
+- **Framework** — Bhatt, S. et al. (2020). *Semi-mechanistic Bayesian modelling
+  of COVID-19 with renewal processes.*
+  [arXiv:2012.00394](https://arxiv.org/abs/2012.00394)
+- **Application** — Mishra, S. et al. (2022). *A COVID-19 Model for Local
+  Authorities of the United Kingdom.* *JRSS-A*.
+  [doi:10.1111/rssa.12988](https://doi.org/10.1111/rssa.12988)
+
+`citation("epidemia")` in R, or [`inst/CITATION`](inst/CITATION), gives the
+authoritative list. Licensed GPL-3.
+
 <!-- ===== article: install ===== -->
 
 # Installation
