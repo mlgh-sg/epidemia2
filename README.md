@@ -23,6 +23,8 @@ compilation happens at install time.
 
 ## Installation
 
+### R
+
 epidemia fits models with [CmdStanR](https://mc-stan.org/cmdstanr/). Install
 CmdStanR and CmdStan first, then install epidemia from GitHub:
 
@@ -38,8 +40,27 @@ cmdstanr::install_cmdstan()
 remotes::install_github("mlgh-sg/epidemia2")
 ```
 
-The Stan models are compiled the first time they are used and then cached. You
-can optionally precompile them with `epidemia::compile_epidemia()`.
+`cmdstanr` is not on CRAN, which is why it needs the `stan-dev` repository
+above; `install_cmdstan()` then downloads and compiles CmdStan itself, so a
+working C++ toolchain is required. The Stan models are compiled the first time
+they are used and then cached. You can optionally precompile them with
+`epidemia::compile_epidemia()`.
+
+### Python
+
+There is also a Python port, under [`python/`](python/) — the same model in
+[PyMC](https://www.pymc.io/), fit with [nutpie](https://github.com/pymc-devs/nutpie).
+It needs no C++ toolchain and no CmdStan:
+
+```bash
+pip install "git+https://github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+```
+
+`#subdirectory=python` is required — the Python package lives in a subdirectory
+of this repository, and without it pip looks for a `pyproject.toml` at the repo
+root (where the R package lives) and fails. See
+[`python/README.md`](python/README.md) for pinning to a tag, the development
+setup, and the API.
 
 ## Disclaimer
 
