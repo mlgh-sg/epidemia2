@@ -11,12 +11,59 @@ The model is specified with **[PyMC](https://www.pymc.io/)** and fit with
 **[nutpie](https://github.com/pymc-devs/nutpie)** — a fast Rust NUTS with
 Fisher-information mass-matrix adaptation — returning an ArviZ `InferenceData`.
 
-## Install (with `uv`)
+## Install
+
+Not on PyPI yet, so install it straight from this repo. The package lives in the
+`python/` subdirectory, hence `#subdirectory=python` — without it pip looks for a
+`pyproject.toml` at the repo root and fails.
 
 ```bash
-cd python
+pip install "git+https://github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+```
+
+or, with [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv pip install "git+https://github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+```
+
+Pin to a tag or commit for anything you need to reproduce later — `main` moves:
+
+```bash
+pip install "git+https://github.com/mlgh-sg/epidemia2.git@v0.1.0#subdirectory=python"
+```
+
+To add it to a project's dependencies (`pyproject.toml`):
+
+```toml
+[project]
+dependencies = [
+  "epidemia @ git+https://github.com/mlgh-sg/epidemia2.git@v0.1.0#subdirectory=python",
+]
+```
+
+> **While the repository is private**, the `https://` forms above will fail with a
+> credential prompt or a 403 for everyone, including you. Use SSH instead — it
+> uses the key you already push with:
+>
+> ```bash
+> pip install "git+ssh://git@github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+> ```
+>
+> Once the repo is public the `https://` forms work for anyone, with no
+> authentication at all, and are what to hand to users.
+
+Python 3.10–3.13. The data files (`EuropeCovid2`, `flu1918`) ship inside the
+wheel, so nothing else needs downloading.
+
+## Install for development (with `uv`)
+
+```bash
+git clone git@github.com:mlgh-sg/epidemia2.git
+cd epidemia2/python
 uv python pin 3.12   # broad wheel availability
 uv sync              # PyMC + nutpie, compiled with the numba CPU backend
+uv run pytest        # check it works
 ```
 
 The default `numba` backend is the recommended optimized path on **all**

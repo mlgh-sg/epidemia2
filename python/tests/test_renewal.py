@@ -102,6 +102,53 @@ def test_numpy_reference_matches_the_pytensor_multilevel_model():
     np.testing.assert_allclose(E_np, E_model, rtol=1e-6)
 
 
+def test_single_population_model_convolution_starts_at_lag_one():
+    """E_obs[t] must not depend on infections[t] in the SINGLE-population model.
+
+    The multilevel model has its own version of this check. Without one here the
+    lag convention in model.py is entirely untested -- reverting it to the old
+    same-day form passes every other test in the suite.
+    """
+    import pymc as pm
+
+    import epidemia as epi
+
+    y = np.concatenate([[np.nan], np.full(29, 5.0)])
+    config = epi.EpiConfig(
+        gen=np.array([1.0]), i2o=np.array([1.0]),  # all mass at lag 1, both kernels
+        seed_days=3, link="log", family="poisson",
+    )
+    model = epi.build_model(y, config)
+    with model:
+        pr = pm.sample_prior_predictive(draws=1, random_seed=0,
+                                        var_names=["E_obs", "infections"])
+    E = np.asarray(pr.prior["E_obs"])[0, 0]
+    inf = np.asarray(pr.prior["infections"])[0, 0]
+    # i2o = [1.0] at lag 1  =>  E_obs[t] == infections[t-1] (+ the 1e-6 floor)
+    np.testing.assert_allclose(E[1:], inf[:-1] + 1e-6, rtol=1e-6)
+    np.testing.assert_allclose(E[0], 1e-6, atol=1e-9)  # nothing precedes day 0
+
+
+def test_single_population_model_matches_the_numpy_reference():
+    """build_model's convolution must agree with expected_observations."""
+    import pymc as pm
+
+    import epidemia as epi
+
+    d = epi.flu1918()
+    y = np.concatenate([[np.nan], d.incidence])
+    i2o = np.repeat(0.25, 4)
+    config = epi.EpiConfig(gen=d.generation, i2o=i2o, seed_days=6, link="log",
+                           family="poisson")
+    model = epi.build_model(y, config)
+    with model:
+        pr = pm.sample_prior_predictive(draws=1, random_seed=0,
+                                        var_names=["E_obs", "infections"])
+    E = np.asarray(pr.prior["E_obs"])[0, 0]
+    inf = np.asarray(pr.prior["infections"])[0, 0]
+    np.testing.assert_allclose(E, expected_observations(inf, i2o, 1.0) + 1e-6, rtol=1e-6)
+
+
 def test_non_centered_random_walk():
     walk = random_walk(0.5, np.array([1.0, 1.0, 1.0]), 2.0)
     assert np.allclose(walk, [2.5, 3.0, 3.5])

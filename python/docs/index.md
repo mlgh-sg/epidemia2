@@ -15,12 +15,40 @@ Fisher-information mass-matrix adaptation — returning an ArviZ `InferenceData`
 
 ## Install
 
+Not on PyPI yet — install from the repository. The package lives in the `python/`
+subdirectory, hence `#subdirectory=python`; without it pip looks for a
+`pyproject.toml` at the repo root and fails.
+
+```bash
+pip install "git+https://github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+```
+
+Pin to a tag for anything you need to reproduce later, since `main` moves:
+
+```bash
+pip install "git+https://github.com/mlgh-sg/epidemia2.git@v0.1.0#subdirectory=python"
+```
+
+Python 3.10–3.13. The example datasets ship inside the wheel.
+
+!!! warning "While the repository is private"
+    The `https://` forms fail for everyone until the repo is public. Use SSH in
+    the meantime — it uses the key you already push with:
+
+    ```bash
+    pip install "git+ssh://git@github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+    ```
+
+### For development
+
 Using [`uv`](https://docs.astral.sh/uv/):
 
 ```bash
-cd python
+git clone git@github.com:mlgh-sg/epidemia2.git
+cd epidemia2/python
 uv python pin 3.12   # broad wheel availability
 uv sync              # PyMC + nutpie, compiled with the numba CPU backend
+uv run pytest
 ```
 
 The default `numba` backend is the recommended optimized path on **all**

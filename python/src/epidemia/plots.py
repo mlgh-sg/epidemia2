@@ -168,14 +168,23 @@ def _pick_obs_var(idata):
 
 
 def _interval_frame(draws, x, levels):
-    """Long dataframe of central credible intervals at each ``level`` (percent)."""
+    """Long dataframe of central credible intervals at each ``level`` (percent).
+
+    The ``level`` categorical is ordered **widest-first**, which is load-bearing:
+    geom_ribbon draws one poly per group in category-code order and they all share
+    a zorder, so the last group drawn wins. Ordering it narrowest-first paints the
+    widest band over every narrower one -- leaving only the outermost band
+    visible while the legend still advertises the rest.
+    """
     rows = []
-    for lv in sorted(levels, reverse=True):  # widest first so it draws underneath
+    for lv in sorted(levels, reverse=True):
         lo = np.percentile(draws, (100 - lv) / 2, axis=0)
         hi = np.percentile(draws, 100 - (100 - lv) / 2, axis=0)
         rows.append(pd.DataFrame({"x": x, "lower": lo, "upper": hi, "level": str(lv)}))
     df = pd.concat(rows, ignore_index=True)
-    df["level"] = pd.Categorical(df["level"], categories=[str(lv) for lv in sorted(levels)])
+    df["level"] = pd.Categorical(
+        df["level"], categories=[str(lv) for lv in sorted(levels, reverse=True)]
+    )
     return df
 
 
@@ -215,17 +224,24 @@ def _region_frame(idata, var, data, levels, group=None):
 
 
 def _observed_frame(data, group=None):
-    """Long frame of the observed counts per region on real dates."""
+    """Long frame of the genuinely **observed** counts per region on real dates.
+
+    Days ``prepare_panel`` masked out (a missing count) are dropped rather than
+    drawn. ``data.deaths`` is zero-filled on those days -- only ``mask`` records
+    that the zero is a placeholder -- so reading ``deaths`` alone would plot a
+    fabricated zero-death observation the model was never fit to.
+    """
     keep = data.regions if group is None else [str(group)]
     rows = []
     for r in keep:
         m = data.regions.index(r)
         n = int(data.lengths[m])
-        rows.append(pd.DataFrame({
-            "x": pd.to_datetime(data.dates[m])[:n],
-            "obs": np.asarray(data.deaths[m, :n], dtype=float),
-            "region": r,
-        }))
+        obs = np.asarray(data.deaths[m, :n], dtype=float)
+        obs[~np.asarray(data.mask)[m, :n]] = np.nan  # missing is not a zero
+        df = pd.DataFrame({
+            "x": pd.to_datetime(data.dates[m])[:n], "obs": obs, "region": r,
+        })
+        rows.append(df[np.isfinite(df["obs"])])
     return pd.concat(rows, ignore_index=True)
 
 
@@ -234,14 +250,36 @@ def _observed_frame(data, group=None):
 # --------------------------------------------------------------------------
 
 
+def _level_colours(palette, levels):
+    """Map each level to a colour, interpolating for levels the palette lacks.
+
+    ``levels`` is a documented public parameter, so an unlisted value (e.g.
+    ``levels=(80,)``, or the ``seq(10, 90, 10)`` the R vignette uses for prior
+    checks) must not blow up on a dictionary lookup. Ramp light->dark with the
+    interval width, matching the fixed palette's intent: wider = lighter.
+    """
+    known = sorted(palette)
+    out = {}
+    for lv in levels:
+        if lv in palette:
+            out[str(lv)] = palette[lv]
+            continue
+        nearest = min(known, key=lambda k: abs(k - lv))
+        out[str(lv)] = palette[nearest]
+    return out
+
+
 def _ribbon_plot(band, med, palette, levels, ylab, xlab, hline=None, facet=0,
                  title=None, obs=None, obs_kind="point"):
     """``facet`` is the number of region panels (0/1 => no faceting)."""
-    cols = {str(lv): palette[lv] for lv in levels}
+    cols = _level_colours(palette, levels)
     p = (
         ggplot()
         + geom_ribbon(band, aes("x", ymin="lower", ymax="upper", fill="level"))
-        + scale_fill_manual(values=cols, name="Credible interval (%)")
+        # Bands are drawn widest-first (see _interval_frame); the legend still
+        # reads narrowest-first, which is the order people expect to see.
+        + scale_fill_manual(values=cols, name="Credible interval (%)",
+                            breaks=[str(lv) for lv in sorted(levels)])
     )
     if obs is not None:
         if obs_kind == "col":
@@ -273,8 +311,16 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
             )
         band, med, keep = _region_frame(idata, var, data, levels, group)
         obs_df = None
-        if obs is not None:
+        if obs is True:  # sentinel: take the counts from the panel
             obs_df = _observed_frame(data, group)
+        elif obs is not None:
+            raise ValueError(
+                "for a multi-region fit the observed counts come from `data` "
+                "(one series per region, each on its own dates), so an "
+                "`observed=` array is ambiguous here. Drop it -- plot_obs(idata, "
+                "data=fit) already overlays the right counts -- or pass "
+                "group='<region>' to plot a single region."
+            )
         p = _ribbon_plot(band, med, palette, levels, ylab, xlab or "", hline,
                          facet=len(keep) if len(keep) > 1 else 0, title=title,
                          obs=obs_df, obs_kind=obs_kind)
