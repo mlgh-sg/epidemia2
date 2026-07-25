@@ -13,43 +13,50 @@ This repository ships **two implementations of the same model**, on one branch:
   pooling, multiple joint observation series, latent infections, population/
   susceptibility adjustment, the full prior system, forecasting via `newdata`,
   variational Bayes, and rich post-processing. Backend: **CmdStanR**.
-- **Python (`python/`)** — a **focused, fast core** port. Single-population renewal
-  model (`EpiConfig` + `build_model`), non-centred RW on `R_t`, log / scaled-logit
-  links, Poisson / neg-binom / normal families, `plotnine` plots, a NumPy renewal
-  reference. Backend: **PyMC + nutpie** (numba CPU, or JAX for GPU on Linux).
+- **Python (`python/`)** — a port that now covers essentially the same models:
+  many regions, partial pooling (independent or correlated), covariates, random
+  walks on `R_t` including per region, several joint observation series with
+  their own delays and families, susceptibility adjustment, swappable priors,
+  variational inference, forecast scoring and `plotnine` plots. Backend:
+  **PyMC + nutpie** (numba CPU, or JAX for GPU on Linux). The current builder is
+  `core.build_epidemia_model`; `model.build_model` and
+  `multilevel.build_multilevel_model` predate it and are kept for the notebooks.
 
 What is **extra in each**. Verified against the code (not aspirational) — if you
 change either side, re-check the row.
 
 | Capability | R (root) | Python (`python/`) |
 |---|---|---|
-| Multiple regions / groups | ✅ | ✅ `prepare_panel` → `build_multilevel_model` |
-| Multilevel / partial pooling across groups | ✅ | ✅ `multilevel.py`, non-centred, 3 pooling regimes |
-| Covariates for `R_t` | ✅ formula mini-language | ⚠️ numeric `(M,T,K)` design matrix; no formula parser |
-| Correlated random effects (`(x \| g)` + `decov`) | ✅ | ❌ independent (`\|\|`) only, no covariance matrix |
-| Random walk on `R_t` | ✅ incl. `rw(gr=)` per group | ⚠️ single-population only; disjoint from the multilevel model |
-| Multiple observation series (joint) | ✅ up to 10 | ❌ exactly one likelihood |
-| Time-varying ascertainment (obs-level RW) | ✅ | ❌ scalar IFR only |
+| Multiple regions / groups | ✅ | ✅ |
+| Multilevel / partial pooling | ✅ | ✅ |
+| Correlated random effects (`(x \| g)` + `decov`) | ✅ | ✅ `EpiModelConfig(correlated=True)` |
+| Random walk on `R_t`, incl. `rw(gr=)` | ✅ | ✅ `RandomWalk(by_region=True)` |
+| Multiple observation series (joint) | ✅ up to 10 | ✅ unbounded, `list[ObsModel]` |
+| Time-varying ascertainment | ✅ | ✅ `ObsModel(X=)` |
+| Population / susceptibility adjustment | ✅ | ✅ `pop_adjust=True` |
+| Observation families | ✅ 5 | ✅ 5 |
+| Forecast scoring (CRPS / coverage) | ✅ | ✅ `epidemia.scoring` |
+| Posterior predictive sampling | ✅ | ✅ `epidemia.predict.posterior_predict` |
+| Spaghetti (per-draw) plots | ✅ | ✅ `spaghetti_rt` / `_infections` / `_obs` |
+| Variational inference | ✅ | ✅ `fit_variational` |
+| Swappable prior families | ✅ | ✅ `epidemia.priors` (no autoscale, no `hs`/`lasso`) |
+| Covariates for `R_t` | ✅ formula mini-language | ⚠️ numeric `(M,T,K)` design matrix |
+| Forecasting via `newdata` | ✅ one call | ⚠️ primitives in `epidemia.predict`, no wrapper |
+| Counterfactuals | ✅ | ⚠️ `effect_table` covers `R_t` only |
 | Latent (stochastic) infections | ✅ `epiinf(latent=TRUE)` | ❌ deterministic renewal only |
-| Population / susceptibility adjustment | ✅ | ❌ no susceptible pool |
-| Full prior system (swappable families) | ✅ | ❌ families hardcoded; hyperparameters configurable |
-| `shifted_gamma`, `hexp` seeding | ✅ | ⚠️ built in to the multilevel model, not reusable priors |
-| Forecasting via `newdata` | ✅ | ❌ no `predict`; notebook code only |
-| Counterfactuals | ✅ | ⚠️ `effect_table` does them for `R_t` only |
-| Forecast scoring (CRPS / coverage) | ✅ | ❌ |
-| Variational inference | ✅ | ❌ NUTS only (`adaptation` picks a metric, not an algorithm) |
-| Posterior predictive | ✅ sampled | ⚠️ bands `E_obs`; excludes observation noise |
-| Spaghetti (per-draw) plots | ✅ | ❌ draws always collapsed to intervals |
 | Non-centred RW parameterisation | ✅ | ✅ |
 | nutpie sampler + JAX/GPU backend option | ❌ | ✅ |
 | Grammar-of-graphics (`plotnine`) plots | ❌ (ggplot2 via R) | ✅ |
 
-The three gaps that most affect someone following the R tutorials, in order:
-**a time-varying `R_t` in a multi-region model** (R's tutorials routinely combine
-`rw()` with grouped data; Python's walk is single-population and its multilevel
-`R_t` is a deterministic covariate step function), **multiple joint observation
-series** (two whole vignettes rest on it), and **population adjustment** (without
-it long-horizon infections grow unbounded).
+Python's unified builder is `python/src/epidemia/core.py`
+(`build_epidemia_model`), which supersedes the two earlier ones: `model.py` had
+the random walk but one population, `multilevel.py` had regions but a
+deterministic `R_t` and a single series. Both are kept for the existing
+notebooks; new work should use `core`.
+
+What still differs: no formula parser (design matrices instead), forecasting is
+primitives rather than one `newdata` call, and `epiinf(latent=TRUE)` has no
+counterpart.
 
 For measured performance of the two backends on the same model, see
 `benchmarks/` and the "Performance" page of the Python docs.

@@ -26,7 +26,15 @@ Licensed GPL-3.0-or-later, as the R package is.
 
 from __future__ import annotations
 
-from . import plots
+from . import plots, predict, priors, scoring
+from .core import (
+    EpiModelConfig,
+    ObsModel,
+    PanelData,
+    RandomWalk,
+    build_epidemia_model,
+)
+from .core import prepare_panel as prepare_panel_multi
 from .data import EUROPE_COVID_NPIS, EpiData, EuropeCovid2, europe_covid2, flu1918
 from .infer import fit
 from .model import EpiConfig, build_model
@@ -38,32 +46,63 @@ from .multilevel import (
     fit_multilevel,
     prepare_panel,
 )
+from .plots import spaghetti_infections, spaghetti_obs, spaghetti_rt
+from .predict import posterior_predict, simulate
 from .renewal import (
     expected_observations,
     infectiousness,
     random_walk,
     renewal_infections,
 )
+from .scoring import crps, evaluate_forecast, posterior_coverage, posterior_metrics
+from .variational import fit_variational
 
 __all__ = [
     "EUROPE_COVID_NPIS",
     "EpiConfig",
     "EpiData",
+    "EpiModelConfig",
     "EuropeCovid2",
     "MultilevelConfig",
     "MultilevelData",
+    "ObsModel",
+    "PanelData",
+    "RandomWalk",
+    "build_epidemia_model",
     "build_model",
     "build_multilevel_model",
+    "crps",
     "effect_table",
     "europe_covid2",
-    "fit_multilevel",
-    "prepare_panel",
+    "evaluate_forecast",
     "expected_observations",
     "fit",
+    "fit_multilevel",
+    "fit_variational",
     "flu1918",
     "infectiousness",
     "plots",
+    "posterior_coverage",
+    "posterior_metrics",
+    "posterior_predict",
+    "predict",
+    "prepare_panel",
+    "prepare_panel_multi",
+    "priors",
     "random_walk",
     "renewal_infections",
+    "scoring",
+    "simulate",
+    "spaghetti_infections",
+    "spaghetti_obs",
+    "spaghetti_rt",
 ]
+
+# Two names appear in more than one module, so the top-level binding picks one
+# and the other stays reachable through its module:
+#   expected_observations -> renewal's single-series NumPy reference.
+#       predict.expected_observations is the draw-batched version.
+#   prepare_panel -> multilevel's single-response version, kept for the existing
+#       notebooks. core.prepare_panel, re-exported as prepare_panel_multi,
+#       handles several response series at once.
 __version__ = "0.1.0"

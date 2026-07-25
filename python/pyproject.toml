@@ -70,3 +70,6 @@ src = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = [
+  "slow: fits a model; deselect with -m 'not slow'",
+]

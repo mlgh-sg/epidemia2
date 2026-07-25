@@ -14,64 +14,87 @@ missing is halfway through an analysis.
 |---|:--:|:--:|
 | Multiple regions / groups | ✅ | ✅ |
 | Multilevel / partial pooling | ✅ | ✅ |
-| Non-centred parameterisation | ✅ | ✅ |
-| Deterministic renewal process | ✅ | ✅ |
+| Correlated random effects | ✅ | ✅ `correlated=True` |
+| Random walk on `R_t`, incl. per region | ✅ | ✅ `RandomWalk(by_region=)` |
+| Multiple observation series | ✅ | ✅ `[ObsModel, ObsModel]` |
+| Time-varying ascertainment | ✅ | ✅ `ObsModel(X=)` |
+| Population / susceptibility adjustment | ✅ | ✅ `pop_adjust=True` |
+| Observation families | ✅ 5 | ✅ 5 |
+| Forecast scoring (CRPS, coverage) | ✅ | ✅ `epidemia.scoring` |
+| Posterior predictive sampling | ✅ | ✅ `epidemia.predict` |
+| Spaghetti plots | ✅ | ✅ `spaghetti_rt` etc. |
+| Variational inference | ✅ | ✅ `fit_variational` |
+| Swappable prior families | ✅ | ✅ `epidemia.priors` |
 | Hierarchical seeding | ✅ | ✅ |
+| Non-centred parameterisation | ✅ | ✅ |
 | Covariates on `R_t` | ✅ formula | ⚠️ design matrix |
+| Forecasting from new data | ✅ one call | ⚠️ primitives, no wrapper |
 | Counterfactuals | ✅ | ⚠️ `R_t` only |
-| Posterior predictive | ✅ | ⚠️ mean only |
-| Correlated random effects | ✅ | ❌ |
-| Random walk on `R_t` in a multi-region model | ✅ | ❌ |
-| Multiple observation series | ✅ | ❌ |
-| Time-varying ascertainment | ✅ | ❌ |
 | Stochastic latent infections | ✅ | ❌ |
-| Population / susceptibility adjustment | ✅ | ❌ |
-| Forecasting from new data | ✅ | ❌ |
-| Forecast scoring (CRPS, coverage) | ✅ | ❌ |
-| Variational inference | ✅ | ❌ |
-| Swappable prior families | ✅ | ❌ |
+| Autoscaled priors, `hs`/`lasso` families | ✅ | ❌ |
 | nutpie sampler, JAX/GPU option | ❌ | ✅ |
 | `plotnine` plots | ❌ | ✅ |
 
-## The three that will bite you first
+Everything in the top block used to be missing. The model that expresses it is
+:func:`epidemia.build_epidemia_model`, which supersedes the two earlier builders:
+`build_model` had a random walk but one population, `build_multilevel_model` had
+regions but a deterministic `R_t` and a single series, and neither could write
+what the R tutorials write routinely.
 
-**A time-varying `R_t` across regions.** Almost every R tutorial combines a random
-walk with grouped data — `R(region, date) ~ 1 + rw(time = dt)`. Here the two
-features live in different models: `build_model` has the walk but is
-single-population, and `build_multilevel_model` is multi-region but its `R_t` is a
-deterministic step function of the covariates. There is no way to write the
-combination.
+```python
+from epidemia.core import (EpiModelConfig, ObsModel, PanelData,
+                           RandomWalk, build_epidemia_model, prepare_panel)
 
-**Several observation series at once.** Two R vignettes fit deaths and cases
-jointly, each with its own delay distribution, family, link and priors. Both
-Python builders declare exactly one observed variable, so `EuropeCovid2`'s `cases`
-column is never used.
+panel, series = prepare_panel(
+    df, npis=["lockdown"], responses=["deaths", "cases"],
+    pop="pop", rw_by="week", fit_until="2020-05-05")
 
-**Population adjustment.** Neither recursion carries a susceptible pool, so
-long-horizon infections grow without bound. Fine over the eight-week windows the
-notebooks use; wrong for anything longer.
+model = build_epidemia_model(
+    panel,
+    [ObsModel("deaths", **series["deaths"], i2o=inf2death,
+              family="neg_binom", link_K=0.02),
+     ObsModel("cases", **series["cases"], i2o=inf2case,
+              family="quasi_poisson", link_K=0.4)],
+    EpiModelConfig(gen=si, correlated=True, pop_adjust=True,
+                   rw=RandomWalk(index=panel.rw_index, by_region=True)),
+)
+```
 
-## The partial ones, precisely
+That is R's `R(country, date) ~ (1 + lockdown | country) + rw(time = week, gr = country)`
+with `obs = list(deaths, cases)` and `epiinf(pop_adjust = TRUE)`.
 
-**Covariates** are supplied as a numeric `(regions, time, covariates)` array from
-`prepare_panel`, not as a formula. You get covariates; you write the design matrix
-yourself.
+## What is still not here
 
-**Posterior predictive** — `plots.plot_obs` bands the posterior of the expected
-count `E_deaths`. It does not draw from the negative binomial on top, so the
-ribbons are narrower than R's `plot_obs`, which does. They answer different
-questions: "where is the mean" versus "where would an observation fall".
+**A formula interface.** Covariates come in as a numeric
+`(regions, time, covariates)` array from `prepare_panel`; there is no
+`R(country, date) ~ ...` parser. You get the models, you write the design matrix.
 
-**Counterfactuals** are available for effect sizes through `effect_table`, which
-re-evaluates `R_t` per draw under a modified design. Re-simulating *observations*
-under that design is notebook code, not a library function.
+**Forecasting is primitives, not one call.** `epidemia.predict` gives you
+`simulate` (forward renewal over posterior draws, with the susceptibility
+adjustment), `expected_observations` and `posterior_predict` (which draws from
+the observation family rather than banding the mean). What is missing is R's
+convenience of handing a whole `newdata` frame to one function.
+
+**Stochastic latent infections.** R's `epiinf(latent = TRUE)` treats infections
+as parameters with noise around the renewal equation. Here the recursion stays
+deterministic.
+
+**Prior coverage is close but not complete.** `epidemia.priors` mirrors R's
+constructors — `normal`, `student_t`, `cauchy`, `exponential`, `laplace`,
+`shifted_gamma`, `hexp`, `decov`, `lkj` — with R's argument names and
+validation. Not ported: `autoscale`, and the `hs`/`hs_plus`/`lasso`/
+`product_normal` shrinkage families.
+
+**Counterfactuals** cover effect sizes through `effect_table`, which re-evaluates
+`R_t` per draw under a modified design. Re-simulating observations under that
+design is now possible with `epidemia.predict`, but it is your code, not a
+one-liner.
 
 ## Choosing a side
 
-Use **R** for anything you intend to publish from: several data streams,
-forecasting and scoring, susceptibility, the full prior system.
-
-Use **Python** when the model is a partially pooled multi-region renewal model
-with fixed covariates and you want it in a PyMC/ArviZ workflow. See
+The two now express the same models. Use **R** when you want the formula
+interface, one-call forecasting from a `newdata` frame, or stochastic latent
+infections. Use **Python** when you want a PyMC/ArviZ workflow, nutpie's
+sampler, or to build the design matrices yourself. See
 [Performance](performance.md) for how the two backends actually compare on that
 model — the answer is less one-sided than "Rust sampler beats Stan" suggests.

@@ -506,3 +506,212 @@ def plot_region_effects(idata, npi, levels=90, save=True, title=None):
     p = _forest(df, f"{npi} effect on logit $R_t$  ($\\beta + b^{{(m)}}$)",
                 title or f"Per-region effect of {npi}")
     return _maybe_save(p, save, f"region_effects_{npi}")
+
+
+# --------------------------------------------------------------------------
+# Spaghetti (per-draw trajectory) plots
+# --------------------------------------------------------------------------
+#
+# The ribbon plots above collapse the posterior to pointwise quantiles, which
+# throws away the *shape* of an individual path: a 95% band is the envelope of
+# many trajectories, and no single draw need look like its median. R's
+# spaghetti_rt() / spaghetti_infections() / spaghetti_obs() overlay the paths
+# themselves, so autocorrelation and the plausibility of individual epidemic
+# curves stay visible. These mirror them.
+
+# darkest shade of each ribbon palette, so a spaghetti plot sits next to the
+# corresponding plot_*() without a colour clash
+_RT_PATH_COLOR = _GREENS[30]
+_OBS_PATH_COLOR = _BLUES[30]
+
+
+def _sample_draw_index(n_draws, draws, seed):
+    """Indices of the draws to overlay -- reproducible, sorted, without replacement.
+
+    Asking for more paths than the posterior holds is *not* an error: R's default
+    is ``min(500, posterior_sample_size(object))``, so the request is a cap, and a
+    short (or thinned) chain should still plot rather than blow up.
+    """
+    if draws is None:
+        k = n_draws
+    else:
+        k = int(draws)
+        if k < 1:
+            raise ValueError(f"draws must be >= 1, got {draws}")
+        k = min(k, n_draws)
+    # A seeded Generator (not the global RNG) so re-running the script, or
+    # regenerating a figure for a paper, redraws the same set of paths.
+    rng = np.random.default_rng(seed)
+    return np.sort(rng.choice(n_draws, size=k, replace=False))
+
+
+def _check_alpha(alpha):
+    if not (0 < alpha <= 1):
+        raise ValueError(f"alpha must be in (0, 1], got {alpha}")
+    return alpha
+
+
+def _path_frame(draws, x, idx):
+    """Long frame of the individual trajectories ``draws[idx]``: one row per point.
+
+    ``draw`` is stringified because it is a *grouping* aesthetic, not a
+    continuous one -- a numeric column would tempt plotnine into treating the
+    draw index as a scale.
+    """
+    sub = np.asarray(draws)[idx]  # (k, T)
+    k, t = sub.shape
+    return pd.DataFrame({
+        "x": np.tile(np.asarray(x), k),
+        "value": sub.reshape(-1),
+        "draw": np.repeat([str(i) for i in idx], t),
+    })
+
+
+def _region_path_frame(idata, var, data, idx, group=None):
+    """Per-region path + median frames on real dates, padded days dropped.
+
+    The same draw indices are used in every region: a draw is a joint sample over
+    all regions, so pairing region A's draw 3 with region B's draw 7 would show a
+    combination the posterior never produced.
+    """
+    arr, dims = _draws(idata, var)  # (draws, region, time)
+    if dims[:1] != ("region",):
+        raise ValueError(f"expected a region dim on {var!r}, got dims {dims}")
+    regions = [str(r) for r in idata.posterior.coords["region"].values]
+    keep = regions if group is None else [str(group)]
+    unknown = set(keep) - set(regions)
+    if unknown:
+        raise ValueError(f"unknown region(s) {sorted(unknown)}; have {regions}")
+
+    paths, meds = [], []
+    for r in keep:
+        m = regions.index(r)
+        n = int(data.lengths[data.regions.index(r)])
+        x = pd.to_datetime(data.dates[data.regions.index(r)])[:n]
+        d = arr[:, m, :n]
+        pf = _path_frame(d, x, idx)
+        pf["region"] = r
+        paths.append(pf)
+        md = _median_frame(d, x)  # median over ALL draws, as in R
+        md["region"] = r
+        meds.append(md)
+    return pd.concat(paths, ignore_index=True), pd.concat(meds, ignore_index=True), keep
+
+
+def _spaghetti_plot(paths, med, color, alpha, ylab, xlab, hline=None, facet=0,
+                    title=None, obs=None, obs_kind="point"):
+    """``facet`` is the number of region panels (0/1 => no faceting)."""
+    p = (
+        ggplot()
+        + geom_line(paths, aes("x", "value", group="draw"), color=color,
+                    alpha=alpha, size=0.35)
+    )
+    if obs is not None:
+        if obs_kind == "col":
+            p = p + geom_col(obs, aes("x", "obs"), fill="#b2182b", alpha=0.45, width=1.0)
+        else:
+            p = p + geom_point(obs, aes("x", "obs"), color="#b2182b", size=1.1, alpha=0.8)
+    # The median goes on last so it stays readable through the bundle of paths.
+    p = p + geom_line(med, aes("x", "median"), color="black", size=0.8) + labs(x=xlab, y=ylab)
+    if hline is not None:
+        p = p + geom_hline(yintercept=hline, linetype="dotted", color="#555555")
+    if title:
+        p = p + labs(title=title)
+    p = p + theme_epidemia()
+    if facet:
+        p = p + facet_wrap("region", scales="free_y", ncol=_FACET_NCOL)
+        p = _size_for_panels(p, facet)
+    return p
+
+
+def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab,
+                      color, hline, save, default_name, title=None, obs=None,
+                      obs_kind="point"):
+    """Dispatch: multi-region (facet on real dates) vs single-population."""
+    _check_alpha(alpha)
+    arr, _ = _draws(idata, var)
+    idx = _sample_draw_index(arr.shape[0], draws, seed)
+
+    if _is_multiregion(idata, var):
+        if data is None:
+            raise ValueError(
+                f"{var!r} has a 'region' dimension (a multilevel fit), so the "
+                "MultilevelData you fitted is needed to map each region's columns "
+                "back to its own dates. Pass data=<your prepare_panel result> "
+                "(and optionally group='Italy' for a single region)."
+            )
+        paths, med, keep = _region_path_frame(idata, var, data, idx, group)
+        obs_df = None
+        if obs is True:  # sentinel: take the counts from the panel
+            obs_df = _observed_frame(data, group)
+        elif obs is not None:
+            raise ValueError(
+                "for a multi-region fit the observed counts come from `data` "
+                "(one series per region, each on its own dates), so an "
+                "`observed=` array is ambiguous here. Drop it -- "
+                "spaghetti_obs(idata, data=fit) already overlays the right "
+                "counts -- or pass group='<region>' to plot a single region."
+            )
+        p = _spaghetti_plot(paths, med, color, alpha, ylab, xlab or "", hline,
+                            facet=len(keep) if len(keep) > 1 else 0, title=title,
+                            obs=obs_df, obs_kind=obs_kind)
+        return _maybe_save(p, save, default_name, n_panels=len(keep))
+
+    if x is None:
+        x = np.arange(arr.shape[-1])
+    paths, med = _path_frame(arr, x, idx), _median_frame(arr, x)
+    obs_df = None
+    if obs is not None:
+        o = np.asarray(obs, dtype=float)
+        obs_df = pd.DataFrame({"x": x, "obs": o})
+        obs_df = obs_df[np.isfinite(obs_df["obs"])]
+    p = _spaghetti_plot(paths, med, color, alpha, ylab, xlab or "Day", hline,
+                        facet=0, title=title, obs=obs_df, obs_kind=obs_kind)
+    return _maybe_save(p, save, default_name)
+
+
+def spaghetti_rt(idata, data=None, group=None, draws=50, alpha=0.3, seed=0,
+                 x=None, xlab=None, save=True, title=None, region=None):
+    """Reproduction numbers: ``draws`` individual posterior paths, median on top.
+
+    The counterpart of :func:`plot_rt` for looking at trajectories rather than
+    pointwise quantiles. ``draws`` caps the number of paths (fewer are drawn if
+    the posterior is smaller) and ``seed`` fixes which ones, so the figure is
+    reproducible. ``alpha`` is the per-path transparency: lower it when the
+    bundle is dense.
+
+    ``region`` is an alias for ``group``, kept for symmetry with R's ``groups``.
+    """
+    return _spaghetti_series(idata, "Rt", data, group if group is not None else region,
+                             draws, alpha, seed, x, xlab, "$R_t$", _RT_PATH_COLOR,
+                             1.0, save, "spaghetti-rt", title=title)
+
+
+def spaghetti_infections(idata, data=None, group=None, draws=50, alpha=0.3, seed=0,
+                         x=None, xlab=None, save=True, title=None, region=None):
+    """Latent daily infections: ``draws`` individual posterior paths, median on top."""
+    return _spaghetti_series(idata, "infections", data,
+                             group if group is not None else region,
+                             draws, alpha, seed, x, xlab, "Infections",
+                             _OBS_PATH_COLOR, None, save, "spaghetti-infections",
+                             title=title)
+
+
+def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0.3,
+                  seed=0, x=None, xlab=None, ylab="Daily deaths", save=True,
+                  title=None, region=None):
+    """Expected observations as individual paths, with the observed counts overlaid.
+
+    Reads ``E_obs`` (single-population) or ``E_deaths`` (multilevel), whichever
+    the fitted model defines; raises :class:`KeyError` if neither is present. For
+    a multilevel fit pass ``data`` and the counts are taken from ``data.deaths``.
+    """
+    var = _pick_obs_var(idata)
+    grp = group if group is not None else region
+    obs = observed
+    if _is_multiregion(idata, var) and obs is None:
+        obs = True  # taken from data.deaths inside _spaghetti_series
+    kind = "col" if _is_multiregion(idata, var) else "point"
+    return _spaghetti_series(idata, var, data, grp, draws, alpha, seed, x, xlab, ylab,
+                             _OBS_PATH_COLOR, None, save, "spaghetti-obs", title=title,
+                             obs=obs, obs_kind=kind)
