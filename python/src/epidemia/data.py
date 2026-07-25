@@ -2,11 +2,16 @@
 
 ``flu1918`` is the 1918 influenza pandemic in Baltimore, the same data used in
 the R package's basic tutorial (originally from the EpiEstim package).
+
+``europe_covid2`` is the ``EuropeCovid2`` dataset from the R package: daily case
+and death counts plus NPI indicators for 11 European countries during the first
+wave of COVID-19 (used in the multilevel / partial-pooling example).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from importlib import resources
 
 import numpy as np
 
@@ -51,3 +56,54 @@ def flu1918() -> EpiData:
         incidence=_FLU1918_INCIDENCE.copy(),
         serial_interval=_FLU1918_SI.copy(),
     )
+
+
+# The five NPIs, in the order used throughout the multilevel example.
+EUROPE_COVID_NPIS = [
+    "schools_universities",
+    "self_isolating_if_ill",
+    "public_events",
+    "social_distancing_encouraged",
+    "lockdown",
+]
+
+
+@dataclass
+class EuropeCovid2:
+    """The ``EuropeCovid2`` dataset (11 countries, first COVID-19 wave).
+
+    Attributes
+    ----------
+    data : pandas.DataFrame
+        Long panel with columns ``id, country, date, cases, deaths, pop`` and the
+        five binary NPI indicators in :data:`EUROPE_COVID_NPIS`. ``date`` is a
+        ``datetime64`` column.
+    si : numpy.ndarray
+        Serial-interval PMF (``si[k] = P(serial interval = k days)``), summing to 1.
+    inf2death : numpy.ndarray
+        Infection-to-death delay PMF, summing to 1.
+    """
+
+    data: object
+    si: np.ndarray
+    inf2death: np.ndarray
+
+
+def europe_covid2() -> EuropeCovid2:
+    """Return the ``EuropeCovid2`` dataset used in the multilevel example.
+
+    Daily case/death counts and NPI indicators for 11 European countries up to
+    1 July 2020, together with the serial interval and infection-to-death delay
+    distributions from Flaxman et al. (2020). Mirrors ``data("EuropeCovid2")`` in
+    the R package.
+    """
+    import pandas as pd
+
+    files = resources.files("epidemia.data_files")
+    with resources.as_file(files / "europe_covid2.csv") as p:
+        df = pd.read_csv(p, parse_dates=["date"])
+    with resources.as_file(files / "europe_covid2_si.csv") as p:
+        si = pd.read_csv(p)["si"].to_numpy(dtype=float)
+    with resources.as_file(files / "europe_covid2_inf2death.csv") as p:
+        inf2death = pd.read_csv(p)["inf2death"].to_numpy(dtype=float)
+    return EuropeCovid2(data=df, si=si, inf2death=inf2death)

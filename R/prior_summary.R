@@ -1,7 +1,21 @@
 #' Returns a summary of the prior distributions used
 #'
-#' @inherit rstantools::prior_summary params return
+#' Summarises the priors used for each regression in a fitted model: the one for
+#' reproduction numbers, and one for each observation type. The priors shown are
+#' those actually used in fitting, i.e. after any autoscaling has been applied,
+#' which can differ from the priors as specified. See \code{\link{priors}}.
+#'
+#' @param object An \code{epimodel} object, returned by \code{\link{epim}}.
 #' @param digits Number of digits used for rounding.
+#' @param ... Not used.
+#' @return A named list with one element per regression in the model:
+#'   \code{"R"} for the reproduction number regression, and one named after each
+#'   observation type. Each element holds that regression's prior information and
+#'   has class \code{"prior_summary_reg.epimodel"}. The list itself has class
+#'   \code{"prior_summary.epimodel"}; both have print methods, so the result is
+#'   generally printed rather than used programmatically.
+#' @seealso \code{\link{priors}} for specifying priors, and \code{\link{epim}}
+#'   for fitting the model they are used in.
 #' @export
 prior_summary.epimodel <- function(object, digits = 3, ...) {
   out <- list()

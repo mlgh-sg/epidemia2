@@ -14,7 +14,7 @@ from .model import build_model
 
 
 def fit(y, config, draws=1000, tune=1000, chains=4, seed=0,
-        adaptation="diag", backend="numba", progress_bar=False, **kwargs):
+        adaptation="diag", backend="numba", progress_bar=True, **kwargs):
     """Fit a single-population renewal model with nutpie.
 
     Parameters
@@ -27,6 +27,10 @@ def fit(y, config, draws=1000, tune=1000, chains=4, seed=0,
         Posterior draws per chain, warmup/tuning iterations, and number of chains.
     seed : int
         Random seed.
+    progress_bar : bool
+        Show nutpie's sampling progress bar (default ``True``). The compile step
+        that precedes sampling is announced separately, since it can take longer
+        than the sampling itself and has no progress of its own.
     adaptation : {"diag", "low_rank", "flow"}
         nutpie mass-matrix adaptation. ``"diag"`` (a Fisher-information diagonal)
         is a strong default; ``"low_rank"`` and ``"flow"`` help hard posteriors
@@ -41,15 +45,9 @@ def fit(y, config, draws=1000, tune=1000, chains=4, seed=0,
     arviz.InferenceData
         Posterior draws including the ``Rt``/``infections``/``E_obs`` series.
     """
-    import nutpie
+    from .multilevel import _compile
 
     model = build_model(np.asarray(y), config)
-    kw = {}
-    if backend == "jax":
-        kw["gradient_backend"] = "jax"
-    compiled = nutpie.compile_pymc_model(model, backend=backend, **kw)
-    idata = nutpie.sample(
-        compiled, draws=draws, tune=tune, chains=chains, seed=seed,
-        adaptation=adaptation, progress_bar=progress_bar, **kwargs,
-    )
-    return idata
+    return _compile(model, backend=backend, draws=draws, tune=tune, chains=chains,
+                    seed=seed, adaptation=adaptation, progress_bar=progress_bar,
+                    **kwargs)

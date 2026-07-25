@@ -30,12 +30,12 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: James Scott \email{james.scott15@imperial.ac.uk} (\href{https://orcid.org/0000-0003-0106-5618}{ORCID})
+\strong{Maintainer}: Swapnil Mishra \email{swapnilmishra.anu@gmail.com} (\href{https://orcid.org/0000-0002-8759-5902}{ORCID})
 
 Authors:
 \itemize{
+  \item James Scott \email{james.scott15@imperial.ac.uk} (\href{https://orcid.org/0000-0003-0106-5618}{ORCID})
   \item Axel Gandy \email{a.gandy@imperial.ac.uk} (\href{https://orcid.org/0000-0002-6777-0451}{ORCID})
-  \item Swapnil Mishra \email{swapnilmishra.anu@gmail.com} (\href{https://orcid.org/0000-0002-8759-5902}{ORCID})
   \item Juliette Unwin \email{h.unwin@imperial.ac.uk} (\href{https://orcid.org/0000-0002-9120-4003}{ORCID})
   \item Seth Flaxman \email{s.flaxman@imperial.ac.uk} (\href{https://orcid.org/0000-0002-2477-4217}{ORCID})
   \item Samir Bhatt \email{s.bhatt@imperial.ac.uk} (\href{https://orcid.org/0000-0002-0891-4611}{ORCID})

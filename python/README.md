@@ -11,12 +11,59 @@ The model is specified with **[PyMC](https://www.pymc.io/)** and fit with
 **[nutpie](https://github.com/pymc-devs/nutpie)** — a fast Rust NUTS with
 Fisher-information mass-matrix adaptation — returning an ArviZ `InferenceData`.
 
-## Install (with `uv`)
+## Install
+
+Not on PyPI yet, so install it straight from this repo. The package lives in the
+`python/` subdirectory, hence `#subdirectory=python` — without it pip looks for a
+`pyproject.toml` at the repo root and fails.
 
 ```bash
-cd python
+pip install "git+https://github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+```
+
+or, with [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv pip install "git+https://github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+```
+
+Pin to a tag or commit for anything you need to reproduce later — `main` moves:
+
+```bash
+pip install "git+https://github.com/mlgh-sg/epidemia2.git@v0.1.0#subdirectory=python"
+```
+
+To add it to a project's dependencies (`pyproject.toml`):
+
+```toml
+[project]
+dependencies = [
+  "epidemia @ git+https://github.com/mlgh-sg/epidemia2.git@v0.1.0#subdirectory=python",
+]
+```
+
+> **While the repository is private**, the `https://` forms above will fail with a
+> credential prompt or a 403 for everyone, including you. Use SSH instead — it
+> uses the key you already push with:
+>
+> ```bash
+> pip install "git+ssh://git@github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+> ```
+>
+> Once the repo is public the `https://` forms work for anyone, with no
+> authentication at all, and are what to hand to users.
+
+Python 3.10–3.13. The data files (`EuropeCovid2`, `flu1918`) ship inside the
+wheel, so nothing else needs downloading.
+
+## Install for development (with `uv`)
+
+```bash
+git clone git@github.com:mlgh-sg/epidemia2.git
+cd epidemia2/python
 uv python pin 3.12   # broad wheel availability
 uv sync              # PyMC + nutpie, compiled with the numba CPU backend
+uv run pytest        # check it works
 ```
 
 The default `numba` backend is the recommended optimized path on **all**
@@ -54,6 +101,23 @@ epi.plots.plot_obs(idata, y)      # posterior predictive vs observed
 epi.plots.plot_infections(idata)  # latent infections
 ```
 
+Every plot is also written to `./figures` (or `$EPIDEMIA_FIGDIR`); pass
+`save=False` to render without writing, or `save="name"` to choose the file.
+
+For a **multi-region** (multilevel) fit, pass the panel you fitted and each
+region gets its own panel — plus effect sizes as a percent reduction in
+transmission:
+
+```python
+fit = epi.prepare_panel(ec.data, epi.EUROPE_COVID_NPIS, fit_until="2020-05-05")
+idata = epi.fit_multilevel(fit, config)
+
+epi.plots.plot_rt(idata, data=fit)                       # every country, faceted
+epi.plots.plot_rt(idata, data=fit, group="Italy")        # just one
+epi.plots.plot_percent_effects(idata, config, data=fit)  # "% reduction in R_t"
+epi.effect_table(idata, config, data=fit)                # the same, as a table
+```
+
 Or run the packaged example:
 
 ```bash
@@ -82,3 +146,31 @@ The model is vectorised wherever the mathematics allows:
 - All latent series (`Rt`, `infections`, `E_obs`) are returned in the ArviZ
   `InferenceData` posterior, so `arviz` diagnostics and the plotting helpers work
   out of the box.
+
+## Authors and credit
+
+This Python package is written and maintained by **Swapnil Mishra**
+([ORCID](https://orcid.org/0000-0002-8759-5902)), with **[Claude
+Code](https://claude.com/claude-code)** (Anthropic).
+
+It is a **port, not a new method**. The model, its priors and links, the
+`EuropeCovid2` and `flu1918` data, and the design this follows are all from the R
+package **epidemia**, by James A. Scott, Axel Gandy, Swapnil Mishra, H. Juliette
+T. Unwin, Seth Flaxman and Samir Bhatt — and the statistical framework is
+Flaxman et al. (2020) and Bhatt et al. (2020). Please cite them, not this port:
+
+* **The R package / software paper** — Scott, J. A., Gandy, A., Mishra, S.,
+  Bhatt, S., Flaxman, S., Unwin, H. J. T. & Ish-Horowicz, J. (2021). *Epidemia:
+  An R Package for Semi-Mechanistic Bayesian Modelling of Infectious Diseases
+  using Point Processes.* [arXiv:2110.12461](https://arxiv.org/abs/2110.12461)
+* **The framework** — Bhatt, S. et al. (2020). *Semi-mechanistic Bayesian
+  modelling of COVID-19 with renewal processes.*
+  [arXiv:2012.00394](https://arxiv.org/abs/2012.00394)
+* **The application this package's examples reproduce** — Flaxman, S. et al.
+  (2020). *Estimating the effects of non-pharmaceutical interventions on COVID-19
+  in Europe.* [Nature 584, 257–261](https://www.nature.com/articles/s41586-020-2405-7)
+
+See [`inst/CITATION`](../inst/CITATION) in the repository root for the full,
+authoritative citation list.
+
+Licensed GPL-3.0-or-later, as the R package is.

@@ -6,7 +6,10 @@ readme = "README.md"
 requires-python = ">=3.10,<3.14"
 license = { text = "GPL-3.0-or-later" }
 authors = [
-  { name = "epidemia authors" },
+  { name = "Swapnil Mishra", email = "swapnilmishra.anu@gmail.com" },
+]
+maintainers = [
+  { name = "Swapnil Mishra", email = "swapnilmishra.anu@gmail.com" },
 ]
 keywords = ["epidemiology", "bayesian", "renewal-process", "reproduction-number", "pymc", "nutpie"]
 dependencies = [
@@ -16,7 +19,18 @@ dependencies = [
   "numpy>=1.24",
   "arviz>=0.18",
   "plotnine>=0.13",   # grammar-of-graphics plotting (ggplot2 for Python)
+  "pandas>=2.0",      # panel data for the multilevel (Europe COVID) example
 ]
+
+# NOTE: keep [project.urls] and every other sub-table BELOW the key/value pairs
+# above. A `[table]` header captures everything after it, so putting it earlier
+# silently reparents `dependencies` into it and the build fails.
+[project.urls]
+Homepage = "https://mlgh-sg.com/epidemia2/"
+Repository = "https://github.com/mlgh-sg/epidemia2"
+Issues = "https://github.com/mlgh-sg/epidemia2/issues"
+"Original R package" = "https://github.com/ImperialCollegeLondon/epidemia"
+"Software paper (Scott et al. 2021)" = "https://arxiv.org/abs/2110.12461"
 
 [project.optional-dependencies]
 # Linux + NVIDIA GPU: compile the log-density with the JAX backend and run on GPU.
@@ -36,6 +50,9 @@ dev = [
   "mkdocs>=1.6",
   "mkdocs-material>=9.5",
   "mkdocstrings[python]>=0.25",
+  "jupytext>=1.16",   # pair the example notebooks (.py <-> .ipynb)
+  "nbconvert>=7.0",   # execute notebooks headless (jupytext --execute)
+  "ipykernel>=6.0",   # the Python kernel nbconvert runs cells in
 ]
 
 [build-system]
@@ -44,6 +61,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/epidemia"]
+artifacts = ["src/epidemia/data_files/*.csv"]
 
 [tool.ruff]
 line-length = 100

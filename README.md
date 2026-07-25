@@ -23,6 +23,8 @@ compilation happens at install time.
 
 ## Installation
 
+### R
+
 epidemia fits models with [CmdStanR](https://mc-stan.org/cmdstanr/). Install
 CmdStanR and CmdStan first, then install epidemia from GitHub:
 
@@ -38,8 +40,27 @@ cmdstanr::install_cmdstan()
 remotes::install_github("mlgh-sg/epidemia2")
 ```
 
-The Stan models are compiled the first time they are used and then cached. You
-can optionally precompile them with `epidemia::compile_epidemia()`.
+`cmdstanr` is not on CRAN, which is why it needs the `stan-dev` repository
+above; `install_cmdstan()` then downloads and compiles CmdStan itself, so a
+working C++ toolchain is required. The Stan models are compiled the first time
+they are used and then cached. You can optionally precompile them with
+`epidemia::compile_epidemia()`.
+
+### Python
+
+There is also a Python port, under [`python/`](python/) — the same model in
+[PyMC](https://www.pymc.io/), fit with [nutpie](https://github.com/pymc-devs/nutpie).
+It needs no C++ toolchain and no CmdStan:
+
+```bash
+pip install "git+https://github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+```
+
+`#subdirectory=python` is required — the Python package lives in a subdirectory
+of this repository, and without it pip looks for a `pyproject.toml` at the repo
+root (where the R package lives) and fails. See
+[`python/README.md`](python/README.md) for pinning to a tag, the development
+setup, and the API.
 
 ## Disclaimer
 
@@ -55,3 +76,34 @@ have feature requests, please report them
 To get started, please see the [package website](https://mlgh-sg.com/epidemia2/index.html),
 where you can find installation instructions, function documentation,
 and vignettes.
+
+## Authors and credit
+
+This package — **epidemia2**, and the Python port under
+[`python/`](python/) — is maintained by **Swapnil Mishra**
+([ORCID](https://orcid.org/0000-0002-8759-5902)), with
+**[Claude Code](https://claude.com/claude-code)** (Anthropic).
+
+It continues the original **epidemia**
+([ImperialCollegeLondon/epidemia](https://github.com/ImperialCollegeLondon/epidemia)),
+whose authors are **James A. Scott, Axel Gandy, Swapnil Mishra, H. Juliette T.
+Unwin, Seth Flaxman and Samir Bhatt**. The model, its priors, its formula
+interface and the statistical framework are their work and remain credited as
+such in `DESCRIPTION`; this repository carries it forward rather than replacing
+it.
+
+**Please cite the papers, not the repository:**
+
+- **Software paper** — Scott, J. A., Gandy, A., Mishra, S., Bhatt, S., Flaxman,
+  S., Unwin, H. J. T. & Ish-Horowicz, J. (2021). *Epidemia: An R Package for
+  Semi-Mechanistic Bayesian Modelling of Infectious Diseases using Point
+  Processes.* [arXiv:2110.12461](https://arxiv.org/abs/2110.12461)
+- **Framework** — Bhatt, S. et al. (2020). *Semi-mechanistic Bayesian modelling
+  of COVID-19 with renewal processes.*
+  [arXiv:2012.00394](https://arxiv.org/abs/2012.00394)
+- **Application** — Mishra, S. et al. (2022). *A COVID-19 Model for Local
+  Authorities of the United Kingdom.* *JRSS-A*.
+  [doi:10.1111/rssa.12988](https://doi.org/10.1111/rssa.12988)
+
+`citation("epidemia")` in R, or [`inst/CITATION`](inst/CITATION), gives the
+authoritative list. Licensed GPL-3.

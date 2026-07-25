@@ -72,10 +72,16 @@ def main(argv=None):
           f"final = {med[-1]:.2f}")
 
     if args.save:
-        epi.plots.plot_rt(idata).save(f"{args.save}_rt.png", verbose=False)
-        epi.plots.plot_obs(idata, observed=y).save(f"{args.save}_obs.png", verbose=False)
-        epi.plots.plot_infections(idata).save(f"{args.save}_infections.png", verbose=False)
-        print(f"saved plots to {args.save}_*.png")
+        # The plot functions save themselves, so name the files here rather than
+        # calling .save() again -- that would write each figure twice, once to
+        # the requested path and once to the default figure_dir().
+        epi.plots.plot_rt(idata, save=f"{args.save}_rt")
+        epi.plots.plot_obs(idata, observed=y, save=f"{args.save}_obs")
+        epi.plots.plot_infections(idata, save=f"{args.save}_infections")
+    else:
+        for p in (epi.plots.plot_rt, epi.plots.plot_infections):
+            p(idata, save=False)
+        epi.plots.plot_obs(idata, observed=y, save=False)
     return idata
 
 
