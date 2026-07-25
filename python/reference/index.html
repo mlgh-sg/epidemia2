@@ -313,9 +313,25 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../tutorials/" class="md-nav__link">
+    
+    
+    
+    
+      
         
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
   
   
   <span class="md-ellipsis">
@@ -329,7 +345,135 @@
   
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/europe-covid/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessing the effects of interventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/partial-pooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Partial pooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/multilevel-multi-obs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Several observation series
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1937,7 +2081,7 @@ seeding period); those days are dropped from the likelihood.</p>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;diag&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;low_rank&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;numba&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -2084,17 +2228,27 @@ than the sampling itself and has no progress of its own.</p>
                 <code>adaptation</code>
             </td>
             <td>
-                  <code>(&#39;diag&#39;, &#39;low_rank&#39;, &#39;flow&#39;)</code>
+                  <code>(&#39;low_rank&#39;, &#39;diag&#39;, &#39;flow&#39;)</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>nutpie mass-matrix adaptation. <code>"diag"</code> (a Fisher-information diagonal)
-is a strong default; <code>"low_rank"</code> and <code>"flow"</code> help hard posteriors
-(<code>"flow"</code> needs <code>nutpie[nnflow]</code>).</p>
+                <p>nutpie mass-matrix adaptation. Defaults to <code>"low_rank"</code>, which fits a
+low-rank correction to the mass matrix.</p>
+<p>This differs from nutpie's own default of <code>"diag"</code> deliberately.
+Renewal models put a random walk and a hierarchy into the same posterior,
+which leaves a correlated ridge that a diagonal mass matrix cannot follow
+-- and it fails <em>silently</em>, mixing badly without diverging. Measured on
+both a small single-population flu model and the eleven-country
+multilevel one, <code>"low_rank"</code> was faster <strong>and</strong> better mixed: 4.7x the
+wall-clock speed and 6.3x the effective samples per second on the former,
+1.3x and 4.6x on the latter. There was no case where <code>"diag"</code> won. See
+the "Performance" page of the documentation.</p>
+<p><code>"flow"</code> (normalizing-flow adaptation) helps the hardest posteriors and
+needs <code>nutpie[nnflow]</code>.</p>
               </div>
             </td>
             <td>
-                  <code>&#34;diag&#34;</code>
+                  <code>&#34;low_rank&#34;</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -2181,8 +2335,20 @@ is required for GPU (Linux, <code>uv sync --extra gpu</code>) and flow adaptatio
 <span class="normal"><a href="#__codelineno-0-50">50</a></span>
 <span class="normal"><a href="#__codelineno-0-51">51</a></span>
 <span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>        <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;diag&quot;</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;numba&quot;</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="normal"><a href="#__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#__codelineno-0-62">62</a></span>
+<span class="normal"><a href="#__codelineno-0-63">63</a></span>
+<span class="normal"><a href="#__codelineno-0-64">64</a></span>
+<span class="normal"><a href="#__codelineno-0-65">65</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>        <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;low_rank&quot;</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;numba&quot;</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit a single-population renewal model with nutpie.</span>
 <a id="__codelineno-0-19" name="__codelineno-0-19"></a>
 <a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">    Parameters</span>
@@ -2199,26 +2365,38 @@ is required for GPU (Linux, <code>uv sync --extra gpu</code>) and flow adaptatio
 <a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        Show nutpie&#39;s sampling progress bar (default ``True``). The compile step</span>
 <a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">        that precedes sampling is announced separately, since it can take longer</span>
 <a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">        than the sampling itself and has no progress of its own.</span>
-<a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">    adaptation : {&quot;diag&quot;, &quot;low_rank&quot;, &quot;flow&quot;}</span>
-<a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">        nutpie mass-matrix adaptation. ``&quot;diag&quot;`` (a Fisher-information diagonal)</span>
-<a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">        is a strong default; ``&quot;low_rank&quot;`` and ``&quot;flow&quot;`` help hard posteriors</span>
-<a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">        (``&quot;flow&quot;`` needs ``nutpie[nnflow]``).</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">    backend : {&quot;numba&quot;, &quot;jax&quot;}</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">        PyTensor compilation backend for the log-density. ``&quot;numba&quot;`` is the</span>
-<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">        low-overhead CPU default (recommended, incl. Apple Silicon); ``&quot;jax&quot;``</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">        is required for GPU (Linux, ``uv sync --extra gpu``) and flow adaptation.</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42"></a>
-<a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">    Returns</span>
-<a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">    -------</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">    arviz.InferenceData</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">        Posterior draws including the ``Rt``/``infections``/``E_obs`` series.</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">.multilevel</span><span class="w"> </span><span class="kn">import</span> <span class="n">_compile</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a>
-<a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">build_model</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">config</span><span class="p">)</span>
-<a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">draws</span><span class="o">=</span><span class="n">draws</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="n">tune</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="n">chains</span><span class="p">,</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">adaptation</span><span class="o">=</span><span class="n">adaptation</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="n">progress_bar</span><span class="p">,</span>
-<a id="__codelineno-0-53" name="__codelineno-0-53"></a>                    <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">    adaptation : {&quot;low_rank&quot;, &quot;diag&quot;, &quot;flow&quot;}</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">        nutpie mass-matrix adaptation. Defaults to ``&quot;low_rank&quot;``, which fits a</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">        low-rank correction to the mass matrix.</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37"></a>
+<a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">        This differs from nutpie&#39;s own default of ``&quot;diag&quot;`` deliberately.</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">        Renewal models put a random walk and a hierarchy into the same posterior,</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">        which leaves a correlated ridge that a diagonal mass matrix cannot follow</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">        -- and it fails *silently*, mixing badly without diverging. Measured on</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">        both a small single-population flu model and the eleven-country</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">        multilevel one, ``&quot;low_rank&quot;`` was faster **and** better mixed: 4.7x the</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">        wall-clock speed and 6.3x the effective samples per second on the former,</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">        1.3x and 4.6x on the latter. There was no case where ``&quot;diag&quot;`` won. See</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">        the &quot;Performance&quot; page of the documentation.</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47"></a>
+<a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="sd">        ``&quot;flow&quot;`` (normalizing-flow adaptation) helps the hardest posteriors and</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="sd">        needs ``nutpie[nnflow]``.</span>
+<a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="sd">    backend : {&quot;numba&quot;, &quot;jax&quot;}</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="sd">        PyTensor compilation backend for the log-density. ``&quot;numba&quot;`` is the</span>
+<a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="sd">        low-overhead CPU default (recommended, incl. Apple Silicon); ``&quot;jax&quot;``</span>
+<a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="sd">        is required for GPU (Linux, ``uv sync --extra gpu``) and flow adaptation.</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54"></a>
+<a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="sd">    Returns</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56"></a><span class="sd">    -------</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="sd">    arviz.InferenceData</span>
+<a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="sd">        Posterior draws including the ``Rt``/``infections``/``E_obs`` series.</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">.multilevel</span><span class="w"> </span><span class="kn">import</span> <span class="n">_compile</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61"></a>
+<a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">build_model</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">config</span><span class="p">)</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">draws</span><span class="o">=</span><span class="n">draws</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="n">tune</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="n">chains</span><span class="p">,</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64"></a>                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">adaptation</span><span class="o">=</span><span class="n">adaptation</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="n">progress_bar</span><span class="p">,</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65"></a>                    <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3474,7 +3652,7 @@ window begins <code>seed_offset</code> days before cumulative deaths first excee
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;diag&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;low_rank&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;numba&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">target_accept</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span>
@@ -3496,19 +3674,26 @@ hierarchical model whose funnel geometry (the between-region SDs against the
 non-centred region effects) makes 0.8 produce hundreds of divergences on the
 full 11-country example. A divergence check is run after sampling and warns
 if any remain.</p>
-<p>.. note:: <strong>If your covariates are correlated, use <code>adaptation="low_rank"</code>.</strong></p>
+<p><code>adaptation</code> defaults to <code>"low_rank"</code> rather than nutpie's <code>"diag"</code>,
+for the reason below.</p>
+<p>.. note:: <strong>Why the mass-matrix default differs from nutpie's.</strong></p>
 <p>Divergences and <code>r_hat</code> are <em>different</em> failures with different cures,
    and this model can hit both. Collinear covariates (NPIs enacted within
    days of each other, say) give a posterior with a long thin correlation
-   ridge that the default diagonal mass matrix cannot follow: the sampler
-   does not diverge, it simply fails to mix. On the 11-country example that
+   ridge that a diagonal mass matrix cannot follow: the sampler does not
+   diverge, it simply fails to mix. On the 11-country example <code>"diag"</code>
    shows up as <code>r_hat</code> 1.08-1.11 and an effective sample size of 25-36 out
    of 4000 for the collinear coefficients -- and their estimates are biased
-   as a result. <code>adaptation="low_rank"</code> fits a low-rank correction to the
-   mass matrix and brings every <code>r_hat</code> to &lt;= 1.04.</p>
-<p>Raising <code>target_accept</code> will not fix this, and a clean divergence count
-   is not evidence that it is absent. Always check <code>arviz.summary</code> for
-   <code>r_hat</code> and <code>ess_bulk</code> too.</p>
+   as a result. <code>"low_rank"</code> fits a low-rank correction and brings every
+   <code>r_hat</code> to &lt;= 1.04.</p>
+<p>Benchmarked, it is faster too, so this is not a speed/accuracy trade:
+   against <code>"diag"</code> it gave 1.3x the wall-clock speed and 4.6x the
+   effective samples per second on the 11-country model, and 4.7x / 6.3x on
+   a small single-population one. No case was found where <code>"diag"</code> won.
+   See <code>benchmarks/</code> and the docs' "Performance" page.</p>
+<p>Raising <code>target_accept</code> will not fix a ridge, and a clean divergence
+   count is not evidence that one is absent. Always check <code>arviz.summary</code>
+   for <code>r_hat</code> and <code>ess_bulk</code> too.</p>
 
 
             <details class="mkdocstrings-source">
@@ -3553,8 +3738,17 @@ if any remain.</p>
 <span class="normal"><a href="#__codelineno-0-578">578</a></span>
 <span class="normal"><a href="#__codelineno-0-579">579</a></span>
 <span class="normal"><a href="#__codelineno-0-580">580</a></span>
-<span class="normal"><a href="#__codelineno-0-581">581</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-541" name="__codelineno-0-541"></a><span class="k">def</span><span class="w"> </span><span class="nf">fit_multilevel</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">MultilevelData</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">MultilevelConfig</span><span class="p">,</span>
-<a id="__codelineno-0-542" name="__codelineno-0-542"></a>                   <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;diag&quot;</span><span class="p">,</span>
+<span class="normal"><a href="#__codelineno-0-581">581</a></span>
+<span class="normal"><a href="#__codelineno-0-582">582</a></span>
+<span class="normal"><a href="#__codelineno-0-583">583</a></span>
+<span class="normal"><a href="#__codelineno-0-584">584</a></span>
+<span class="normal"><a href="#__codelineno-0-585">585</a></span>
+<span class="normal"><a href="#__codelineno-0-586">586</a></span>
+<span class="normal"><a href="#__codelineno-0-587">587</a></span>
+<span class="normal"><a href="#__codelineno-0-588">588</a></span>
+<span class="normal"><a href="#__codelineno-0-589">589</a></span>
+<span class="normal"><a href="#__codelineno-0-590">590</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-541" name="__codelineno-0-541"></a><span class="k">def</span><span class="w"> </span><span class="nf">fit_multilevel</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">MultilevelData</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">MultilevelConfig</span><span class="p">,</span>
+<a id="__codelineno-0-542" name="__codelineno-0-542"></a>                   <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;low_rank&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-543" name="__codelineno-0-543"></a>                   <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;numba&quot;</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">target_accept</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <a id="__codelineno-0-544" name="__codelineno-0-544"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit the multi-region renewal model with nutpie (NUTS / MCMC).</span>
 <a id="__codelineno-0-545" name="__codelineno-0-545"></a>
@@ -3572,28 +3766,37 @@ if any remain.</p>
 <a id="__codelineno-0-557" name="__codelineno-0-557"></a><span class="sd">    full 11-country example. A divergence check is run after sampling and warns</span>
 <a id="__codelineno-0-558" name="__codelineno-0-558"></a><span class="sd">    if any remain.</span>
 <a id="__codelineno-0-559" name="__codelineno-0-559"></a>
-<a id="__codelineno-0-560" name="__codelineno-0-560"></a><span class="sd">    .. note:: **If your covariates are correlated, use ``adaptation=&quot;low_rank&quot;``.**</span>
-<a id="__codelineno-0-561" name="__codelineno-0-561"></a>
-<a id="__codelineno-0-562" name="__codelineno-0-562"></a><span class="sd">       Divergences and ``r_hat`` are *different* failures with different cures,</span>
-<a id="__codelineno-0-563" name="__codelineno-0-563"></a><span class="sd">       and this model can hit both. Collinear covariates (NPIs enacted within</span>
-<a id="__codelineno-0-564" name="__codelineno-0-564"></a><span class="sd">       days of each other, say) give a posterior with a long thin correlation</span>
-<a id="__codelineno-0-565" name="__codelineno-0-565"></a><span class="sd">       ridge that the default diagonal mass matrix cannot follow: the sampler</span>
-<a id="__codelineno-0-566" name="__codelineno-0-566"></a><span class="sd">       does not diverge, it simply fails to mix. On the 11-country example that</span>
-<a id="__codelineno-0-567" name="__codelineno-0-567"></a><span class="sd">       shows up as ``r_hat`` 1.08-1.11 and an effective sample size of 25-36 out</span>
-<a id="__codelineno-0-568" name="__codelineno-0-568"></a><span class="sd">       of 4000 for the collinear coefficients -- and their estimates are biased</span>
-<a id="__codelineno-0-569" name="__codelineno-0-569"></a><span class="sd">       as a result. ``adaptation=&quot;low_rank&quot;`` fits a low-rank correction to the</span>
-<a id="__codelineno-0-570" name="__codelineno-0-570"></a><span class="sd">       mass matrix and brings every ``r_hat`` to &lt;= 1.04.</span>
-<a id="__codelineno-0-571" name="__codelineno-0-571"></a>
-<a id="__codelineno-0-572" name="__codelineno-0-572"></a><span class="sd">       Raising ``target_accept`` will not fix this, and a clean divergence count</span>
-<a id="__codelineno-0-573" name="__codelineno-0-573"></a><span class="sd">       is not evidence that it is absent. Always check ``arviz.summary`` for</span>
-<a id="__codelineno-0-574" name="__codelineno-0-574"></a><span class="sd">       ``r_hat`` and ``ess_bulk`` too.</span>
-<a id="__codelineno-0-575" name="__codelineno-0-575"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-576" name="__codelineno-0-576"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">build_multilevel_model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
-<a id="__codelineno-0-577" name="__codelineno-0-577"></a>    <span class="n">idata</span> <span class="o">=</span> <span class="n">_compile</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">draws</span><span class="o">=</span><span class="n">draws</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="n">tune</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="n">chains</span><span class="p">,</span>
-<a id="__codelineno-0-578" name="__codelineno-0-578"></a>                     <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">adaptation</span><span class="o">=</span><span class="n">adaptation</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="n">progress_bar</span><span class="p">,</span>
-<a id="__codelineno-0-579" name="__codelineno-0-579"></a>                     <span class="n">target_accept</span><span class="o">=</span><span class="n">target_accept</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-<a id="__codelineno-0-580" name="__codelineno-0-580"></a>    <span class="n">_warn_on_divergences</span><span class="p">(</span><span class="n">idata</span><span class="p">)</span>
-<a id="__codelineno-0-581" name="__codelineno-0-581"></a>    <span class="k">return</span> <span class="n">idata</span>
+<a id="__codelineno-0-560" name="__codelineno-0-560"></a><span class="sd">    ``adaptation`` defaults to ``&quot;low_rank&quot;`` rather than nutpie&#39;s ``&quot;diag&quot;``,</span>
+<a id="__codelineno-0-561" name="__codelineno-0-561"></a><span class="sd">    for the reason below.</span>
+<a id="__codelineno-0-562" name="__codelineno-0-562"></a>
+<a id="__codelineno-0-563" name="__codelineno-0-563"></a><span class="sd">    .. note:: **Why the mass-matrix default differs from nutpie&#39;s.**</span>
+<a id="__codelineno-0-564" name="__codelineno-0-564"></a>
+<a id="__codelineno-0-565" name="__codelineno-0-565"></a><span class="sd">       Divergences and ``r_hat`` are *different* failures with different cures,</span>
+<a id="__codelineno-0-566" name="__codelineno-0-566"></a><span class="sd">       and this model can hit both. Collinear covariates (NPIs enacted within</span>
+<a id="__codelineno-0-567" name="__codelineno-0-567"></a><span class="sd">       days of each other, say) give a posterior with a long thin correlation</span>
+<a id="__codelineno-0-568" name="__codelineno-0-568"></a><span class="sd">       ridge that a diagonal mass matrix cannot follow: the sampler does not</span>
+<a id="__codelineno-0-569" name="__codelineno-0-569"></a><span class="sd">       diverge, it simply fails to mix. On the 11-country example ``&quot;diag&quot;``</span>
+<a id="__codelineno-0-570" name="__codelineno-0-570"></a><span class="sd">       shows up as ``r_hat`` 1.08-1.11 and an effective sample size of 25-36 out</span>
+<a id="__codelineno-0-571" name="__codelineno-0-571"></a><span class="sd">       of 4000 for the collinear coefficients -- and their estimates are biased</span>
+<a id="__codelineno-0-572" name="__codelineno-0-572"></a><span class="sd">       as a result. ``&quot;low_rank&quot;`` fits a low-rank correction and brings every</span>
+<a id="__codelineno-0-573" name="__codelineno-0-573"></a><span class="sd">       ``r_hat`` to &lt;= 1.04.</span>
+<a id="__codelineno-0-574" name="__codelineno-0-574"></a>
+<a id="__codelineno-0-575" name="__codelineno-0-575"></a><span class="sd">       Benchmarked, it is faster too, so this is not a speed/accuracy trade:</span>
+<a id="__codelineno-0-576" name="__codelineno-0-576"></a><span class="sd">       against ``&quot;diag&quot;`` it gave 1.3x the wall-clock speed and 4.6x the</span>
+<a id="__codelineno-0-577" name="__codelineno-0-577"></a><span class="sd">       effective samples per second on the 11-country model, and 4.7x / 6.3x on</span>
+<a id="__codelineno-0-578" name="__codelineno-0-578"></a><span class="sd">       a small single-population one. No case was found where ``&quot;diag&quot;`` won.</span>
+<a id="__codelineno-0-579" name="__codelineno-0-579"></a><span class="sd">       See ``benchmarks/`` and the docs&#39; &quot;Performance&quot; page.</span>
+<a id="__codelineno-0-580" name="__codelineno-0-580"></a>
+<a id="__codelineno-0-581" name="__codelineno-0-581"></a><span class="sd">       Raising ``target_accept`` will not fix a ridge, and a clean divergence</span>
+<a id="__codelineno-0-582" name="__codelineno-0-582"></a><span class="sd">       count is not evidence that one is absent. Always check ``arviz.summary``</span>
+<a id="__codelineno-0-583" name="__codelineno-0-583"></a><span class="sd">       for ``r_hat`` and ``ess_bulk`` too.</span>
+<a id="__codelineno-0-584" name="__codelineno-0-584"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-585" name="__codelineno-0-585"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">build_multilevel_model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+<a id="__codelineno-0-586" name="__codelineno-0-586"></a>    <span class="n">idata</span> <span class="o">=</span> <span class="n">_compile</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">draws</span><span class="o">=</span><span class="n">draws</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="n">tune</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="n">chains</span><span class="p">,</span>
+<a id="__codelineno-0-587" name="__codelineno-0-587"></a>                     <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">adaptation</span><span class="o">=</span><span class="n">adaptation</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="n">progress_bar</span><span class="p">,</span>
+<a id="__codelineno-0-588" name="__codelineno-0-588"></a>                     <span class="n">target_accept</span><span class="o">=</span><span class="n">target_accept</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="__codelineno-0-589" name="__codelineno-0-589"></a>    <span class="n">_warn_on_divergences</span><span class="p">(</span><span class="n">idata</span><span class="p">)</span>
+<a id="__codelineno-0-590" name="__codelineno-0-590"></a>    <span class="k">return</span> <span class="n">idata</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

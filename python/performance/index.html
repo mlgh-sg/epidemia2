@@ -315,9 +315,25 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../tutorials/" class="md-nav__link">
+    
+    
+    
+    
+      
         
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
   
   
   <span class="md-ellipsis">
@@ -331,7 +347,135 @@
   
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/europe-covid/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessing the effects of interventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/partial-pooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Partial pooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/multilevel-multi-obs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Several observation series
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -445,6 +589,17 @@
     <span class="md-ellipsis">
       
         The number that matters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#this-is-now-the-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        This is now the default
       
     </span>
   </a>
@@ -572,6 +727,17 @@
     <span class="md-ellipsis">
       
         The number that matters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#this-is-now-the-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        This is now the default
       
     </span>
   </a>
@@ -718,6 +884,42 @@ explored badly has not saved you anything. The comparison worth making is
 <p>4 chains x (500 tune + 500 draws), seed 12345. Model: Europe/COVID multilevel, 11 countries, 5 NPIs, deaths.</p>
 <p>Run on arm, 10 cores, macOS-26.5.2-arm64-arm-64bit. Python 3.12.9; pymc 5.28.5, nutpie 0.16.11, numba 0.66.0, numpy 2.4.6, pytensor 2.38.2, arviz 0.23.4</p>
 <p>min ESS is the smallest bulk effective sample size across the five NPI effects; ESS/s divides it by sampling wall-clock. Compile time is excluded from ESS/s because Stan caches its executable across runs while nutpie re-compiles each time.</p>
+<h2 id="this-is-now-the-default">This is now the default<a class="headerlink" href="#this-is-now-the-default" title="Permanent link">&para;</a></h2>
+<p>Because it wins everywhere we measured, <code>adaptation="low_rank"</code> is what
+<code>fit</code>, <code>fit_multilevel</code> and <code>fit_epidemia</code> use — deliberately departing from
+nutpie's own <code>"diag"</code> default. The small single-population flu model shows the
+same pattern even more starkly than the eleven-country one, so there is no easy
+case in which the diagonal metric is the better choice:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align: right;"><code>diag</code></th>
+<th style="text-align: right;"><code>low_rank</code></th>
+<th style="text-align: right;">speed-up</th>
+<th style="text-align: right;">ESS/s gain</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Flu, 1 population, 92 days</td>
+<td style="text-align: right;">130.2s ±3.1</td>
+<td style="text-align: right;"><strong>27.9s ±2.9</strong></td>
+<td style="text-align: right;">4.7×</td>
+<td style="text-align: right;">6.3×</td>
+</tr>
+<tr>
+<td>Europe COVID, 11 regions</td>
+<td style="text-align: right;">963s</td>
+<td style="text-align: right;"><strong>752s</strong></td>
+<td style="text-align: right;">1.3×</td>
+<td style="text-align: right;">4.6×</td>
+</tr>
+</tbody>
+</table>
+<p>(Three seeds each on the small model; min bulk ESS was also higher for
+<code>low_rank</code> in both cases.)</p>
+<p>Pass <code>adaptation="diag"</code> explicitly if you want the old behaviour.</p>
 <h2 id="why-low_rank-matters-so-much-here">Why <code>low_rank</code> matters so much here<a class="headerlink" href="#why-low_rank-matters-so-much-here" title="Permanent link">&para;</a></h2>
 <p>The five NPIs were enacted within days of each other across most of these
 countries — Germany banned public events on the same day it locked down. Their

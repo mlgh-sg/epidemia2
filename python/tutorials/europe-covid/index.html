@@ -1,0 +1,2220 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Bayesian semi-mechanistic renewal-process modelling of infectious diseases, in PyMC + nutpie.">
+      
+      
+      
+        <link rel="canonical" href="https://mlgh-sg.com/epidemia2/python/tutorials/europe-covid/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../partial-pooling/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Assessing the effects of interventions - epidemia (Python)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#assessing-the-effects-of-interventions-on-covid-19" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="epidemia (Python)" class="md-header__button md-logo" aria-label="epidemia (Python)" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            epidemia (Python)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Assessing the effects of interventions
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mlgh-sg/epidemia2" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    mlgh-sg/epidemia2
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="epidemia (Python)" class="md-nav__button md-logo" aria-label="epidemia (Python)" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    epidemia (Python)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mlgh-sg/epidemia2" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    mlgh-sg/epidemia2
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessing the effects of interventions
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessing the effects of interventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#transmission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transmission
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#infections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Infections
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-fitting-mcmc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model fitting (MCMC)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#posterior-predictive-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Posterior predictive checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproduction-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproduction numbers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#effect-sizes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Effect sizes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Effect sizes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#collinearity-what-is-identified" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Collinearity: what is identified
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-per-country-lockdown-effect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The per-country lockdown effect
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#effect-sizes-as-a-percent-reduction-in-transmission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Effect sizes as a percent reduction in transmission
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forecasting-and-counterfactuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forecasting and counterfactuals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Forecasting and counterfactuals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../partial-pooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Partial pooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multilevel-multi-obs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Several observation series
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parity with R
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#transmission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transmission
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#infections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Infections
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-fitting-mcmc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model fitting (MCMC)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#posterior-predictive-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Posterior predictive checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproduction-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproduction numbers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#effect-sizes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Effect sizes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Effect sizes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#collinearity-what-is-identified" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Collinearity: what is identified
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-per-country-lockdown-effect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The per-country lockdown effect
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#effect-sizes-as-a-percent-reduction-in-transmission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Effect sizes as a percent reduction in transmission
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forecasting-and-counterfactuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forecasting and counterfactuals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Forecasting and counterfactuals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="assessing-the-effects-of-interventions-on-covid-19">Assessing the Effects of Interventions on COVID-19<a class="headerlink" href="#assessing-the-effects-of-interventions-on-covid-19" title="Permanent link">&para;</a></h1>
+<p>This is the Python counterpart of the R vignette
+<a href="https://mlgh-sg.com/epidemia2/articles/europe-covid.html"><code>europe-covid</code></a>
+(<em>Multilevel Modeling</em>). It is a <strong>jupytext</strong> notebook stored as a plain
+<code>.py</code> file (percent format): open it directly in Jupyter/VS Code, or pair it
+with an <code>.ipynb</code> via <code>jupytext --sync</code>.</p>
+<p>We use a <strong>hierarchical (partially pooled)</strong> model to estimate the effect of
+non-pharmaceutical interventions (NPIs) on the transmissibility of COVID-19,
+following Flaxman et al. (2020): the effect of five measures enacted in March
+2020 across 11 European countries, fit to daily death data.</p>
+<blockquote>
+<p><strong>Estimation with MCMC, not Variational Bayes.</strong> The R vignette fits this
+model with Variational Bayes (<code>algorithm = "fullrank"</code>) for speed, and notes
+that VB <em>understates</em> uncertainty ("relatively narrow intervals ... an
+artifact of using Variational Bayes"). Here we instead run <strong>full MCMC</strong>
+(NUTS, via <a href="https://github.com/pymc-devs/nutpie">nutpie</a>), so the credible
+intervals are the genuine posterior ones.</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">arviz</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">az</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">plotnine</span><span class="w"> </span><span class="kn">import</span> <span class="n">aes</span><span class="p">,</span> <span class="n">geom_col</span><span class="p">,</span> <span class="n">geom_line</span><span class="p">,</span> <span class="n">geom_ribbon</span><span class="p">,</span> <span class="n">geom_vline</span><span class="p">,</span> <span class="n">ggplot</span><span class="p">,</span> <span class="n">labs</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">import</span><span class="w"> </span><span class="nn">epidemia</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">epi</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">epidemia.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_plot</span><span class="p">,</span> <span class="n">theme_epidemia</span>
+</code></pre></div>
+<h2 id="data">Data<a class="headerlink" href="#data" title="Permanent link">&para;</a></h2>
+<p><code>epi.europe_covid2()</code> returns the <code>EuropeCovid2</code> dataset (the same data as the
+R package): daily cases and deaths and the five binary NPI indicators for 11
+countries, up to 1 July 2020, plus the serial interval (<code>si</code>) and the
+infection-to-death delay (<code>inf2death</code>).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">ec</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">europe_covid2</span><span class="p">()</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">data</span> <span class="o">=</span> <span class="n">ec</span><span class="o">.</span><span class="n">data</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nb">print</span><span class="p">(</span><span class="n">epi</span><span class="o">.</span><span class="n">EUROPE_COVID_NPIS</span><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[&#39;schools_universities&#39;, &#39;self_isolating_if_ill&#39;, &#39;public_events&#39;, &#39;social_distancing_encouraged&#39;, &#39;lockdown&#39;]
+</code></pre></div>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>id</th>
+      <th>country</th>
+      <th>date</th>
+      <th>cases</th>
+      <th>deaths</th>
+      <th>schools_universities</th>
+      <th>self_isolating_if_ill</th>
+      <th>public_events</th>
+      <th>lockdown</th>
+      <th>social_distancing_encouraged</th>
+      <th>pop</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>AT</td>
+      <td>Austria</td>
+      <td>2020-01-03</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>AT</td>
+      <td>Austria</td>
+      <td>2020-01-04</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>AT</td>
+      <td>Austria</td>
+      <td>2020-01-05</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>AT</td>
+      <td>Austria</td>
+      <td>2020-01-06</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>AT</td>
+      <td>Austria</td>
+      <td>2020-01-07</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>As in the R vignette, seeding for each country begins 30 days before cumulative
+deaths first exceed 10, and — to demonstrate forecasting later — we fit only up
+to the 5th of May 2020, holding out the rest. <code>epi.prepare_panel</code> performs this
+per-country filtering and returns padded, model-ready arrays.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">fit</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">prepare_panel</span><span class="p">(</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">data</span><span class="p">,</span> <span class="n">epi</span><span class="o">.</span><span class="n">EUROPE_COVID_NPIS</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">seed_offset</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">death_threshold</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">fit_until</span><span class="o">=</span><span class="s2">&quot;2020-05-05&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">start_end</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="s2">&quot;country&quot;</span><span class="p">:</span> <span class="n">fit</span><span class="o">.</span><span class="n">regions</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">fit</span><span class="o">.</span><span class="n">dates</span><span class="p">],</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">fit</span><span class="o">.</span><span class="n">dates</span><span class="p">],</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="s2">&quot;days&quot;</span><span class="p">:</span> <span class="n">fit</span><span class="o">.</span><span class="n">lengths</span><span class="p">,</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">})</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">start_end</span>
+</code></pre></div>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>country</th>
+      <th>start</th>
+      <th>end</th>
+      <th>days</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Austria</td>
+      <td>2020-02-23</td>
+      <td>2020-05-04</td>
+      <td>72</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Belgium</td>
+      <td>2020-02-15</td>
+      <td>2020-05-04</td>
+      <td>80</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Denmark</td>
+      <td>2020-02-22</td>
+      <td>2020-05-04</td>
+      <td>73</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>France</td>
+      <td>2020-02-09</td>
+      <td>2020-05-04</td>
+      <td>86</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Germany</td>
+      <td>2020-02-16</td>
+      <td>2020-05-04</td>
+      <td>79</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>Italy</td>
+      <td>2020-01-28</td>
+      <td>2020-05-04</td>
+      <td>98</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>Norway</td>
+      <td>2020-02-26</td>
+      <td>2020-05-04</td>
+      <td>69</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>Spain</td>
+      <td>2020-02-09</td>
+      <td>2020-05-04</td>
+      <td>86</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>Sweden</td>
+      <td>2020-02-20</td>
+      <td>2020-05-04</td>
+      <td>75</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>Switzerland</td>
+      <td>2020-02-12</td>
+      <td>2020-05-04</td>
+      <td>83</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>United_Kingdom</td>
+      <td>2020-02-15</td>
+      <td>2020-05-04</td>
+      <td>80</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="model-components">Model components<a class="headerlink" href="#model-components" title="Permanent link">&para;</a></h3>
+<p>As in <code>epidemia</code>, the model has three components: <strong>transmission</strong>,
+<strong>infections</strong>, and <strong>observations</strong>.</p>
+<h4 id="transmission">Transmission<a class="headerlink" href="#transmission" title="Permanent link">&para;</a></h4>
+<p>Country-specific reproduction numbers are a step function of the five NPIs:</p>
+<p>$$ R^{(m)}<em k="1">t = 6.5 \cdot \mathrm{sigmoid}!\Big(b^{(m)}_0 + \sum</em>}^{5}\big(\beta_k + b^{(m)<em k_t="k,t">k\big) I^{(m)}</em>\Big). $$</p>
+<ul>
+<li>$\beta_k$ are <strong>fixed</strong> (global) NPI effects with a <em>shifted Gamma</em> prior,
+  $\beta_k = \tfrac{\log 1.05}{6} - g_k$, $g_k \sim \mathrm{Gamma}(1/6, 1)$ —
+  this makes a measure <em>a priori</em> reduce transmission (with a small allowance
+  to increase it), matching <code>shifted_gamma(shape = 1/6, scale = 1, shift = log(1.05)/6)</code>.</li>
+<li>$b^{(m)}_0, b^{(m)}_k$ are <strong>partially pooled</strong> country effects,
+  $b^{(m)}_0 \sim N(0, \sigma_0)$ and $b^{(m)}_k \sim N(0, \sigma_k)$, with
+  $\sigma_0 \sim \mathrm{Gamma}(2, 0.25)$ and $\sigma_k \sim \mathrm{Gamma}(0.5, 0.25)$.
+  This is the <code>(1 + npis || country)</code> term with the <code>decov</code> covariance prior.</li>
+<li>The link <code>scaled_logit(6.5)</code> keeps $R$ in $(0, 6.5)$ with midpoint $3.25$.</li>
+</ul>
+<h4 id="infections">Infections<a class="headerlink" href="#infections" title="Permanent link">&para;</a></h4>
+<p>Basic (deterministic) renewal dynamics: infections are seeded over 6 days and
+propagated by the generation kernel <code>ec.si</code>. The seeds are themselves
+<strong>partially pooled</strong> through a shared mean,
+$\tau \sim \mathrm{Exp}(0.03)$ and $i^{(m)} \mid \tau \sim \mathrm{Exp}(\tau)$
+— R's <code>prior_seeds = hexp(prior_aux = exponential(0.03))</code> — so a country with
+little early death data borrows epidemic-size information from the others.</p>
+<p>Both kernels are <strong>lag-1-first</strong>: <code>ec.si[0]</code> weights infections one day back,
+<code>ec.inf2death[0]</code> weights infections one day before the death. An infection is
+never observed on the day it happens, matching R's Stan (which sums over
+<code>infections[start .. t-1]</code> for both), so the vectors from the R data objects
+drop in unchanged.</p>
+<h4 id="observations">Observations<a class="headerlink" href="#observations" title="Permanent link">&para;</a></h4>
+<p>Deaths are modelled with a constant infection-fatality ratio (IFR),
+$\mathrm{IFR} = 0.02 \cdot \mathrm{sigmoid}(\alpha)$, $\alpha \sim N(0, 0.2)$
+(a prior mean IFR of $1\%$), convolved with <code>ec.inf2death</code>, and a
+negative-binomial likelihood whose reciprocal dispersion is
+$10 + 5\cdot\mathrm{HalfNormal}(1)$ — R's <code>epiobs</code> default
+<code>prior_aux = normal(location = 10, scale = 5)</code>.</p>
+<p>All of this is captured by <code>MultilevelConfig</code>, whose defaults already match
+the priors and links above.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">config</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">MultilevelConfig</span><span class="p">(</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">gen</span><span class="o">=</span><span class="n">ec</span><span class="o">.</span><span class="n">si</span><span class="p">,</span>            <span class="c1"># generation kernel (serial interval)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">i2o</span><span class="o">=</span><span class="n">ec</span><span class="o">.</span><span class="n">inf2death</span><span class="p">,</span>     <span class="c1"># infection-to-death delay</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">R_link_K</span><span class="o">=</span><span class="mf">6.5</span><span class="p">,</span>         <span class="c1"># scaled_logit(6.5) on R</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">ifr_link_K</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>      <span class="c1"># IFR in (0, 2%)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">seed_days</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="p">)</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">config</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>MultilevelConfig(gen=array([1.83261825e-02, 6.65923070e-02, 1.01913891e-01, 1.17716779e-01,
+       1.18385594e-01, 1.09634706e-01, 9.61232167e-02, 8.10548507e-02,
+       6.63831287e-02, 5.31489565e-02, 4.17894990e-02, 3.23750574e-02,
+       2.47742310e-02, 1.87612758e-02, 1.40813981e-02, 1.04874277e-02,
+       7.75805852e-03, 5.70485457e-03, 4.17284495e-03, 3.03779926e-03,
+       2.20207208e-03, 1.59010775e-03, 1.14418671e-03, 8.20682873e-04,
+       5.86918954e-04, 4.18607884e-04, 2.97819806e-04, 2.11396111e-04,
+       1.49730189e-04, 1.05841262e-04, 7.46778410e-05, 5.25983179e-05,
+       3.69864509e-05, 2.59685201e-05, 1.82064266e-05, 1.27470904e-05,
+       8.91331246e-06, 6.22499659e-06, 4.34249019e-06, 3.02596565e-06,
+       2.10638770e-06, 1.46481847e-06, 1.01770269e-06, 7.06429240e-07,
+       4.89942093e-07, 3.39520273e-07, 2.35096950e-07, 1.62668352e-07,
+       1.12472796e-07, 7.77128787e-08, 5.36601085e-08, 3.70283537e-08,
+       2.55359592e-08, 1.76000896e-08, 1.21236100e-08, 8.34665304e-09,
+       5.74334003e-09, 3.94999455e-09, 2.71528766e-09, 1.86564841e-09,
+       1.28128341e-09, 8.79566309e-10, 6.03539996e-10, 4.13964973e-10,
+       2.83822632e-10, 1.94518623e-10, 1.33263733e-10, 9.12647735e-11,
+       6.24800212e-11, 4.27590185e-11, 2.92530444e-11, 2.00064409e-11,
+       1.36783918e-11, 9.34896605e-12, 6.38800124e-12, 4.36350955e-12,
+       2.97972758e-12, 2.03426165e-12, 1.38844491e-12, 9.47464329e-13,
+       6.46260823e-13, 4.40758541e-13, 3.00426350e-13, 2.04947170e-13,
+       1.39555034e-13, 9.51461132e-14, 6.47260023e-14, 4.41868764e-14,
+       3.00870440e-14, 2.04281037e-14, 1.38777878e-14, 9.54791801e-15,
+       6.43929354e-15, 4.32986980e-15, 2.99760217e-15, 1.99840144e-15,
+       1.44328993e-15, 8.88178420e-16, 6.66133815e-16, 4.44089210e-16]), i2o=array([1.30000e-06, 4.25000e-05, 2.28600e-04, 7.81100e-04, 1.92840e-03,
+       3.80800e-03, 6.47090e-03, 9.94050e-03, 1.40458e-02, 1.86132e-02,
+       2.34308e-02, 2.81585e-02, 3.27993e-02, 3.67371e-02, 4.02502e-02,
+       4.31422e-02, 4.50086e-02, 4.63019e-02, 4.70288e-02, 4.66678e-02,
+       4.59662e-02, 4.44947e-02, 4.28173e-02, 4.08481e-02, 3.85647e-02,
+       3.59808e-02, 3.33518e-02, 3.08189e-02, 2.81390e-02, 2.55677e-02,
+       2.31206e-02, 2.07830e-02, 1.86044e-02, 1.65310e-02, 1.45487e-02,
+       1.30146e-02, 1.13813e-02, 9.92550e-03, 8.69520e-03, 7.53010e-03,
+       6.47090e-03, 5.63180e-03, 4.80890e-03, 4.18190e-03, 3.54210e-03,
+       3.04100e-03, 2.57290e-03, 2.21840e-03, 1.85340e-03, 1.56670e-03,
+       1.32030e-03, 1.11760e-03, 9.25000e-04, 7.99400e-04, 6.56500e-04,
+       5.65900e-04, 4.53000e-04, 3.80700e-04, 3.24500e-04, 2.61600e-04,
+       2.16500e-04, 1.82600e-04, 1.46600e-04, 1.17100e-04, 9.91000e-05,
+       7.94000e-05, 7.13000e-05, 5.87000e-05, 4.91000e-05, 4.04000e-05,
+       3.34000e-05, 2.72000e-05, 2.38000e-05, 1.57000e-05, 1.49000e-05,
+       1.18000e-05, 8.80000e-06, 8.30000e-06, 6.80000e-06, 5.20000e-06,
+       4.70000e-06, 2.40000e-06, 2.50000e-06, 3.00000e-06, 1.60000e-06,
+       1.10000e-06, 1.50000e-06, 1.30000e-06, 7.00000e-07, 5.00000e-07,
+       4.00000e-07, 1.00000e-07, 1.00000e-07, 4.00000e-07, 3.00000e-07,
+       3.00000e-07, 2.00000e-07, 2.00000e-07, 2.00000e-07, 1.00000e-07,
+       1.00000e-07]), R_link_K=6.5, ifr_link_K=0.02, beta_shape=0.16666666666666666, beta_scale=1.0, beta_shift=0.008131694028238675, sd_intercept_shape=2.0, sd_slope_shape=0.5, sd_scale=0.25, sd_slope_fixed=None, ifr_intercept_scale=0.2, seed_days=6, seed_pooling=True, seed_aux_rate=0.03, seed_prior_mean=30.0, dispersion_loc=10.0, dispersion_scale=5.0)
+</code></pre></div>
+<h2 id="model-fitting-mcmc">Model fitting (MCMC)<a class="headerlink" href="#model-fitting-mcmc" title="Permanent link">&para;</a></h2>
+<p>We fit with nutpie's NUTS sampler. For a quick pass use fewer draws; for
+publication-quality intervals increase <code>draws</code>/<code>tune</code> (e.g. 1000/1000) and use
+4 chains. This is genuine Hamiltonian Monte Carlo — <strong>not</strong> the Variational
+Bayes used in the R vignette.</p>
+<p><strong>This takes a while</strong> — roughly an hour for 11 countries at these settings, so
+the progress bar is on by default (the compile step is announced separately,
+since nutpie reports nothing during it and it is not fast either).</p>
+<p><code>target_accept</code> defaults to <strong>0.95</strong>, not nutpie's 0.8. The funnel geometry of
+a hierarchical model — the between-country SDs against the non-centred country
+effects — gives hundreds of divergences at 0.8 here. <code>fit_multilevel</code> warns if
+any survive; a divergent fit's intervals should not be quoted.</p>
+<p><strong><code>adaptation="low_rank"</code> matters for this model</strong>, and not for a cosmetic
+reason. The NPI coefficients are strongly correlated <em>in the posterior</em> (they
+are collinear in the data), which makes a long thin ridge that a diagonal mass
+matrix cannot follow. With the default <code>"diag"</code>, <code>beta[schools]</code> and
+<code>beta[social_distancing_encouraged]</code> come out at $\hat{R} \approx 1.08$–$1.11$
+with an effective sample size of <strong>25–36 out of 4000</strong> — not converged, and
+their point estimates are visibly <em>wrong</em> as a result (social distancing shifts
+from $-1.11$ to $-1.35$ once the sampler can actually traverse the ridge).
+<code>"low_rank"</code> estimates a low-rank correction to the mass matrix, which is
+exactly the right tool for a correlated posterior, and brings every
+$\hat{R} \le 1.04$.</p>
+<p>The lesson generalises: <strong>divergences and $\hat{R}$ are different failures</strong>.
+Raising <code>target_accept</code> fixes the funnel; only a better mass matrix fixes the
+ridge. Check both.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">idata</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">fit_multilevel</span><span class="p">(</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">fit</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">12345</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;low_rank&quot;</span><span class="p">,</span> <span class="n">target_accept</span><span class="o">=</span><span class="mf">0.99</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">)</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;divergences:&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">idata</span><span class="o">.</span><span class="n">sample_stats</span><span class="p">[</span><span class="s2">&quot;diverging&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()))</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">az</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;sd&quot;</span><span class="p">,</span> <span class="s2">&quot;ifr&quot;</span><span class="p">,</span> <span class="s2">&quot;reciprocal_dispersion&quot;</span><span class="p">,</span> <span class="s2">&quot;seed_tau&quot;</span><span class="p">])</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[epidemia] compiling the log-density (numba backend)...
+
+done in 20.7s
+
+
+[epidemia] sampling 4 chains x (2000 tune + 1000 draws)
+</code></pre></div>
+<style>
+    :root {
+        --column-width-1: 40%; /* Progress column width */
+        --column-width-2: 15%; /* Chain column width */
+        --column-width-3: 15%; /* Divergences column width */
+        --column-width-4: 15%; /* Step Size column width */
+        --column-width-5: 15%; /* Gradients/Draw column width */
+    }
+
+    .nutpie {
+        max-width: 800px;
+        margin: 10px auto;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        //color: #333;
+        //background-color: #fff;
+        padding: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        font-size: 14px; /* Smaller font size for a more compact look */
+    }
+    .nutpie table {
+        width: 100%;
+        border-collapse: collapse; /* Remove any extra space between borders */
+    }
+    .nutpie th, .nutpie td {
+        padding: 8px 10px; /* Reduce padding to make table more compact */
+        text-align: left;
+        border-bottom: 1px solid #888;
+    }
+    .nutpie th {
+        //background-color: #f0f0f0;
+    }
+
+    .nutpie th:nth-child(1) { width: var(--column-width-1); }
+    .nutpie th:nth-child(2) { width: var(--column-width-2); }
+    .nutpie th:nth-child(3) { width: var(--column-width-3); }
+    .nutpie th:nth-child(4) { width: var(--column-width-4); }
+    .nutpie th:nth-child(5) { width: var(--column-width-5); }
+
+    .nutpie progress {
+        width: 100%;
+        height: 15px; /* Smaller progress bars */
+        border-radius: 5px;
+    }
+    progress::-webkit-progress-bar {
+        background-color: #eee;
+        border-radius: 5px;
+    }
+    progress::-webkit-progress-value {
+        background-color: #5cb85c;
+        border-radius: 5px;
+    }
+    progress::-moz-progress-bar {
+        background-color: #5cb85c;
+        border-radius: 5px;
+    }
+    .nutpie .progress-cell {
+        width: 100%;
+    }
+
+    .nutpie p strong { font-size: 16px; font-weight: bold; }
+
+    @media (prefers-color-scheme: dark) {
+        .nutpie {
+            //color: #ddd;
+            //background-color: #1e1e1e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .nutpie table, .nutpie th, .nutpie td {
+            border-color: #555;
+            color: #ccc;
+        }
+        .nutpie th {
+            background-color: #2a2a2a;
+        }
+        .nutpie progress::-webkit-progress-bar {
+            background-color: #444;
+        }
+        .nutpie progress::-webkit-progress-value {
+            background-color: #3178c6;
+        }
+        .nutpie progress::-moz-progress-bar {
+            background-color: #3178c6;
+        }
+    }
+</style>
+
+<div class="nutpie">
+    <p><strong>Sampler Progress</strong></p>
+    <p>Total Chains: <span id="total-chains">4</span></p>
+    <p>Active Chains: <span id="active-chains">0</span></p>
+    <p>
+        Finished Chains:
+        <span id="active-chains">4</span>
+    </p>
+    <p>Sampling for an hour</p>
+    <p>
+        Estimated Time to Completion:
+        <span id="eta">now</span>
+    </p>
+
+    <progress
+        id="total-progress-bar"
+        max="12000"
+        value="12000">
+    </progress>
+    <table>
+        <thead>
+            <tr>
+                <th>Progress</th>
+                <th>Draws</th>
+                <th>Divergences</th>
+                <th>Step Size</th>
+                <th>Gradients/Draw</th>
+            </tr>
+        </thead>
+        <tbody id="chain-details">
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="3000"
+                            value="3000">
+                        </progress>
+                    </td>
+                    <td>3000</td>
+                    <td>0</td>
+                    <td>0.02</td>
+                    <td>1023</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="3000"
+                            value="3000">
+                        </progress>
+                    </td>
+                    <td>3000</td>
+                    <td>0</td>
+                    <td>0.01</td>
+                    <td>1023</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="3000"
+                            value="3000">
+                        </progress>
+                    </td>
+                    <td>3000</td>
+                    <td>0</td>
+                    <td>0.01</td>
+                    <td>1023</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="3000"
+                            value="3000">
+                        </progress>
+                    </td>
+                    <td>3000</td>
+                    <td>0</td>
+                    <td>0.01</td>
+                    <td>1023</td>
+                </tr>
+
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="highlight"><pre><span></span><code>[epidemia] sampled in 2989.4s
+
+
+divergences: 0
+</code></pre></div>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>mean</th>
+      <th>sd</th>
+      <th>hdi_3%</th>
+      <th>hdi_97%</th>
+      <th>mcse_mean</th>
+      <th>mcse_sd</th>
+      <th>ess_bulk</th>
+      <th>ess_tail</th>
+      <th>r_hat</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>beta[schools_universities]</th>
+      <td>-0.237</td>
+      <td>0.393</td>
+      <td>-1.067</td>
+      <td>0.008</td>
+      <td>0.033</td>
+      <td>0.029</td>
+      <td>50.0</td>
+      <td>131.0</td>
+      <td>1.07</td>
+    </tr>
+    <tr>
+      <th>beta[self_isolating_if_ill]</th>
+      <td>-0.174</td>
+      <td>0.288</td>
+      <td>-0.763</td>
+      <td>0.008</td>
+      <td>0.016</td>
+      <td>0.015</td>
+      <td>95.0</td>
+      <td>108.0</td>
+      <td>1.04</td>
+    </tr>
+    <tr>
+      <th>beta[public_events]</th>
+      <td>-0.124</td>
+      <td>0.235</td>
+      <td>-0.625</td>
+      <td>0.008</td>
+      <td>0.013</td>
+      <td>0.017</td>
+      <td>314.0</td>
+      <td>238.0</td>
+      <td>1.01</td>
+    </tr>
+    <tr>
+      <th>beta[social_distancing_encouraged]</th>
+      <td>-1.278</td>
+      <td>0.518</td>
+      <td>-1.989</td>
+      <td>0.008</td>
+      <td>0.040</td>
+      <td>0.032</td>
+      <td>200.0</td>
+      <td>98.0</td>
+      <td>1.02</td>
+    </tr>
+    <tr>
+      <th>beta[lockdown]</th>
+      <td>-1.771</td>
+      <td>0.436</td>
+      <td>-2.597</td>
+      <td>-0.966</td>
+      <td>0.013</td>
+      <td>0.012</td>
+      <td>1111.0</td>
+      <td>845.0</td>
+      <td>1.00</td>
+    </tr>
+    <tr>
+      <th>sd[0]</th>
+      <td>1.434</td>
+      <td>0.302</td>
+      <td>0.937</td>
+      <td>2.041</td>
+      <td>0.008</td>
+      <td>0.005</td>
+      <td>1329.0</td>
+      <td>2150.0</td>
+      <td>1.00</td>
+    </tr>
+    <tr>
+      <th>sd[1]</th>
+      <td>0.650</td>
+      <td>0.320</td>
+      <td>0.000</td>
+      <td>1.144</td>
+      <td>0.021</td>
+      <td>0.010</td>
+      <td>200.0</td>
+      <td>179.0</td>
+      <td>1.02</td>
+    </tr>
+    <tr>
+      <th>sd[2]</th>
+      <td>0.124</td>
+      <td>0.165</td>
+      <td>0.000</td>
+      <td>0.435</td>
+      <td>0.007</td>
+      <td>0.011</td>
+      <td>483.0</td>
+      <td>470.0</td>
+      <td>1.01</td>
+    </tr>
+    <tr>
+      <th>sd[3]</th>
+      <td>0.674</td>
+      <td>0.250</td>
+      <td>0.224</td>
+      <td>1.167</td>
+      <td>0.011</td>
+      <td>0.008</td>
+      <td>453.0</td>
+      <td>322.0</td>
+      <td>1.01</td>
+    </tr>
+    <tr>
+      <th>sd[4]</th>
+      <td>0.244</td>
+      <td>0.266</td>
+      <td>0.000</td>
+      <td>0.759</td>
+      <td>0.018</td>
+      <td>0.014</td>
+      <td>244.0</td>
+      <td>417.0</td>
+      <td>1.01</td>
+    </tr>
+    <tr>
+      <th>sd[5]</th>
+      <td>0.926</td>
+      <td>0.260</td>
+      <td>0.466</td>
+      <td>1.424</td>
+      <td>0.007</td>
+      <td>0.005</td>
+      <td>1324.0</td>
+      <td>1350.0</td>
+      <td>1.00</td>
+    </tr>
+    <tr>
+      <th>ifr</th>
+      <td>0.010</td>
+      <td>0.001</td>
+      <td>0.008</td>
+      <td>0.012</td>
+      <td>0.000</td>
+      <td>0.000</td>
+      <td>4085.0</td>
+      <td>3519.0</td>
+      <td>1.00</td>
+    </tr>
+    <tr>
+      <th>reciprocal_dispersion</th>
+      <td>15.382</td>
+      <td>1.239</td>
+      <td>13.206</td>
+      <td>17.732</td>
+      <td>0.021</td>
+      <td>0.020</td>
+      <td>3368.0</td>
+      <td>2617.0</td>
+      <td>1.00</td>
+    </tr>
+    <tr>
+      <th>seed_tau</th>
+      <td>26.011</td>
+      <td>9.754</td>
+      <td>10.326</td>
+      <td>42.984</td>
+      <td>0.169</td>
+      <td>0.228</td>
+      <td>3656.0</td>
+      <td>3082.0</td>
+      <td>1.00</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Check the diagnostics before reading anything off this fit — <code>r_hat</code> should be
+$\le 1.01$ and <code>ess_bulk</code> in the hundreds at least. If <code>beta[...]</code> rows have a
+poor <code>r_hat</code>, the effect estimates below are not trustworthy no matter how
+reasonable they look.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">summ</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="s2">&quot;sd&quot;</span><span class="p">])</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">bad</span> <span class="o">=</span> <span class="n">summ</span><span class="p">[(</span><span class="n">summ</span><span class="p">[</span><span class="s2">&quot;r_hat&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1.01</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">summ</span><span class="p">[</span><span class="s2">&quot;ess_bulk&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">400</span><span class="p">)]</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad</span><span class="p">):</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOT CONVERGED — do not quote these:&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">bad</span><span class="p">[[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;ess_bulk&quot;</span><span class="p">,</span> <span class="s2">&quot;r_hat&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;all clear: max r_hat = </span><span class="si">{</span><span class="n">summ</span><span class="p">[</span><span class="s1">&#39;r_hat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, &quot;</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>          <span class="sa">f</span><span class="s2">&quot;min ess_bulk = </span><span class="si">{</span><span class="n">summ</span><span class="p">[</span><span class="s1">&#39;ess_bulk&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>NOT CONVERGED — do not quote these:
+                                     mean  ess_bulk  r_hat
+beta[schools_universities]         -0.237      50.0   1.07
+beta[self_isolating_if_ill]        -0.174      95.0   1.04
+beta[public_events]                -0.124     314.0   1.01
+beta[social_distancing_encouraged] -1.278     200.0   1.02
+sd[1]                               0.650     200.0   1.02
+sd[4]                               0.244     244.0   1.01
+</code></pre></div>
+<h2 id="posterior-predictive-checks">Posterior predictive checks<a class="headerlink" href="#posterior-predictive-checks" title="Permanent link">&para;</a></h2>
+<p>Expected deaths (posterior median and 50 %/95 % credible bands) against the
+observed daily deaths, <strong>one panel per country</strong> — the counterpart of the R
+vignette's <code>plot_obs(fm, type = "deaths", levels = c(50, 95))</code>.</p>
+<p><code>Rt</code>, <code>infections</code> and <code>E_deaths</code> are stored in the posterior indexed by
+<code>region</code>, so <code>epi.plots</code> draws every country for you: pass the <code>fit</code> object
+(the <code>prepare_panel</code> result) as <code>data=</code> and each region is placed on <strong>its own
+dates</strong> — remember each region's column <code>t</code> is a <em>different</em> calendar day, and
+each region's padded tail is dropped. Every plot is written to <code>figures/</code>
+(override with <code>$EPIDEMIA_FIGDIR</code>); pass <code>save=False</code> to skip.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_obs</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;deaths-ppc&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>                   <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Posterior predictive: deaths&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[epidemia] saved figures/deaths-ppc.png
+</code></pre></div>
+<p><img alt="png" src="../europe-covid_files/europe-covid_13_1.png" /></p>
+<h2 id="reproduction-numbers">Reproduction numbers<a class="headerlink" href="#reproduction-numbers" title="Permanent link">&para;</a></h2>
+<p>The inferred $R^{(m)}_t$ per country (a step function of the NPIs). We expect
+it to fall below one in each country as measures come into force.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_rt</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;rt-by-country&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>                  <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Inferred reproduction numbers&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[epidemia] saved figures/rt-by-country.png
+</code></pre></div>
+<p><img alt="png" src="../europe-covid_files/europe-covid_15_1.png" /></p>
+<p>Latent infections, likewise per country:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_infections</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;infections-by-country&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>                          <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Latent daily infections&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[epidemia] saved figures/infections-by-country.png
+</code></pre></div>
+<p><img alt="png" src="../europe-covid_files/europe-covid_17_1.png" /></p>
+<h2 id="effect-sizes">Effect sizes<a class="headerlink" href="#effect-sizes" title="Permanent link">&para;</a></h2>
+<p><strong>Global</strong> NPI effects $\beta_k$ — the average effect of each measure across
+countries. A large negative coefficient means a strong reduction in
+transmission. As in the R analysis, lockdown is the most effective on average.</p>
+<blockquote>
+<p><strong>How to read this plot — the measures are highly collinear.</strong> Most countries
+enacted all five NPIs within a few days of each other (Germany banned public
+events on the <em>same day</em> it locked down), so the individual $\beta_k$ are only
+weakly identified: the data constrain their <strong>sum</strong> far better than the split
+between them. The R vignette makes the same point — <em>"when repeating this
+analysis with full MCMC, we observe that the intervals for all policies other
+than lockdown overlap with zero"</em>. So an interval that straddles zero here
+means <strong>"not separately identifiable from the other measures"</strong>, not "this
+measure did nothing". The cell after next quantifies exactly that.</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Schools&quot;</span><span class="p">,</span> <span class="s2">&quot;Isolating&quot;</span><span class="p">,</span> <span class="s2">&quot;Events&quot;</span><span class="p">,</span> <span class="s2">&quot;Distancing&quot;</span><span class="p">,</span> <span class="s2">&quot;Lockdown&quot;</span><span class="p">]</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_effects</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;effects-global&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[epidemia] saved figures/effects-global.png
+</code></pre></div>
+<p><img alt="png" src="../europe-covid_files/europe-covid_19_1.png" /></p>
+<p>Because effects are <em>partially pooled</em>, the country-specific effect of measure
+$k$ is $\beta_k + b^{(m)}_k$, which can differ from the global $\beta_k$. Below
+we extract these for Italy (compare with the R vignette's Italy panel).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_effects</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="s2">&quot;Italy&quot;</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;effects-italy&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[epidemia] saved figures/effects-italy.png
+</code></pre></div>
+<p><img alt="png" src="../europe-covid_files/europe-covid_21_1.png" /></p>
+<h3 id="collinearity-what-is-identified">Collinearity: what <em>is</em> identified<a class="headerlink" href="#collinearity-what-is-identified" title="Permanent link">&para;</a></h3>
+<p>The individual coefficients trade off against one another, but their <strong>total</strong>
+— the combined effect once every measure is in force — is pinned down by the
+data. Comparing the two tells you how much of a small $\beta_k$ is a real
+"no effect" and how much is just collinearity moving the effect to a neighbour.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">idata</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="s2">&quot;beta&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="s2">&quot;draw&quot;</span><span class="p">)))</span>     <span class="c1"># (K, S)</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">total</span> <span class="o">=</span> <span class="n">beta</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Combined effect of all five measures (logit Rt scale):&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  median </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">total</span><span class="p">)</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">  90% CI &quot;</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>      <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">total</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">total</span><span class="p">,</span><span class="w"> </span><span class="mi">95</span><span class="p">)</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Individual measures — note how much wider these are relative to their size:&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">lab</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>    <span class="n">d</span> <span class="o">=</span> <span class="n">beta</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">lab</span><span class="si">:</span><span class="s2">11s</span><span class="si">}</span><span class="s2"> median </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">  90% CI &quot;</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>          <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="mi">95</span><span class="p">)</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">]&quot;</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>          <span class="sa">f</span><span class="s2">&quot;   P(effect &lt; 0) = </span><span class="si">{</span><span class="p">(</span><span class="n">d</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Posterior correlation between the coefficients (collinearity fingerprint):&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="nb">print</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span> <span class="mi">2</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Combined effect of all five measures (logit Rt scale):
+  median -3.59  90% CI [-4.38, -2.78]
+
+Individual measures — note how much wider these are relative to their size:
+  Schools     median -0.02  90% CI [-1.14, +0.01]   P(effect &lt; 0) = 0.60
+  Isolating   median -0.03  90% CI [-0.81, +0.01]   P(effect &lt; 0) = 0.62
+  Events      median -0.01  90% CI [-0.68, +0.01]   P(effect &lt; 0) = 0.56
+  Distancing  median -1.35  90% CI [-2.02, -0.22]   P(effect &lt; 0) = 0.99
+  Lockdown    median -1.78  90% CI [-2.47, -1.05]   P(effect &lt; 0) = 1.00
+
+Posterior correlation between the coefficients (collinearity fingerprint):
+            Schools  Isolating  Events  Distancing  Lockdown
+Schools        1.00       0.06   -0.14       -0.49     -0.02
+Isolating      0.06       1.00   -0.05       -0.37     -0.02
+Events        -0.14      -0.05    1.00       -0.02     -0.23
+Distancing    -0.49      -0.37   -0.02        1.00     -0.27
+Lockdown      -0.02      -0.02   -0.23       -0.27      1.00
+</code></pre></div>
+<h3 id="the-per-country-lockdown-effect">The per-country lockdown effect<a class="headerlink" href="#the-per-country-lockdown-effect" title="Permanent link">&para;</a></h3>
+<p>The global $\beta_\text{lockdown}$ is one number for all 11 countries. What
+actually drives country $m$'s $R_t$ is $\beta_k + b^{(m)}_k$ — so this is the
+plot to read if the question is <em>"did lockdown do anything </em><em>here</em><em>?"</em>
+Sweden is the instructive case: it never locked down, so its lockdown column is
+identically zero, its likelihood says nothing about the effect, and its
+posterior is just the shared prior. The model explains Sweden through its
+country-specific intercept instead — exactly the point the R vignette makes.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_region_effects</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="s2">&quot;lockdown&quot;</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;lockdown-by-country&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[epidemia] saved figures/lockdown-by-country.png
+</code></pre></div>
+<p><img alt="png" src="../europe-covid_files/europe-covid_25_1.png" /></p>
+<h2 id="effect-sizes-as-a-percent-reduction-in-transmission">Effect sizes as a percent reduction in transmission<a class="headerlink" href="#effect-sizes-as-a-percent-reduction-in-transmission" title="Permanent link">&para;</a></h2>
+<p>A coefficient on the logit scale is hard to feel. <code>epi.effect_table</code> converts
+it into the quantity people actually want — <em>by what percent did this measure
+cut transmission?</em></p>
+<blockquote>
+<p><strong>Why not just $1 - e^{\beta_k}$?</strong> Because that is the answer for a <strong>log</strong>
+link, and this model uses <code>scaled_logit(6.5)</code>:
+$R = 6.5\,\operatorname{sigmoid}(\eta)$. A coefficient therefore does <strong>not</strong>
+map to a constant multiplicative effect — the same $\beta$ buys a bigger
+percentage in a country with a low $R_0$ than in one with a high $R_0$. On
+this data $1-e^{\beta}$ overstates lockdown by roughly 9 percentage points.
+<code>effect_table</code> instead does the counterfactual properly, per posterior draw:
+compare $6.5\,\operatorname{sigmoid}(b_0^{(m)})$ (no measures) with
+$6.5\,\operatorname{sigmoid}(b_0^{(m)} + \beta_k + b_k^{(m)})$ (measure $k$
+on). That is also why the answer is reported per country rather than as one
+global number.</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">tab</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">effect_table</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">)</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">pct</span> <span class="o">=</span> <span class="n">tab</span><span class="p">[</span><span class="n">tab</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;pct&quot;</span><span class="p">]</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reduction in R_t (%), median [90% CI] — per country</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">piv</span> <span class="o">=</span> <span class="n">pct</span><span class="o">.</span><span class="n">pivot</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;term&quot;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="nb">print</span><span class="p">(</span><span class="n">piv</span><span class="p">[[</span><span class="o">*</span><span class="n">fit</span><span class="o">.</span><span class="n">npis</span><span class="p">,</span> <span class="s2">&quot;all measures&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">All five measures combined:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">pct</span><span class="p">[</span><span class="n">pct</span><span class="p">[</span><span class="s2">&quot;term&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;all measures&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;region&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">16s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;median&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2">%  [</span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;lo&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;hi&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">R_0 -&gt; R_t once every measure is in force:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="n">R</span> <span class="o">=</span> <span class="n">tab</span><span class="p">[</span><span class="n">tab</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;R&quot;</span><span class="p">]</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="n">r0</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="n">R</span><span class="p">[</span><span class="s2">&quot;term&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;R_0 (no measures)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="n">ra</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="n">R</span><span class="p">[</span><span class="s2">&quot;term&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;R_t (all measures)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">fit</span><span class="o">.</span><span class="n">regions</span><span class="p">:</span>
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">reg</span><span class="si">:</span><span class="s2">16s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">r0</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">reg</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;median&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">  -&gt;  </span><span class="si">{</span><span class="n">ra</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">reg</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;median&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Reduction in R_t (%), median [90% CI] — per country
+
+term            schools_universities  self_isolating_if_ill  public_events  social_distancing_encouraged  lockdown  all measures
+region                                                                                                                          
+Austria                          2.8                    0.8           -1.1                          28.5      53.2          87.4
+Belgium                          1.4                    0.4           -0.2                          19.4      61.2          89.1
+Denmark                          3.1                    0.8            0.5                          32.7      49.8          85.9
+France                          -8.7                    1.3          -15.1                          43.5      81.7          86.0
+Germany                          0.7                    0.6            4.7                          26.8      50.1          87.3
+Italy                           48.5                    1.6           -3.3                          46.6       6.2          83.2
+Norway                          -0.1                    1.6           -3.2                          48.2      64.1          87.4
+Spain                            5.0                    0.5            3.4                          16.3      39.0          90.9
+Sweden                           6.8                    2.6           40.0                          54.9      57.6          97.8
+Switzerland                     12.9                    4.0           14.8                          53.5      33.5          88.4
+United_Kingdom                   1.7                    1.5            2.2                          37.4      49.0          86.8
+
+
+All five measures combined:
+
+  Austria           87.4%  [ 83.6,  89.4]
+  Belgium           89.1%  [ 87.3,  90.4]
+  Denmark           85.9%  [ 81.0,  88.6]
+  France            86.0%  [ 84.0,  87.9]
+  Germany           87.3%  [ 84.4,  89.1]
+  Italy             83.2%  [ 81.3,  84.9]
+  Norway            87.4%  [ 76.8,  92.6]
+  Spain             90.9%  [ 89.9,  91.8]
+  Sweden            97.8%  [ 81.6,  99.7]
+  Switzerland       88.4%  [ 85.0,  91.5]
+  United_Kingdom    86.8%  [ 84.7,  88.7]
+
+
+R_0 -&gt; R_t once every measure is in force:
+
+  Austria          5.57  -&gt;  0.70
+  Belgium          5.90  -&gt;  0.64
+  Denmark          5.24  -&gt;  0.73
+  France           4.67  -&gt;  0.66
+  Germany          5.58  -&gt;  0.70
+  Italy            4.41  -&gt;  0.74
+  Norway           4.02  -&gt;  0.50
+  Spain            6.06  -&gt;  0.55
+  Sweden           4.58  -&gt;  0.10
+  Switzerland      3.79  -&gt;  0.44
+  United_Kingdom   5.18  -&gt;  0.68
+</code></pre></div>
+<p>The same thing as a plot. Measures a country <strong>never enacted</strong> are greyed out:
+there, the percentage is a counterfactual drawn from the pooled prior ("what
+lockdown <em>would</em> have done in Sweden"), not a measured effect, and it should
+not be read alongside the others as if it were evidence.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_percent_effects</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>                               <span class="n">save</span><span class="o">=</span><span class="s2">&quot;percent-effects-by-country&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[epidemia] saved figures/percent-effects-by-country.png
+</code></pre></div>
+<p><img alt="png" src="../europe-covid_files/europe-covid_29_1.png" /></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_percent_effects</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="s2">&quot;Italy&quot;</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>                               <span class="n">save</span><span class="o">=</span><span class="s2">&quot;percent-effects-italy&quot;</span><span class="p">,</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>                               <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Italy: reduction in transmission by measure&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[epidemia] saved figures/percent-effects-italy.png
+</code></pre></div>
+<p><img alt="png" src="../europe-covid_files/europe-covid_30_1.png" /></p>
+<h2 id="forecasting-and-counterfactuals">Forecasting and counterfactuals<a class="headerlink" href="#forecasting-and-counterfactuals" title="Permanent link">&para;</a></h2>
+<p>Forecasting in <code>epidemia</code> means swapping in a new data frame — extending the
+dates, or altering covariates for a <em>counterfactual</em>. We reproduce this here by
+forward-simulating the renewal process from the posterior draws, reusing the
+package's NumPy renewal reference (<code>epi.renewal_infections</code>). The function
+below takes a per-country NPI design (of any length) and returns posterior
+deaths, so the same code serves both out-of-sample forecasts and
+counterfactuals.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">posterior_deaths</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">X_list</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">n_draws</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Posterior expected deaths per region for arbitrary NPI designs.</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="sd">    ``X_list[m]`` is a ``(T_m, K)`` design matrix (possibly longer than the</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="sd">    fitted window, or with shifted policies). Returns a list of ``(n_draws,</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="sd">    T_m)`` arrays of expected daily deaths.</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>    <span class="n">post</span> <span class="o">=</span> <span class="n">idata</span><span class="o">.</span><span class="n">posterior</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>    <span class="n">S</span> <span class="o">=</span> <span class="n">post</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">&quot;chain&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">post</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">&quot;draw&quot;</span><span class="p">]</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>    <span class="n">take</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">n_draws</span><span class="p">,</span> <span class="n">S</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">flat</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">post</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="s2">&quot;draw&quot;</span><span class="p">)))</span>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)[</span><span class="n">take</span><span class="p">]</span>           <span class="c1"># (draws, ...)</span>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a>
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a>    <span class="n">beta</span> <span class="o">=</span> <span class="n">flat</span><span class="p">(</span><span class="s2">&quot;beta&quot;</span><span class="p">)</span>                               <span class="c1"># (D, K)</span>
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a>    <span class="n">b0</span> <span class="o">=</span> <span class="n">flat</span><span class="p">(</span><span class="s2">&quot;b0&quot;</span><span class="p">)</span>                                   <span class="c1"># (D, M)</span>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a>    <span class="n">b</span> <span class="o">=</span> <span class="n">flat</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>                                     <span class="c1"># (D, M, K)</span>
+<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a>    <span class="n">seed_</span> <span class="o">=</span> <span class="n">flat</span><span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">)</span>                              <span class="c1"># (D, M)</span>
+<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>    <span class="n">ifr</span> <span class="o">=</span> <span class="n">flat</span><span class="p">(</span><span class="s2">&quot;ifr&quot;</span><span class="p">)</span>                                 <span class="c1"># (D,)</span>
+<a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a>    <span class="n">gen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">gen</span><span class="p">)</span>
+<a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a>    <span class="n">i2o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">i2o</span><span class="p">)</span>
+<a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a>    <span class="n">v</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">seed_days</span>
+<a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a>    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a>    <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">X</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">X_list</span><span class="p">):</span>
+<a id="__codelineno-16-27" name="__codelineno-16-27" href="#__codelineno-16-27"></a>        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<a id="__codelineno-16-28" name="__codelineno-16-28" href="#__codelineno-16-28"></a>        <span class="n">T</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-16-29" name="__codelineno-16-29" href="#__codelineno-16-29"></a>        <span class="n">deaths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">take</span><span class="p">),</span> <span class="n">T</span><span class="p">))</span>
+<a id="__codelineno-16-30" name="__codelineno-16-30" href="#__codelineno-16-30"></a>        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">take</span><span class="p">)):</span>
+<a id="__codelineno-16-31" name="__codelineno-16-31" href="#__codelineno-16-31"></a>            <span class="n">eta</span> <span class="o">=</span> <span class="n">b0</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">+</span> <span class="n">X</span> <span class="o">@</span> <span class="p">(</span><span class="n">beta</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">m</span><span class="p">])</span>
+<a id="__codelineno-16-32" name="__codelineno-16-32" href="#__codelineno-16-32"></a>            <span class="n">R</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">R_link_K</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">eta</span><span class="p">))</span>
+<a id="__codelineno-16-33" name="__codelineno-16-33" href="#__codelineno-16-33"></a>            <span class="n">seeds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">seed_</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">m</span><span class="p">])</span>
+<a id="__codelineno-16-34" name="__codelineno-16-34" href="#__codelineno-16-34"></a>            <span class="n">infections</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">renewal_infections</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">gen</span><span class="p">)</span>
+<a id="__codelineno-16-35" name="__codelineno-16-35" href="#__codelineno-16-35"></a>            <span class="c1"># Use the package&#39;s own reference rather than a hand-rolled</span>
+<a id="__codelineno-16-36" name="__codelineno-16-36" href="#__codelineno-16-36"></a>            <span class="c1"># convolution, so the forecast applies the *same* lag convention as</span>
+<a id="__codelineno-16-37" name="__codelineno-16-37" href="#__codelineno-16-37"></a>            <span class="c1"># the model that produced these draws.</span>
+<a id="__codelineno-16-38" name="__codelineno-16-38" href="#__codelineno-16-38"></a>            <span class="n">deaths</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">expected_observations</span><span class="p">(</span><span class="n">infections</span><span class="p">,</span> <span class="n">i2o</span><span class="p">,</span> <span class="n">ifr</span><span class="p">[</span><span class="n">j</span><span class="p">])[:</span><span class="n">T</span><span class="p">]</span>
+<a id="__codelineno-16-39" name="__codelineno-16-39" href="#__codelineno-16-39"></a>        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deaths</span><span class="p">)</span>
+<a id="__codelineno-16-40" name="__codelineno-16-40" href="#__codelineno-16-40"></a>    <span class="k">return</span> <span class="n">out</span>
+</code></pre></div>
+<p><strong>Out-of-sample forecast.</strong> We rebuild the design for each country over the
+<em>full</em> period (through the end of the data), fit only to data before 5 May, and
+forecast beyond it. Here we show the United Kingdom.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">full</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">prepare_panel</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">epi</span><span class="o">.</span><span class="n">EUROPE_COVID_NPIS</span><span class="p">,</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>                         <span class="n">seed_offset</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">death_threshold</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">fit_until</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="n">uk</span> <span class="o">=</span> <span class="n">full</span><span class="o">.</span><span class="n">regions</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">&quot;United_Kingdom&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="n">X_uk</span> <span class="o">=</span> <span class="n">full</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="n">uk</span><span class="p">,</span> <span class="p">:</span> <span class="n">full</span><span class="o">.</span><span class="n">lengths</span><span class="p">[</span><span class="n">uk</span><span class="p">],</span> <span class="p">:]</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="n">uk_dates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">full</span><span class="o">.</span><span class="n">dates</span><span class="p">[</span><span class="n">uk</span><span class="p">])</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="n">fc</span> <span class="o">=</span> <span class="n">posterior_deaths</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="p">[</span><span class="n">X_uk</span><span class="p">],</span> <span class="n">config</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="n">uk_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>    <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">uk_dates</span><span class="p">,</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>    <span class="s2">&quot;median&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>    <span class="s2">&quot;lo&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>    <span class="s2">&quot;hi&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="mf">97.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="p">})</span>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="n">uk_obs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>    <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">uk_dates</span><span class="p">,</span>
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>    <span class="s2">&quot;deaths&quot;</span><span class="p">:</span> <span class="n">full</span><span class="o">.</span><span class="n">deaths</span><span class="p">[</span><span class="n">uk</span><span class="p">,</span> <span class="p">:</span> <span class="n">full</span><span class="o">.</span><span class="n">lengths</span><span class="p">[</span><span class="n">uk</span><span class="p">]],</span>
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="p">})</span>
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="n">p</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>    <span class="n">ggplot</span><span class="p">(</span><span class="n">uk_df</span><span class="p">,</span> <span class="n">aes</span><span class="p">(</span><span class="s2">&quot;date&quot;</span><span class="p">))</span>
+<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>    <span class="o">+</span> <span class="n">geom_col</span><span class="p">(</span><span class="n">uk_obs</span><span class="p">,</span> <span class="n">aes</span><span class="p">(</span><span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="s2">&quot;deaths&quot;</span><span class="p">),</span> <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;#b2182b&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>    <span class="o">+</span> <span class="n">geom_ribbon</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="o">=</span><span class="s2">&quot;lo&quot;</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=</span><span class="s2">&quot;hi&quot;</span><span class="p">),</span> <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;#6baed6&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>    <span class="o">+</span> <span class="n">geom_line</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>    <span class="o">+</span> <span class="n">geom_vline</span><span class="p">(</span><span class="n">xintercept</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="s2">&quot;2020-05-05&quot;</span><span class="p">),</span> <span class="n">linetype</span><span class="o">=</span><span class="s2">&quot;dotted&quot;</span><span class="p">,</span>
+<a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>                 <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#555555&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a>    <span class="o">+</span> <span class="n">labs</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;Daily deaths&quot;</span><span class="p">,</span>
+<a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a>           <span class="n">title</span><span class="o">=</span><span class="s2">&quot;United Kingdom: out-of-sample forecast (fit ends 5 May, dotted)&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>    <span class="o">+</span> <span class="n">theme_epidemia</span><span class="p">()</span>
+<a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a><span class="p">)</span>
+<a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a><span class="n">save_plot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;uk-forecast&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a><span class="n">p</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_93270/3853627252.py:1: UserWarning: 2 missing deaths value(s) inside the modelled window were left out of the likelihood (masked as unobserved, as R treats NA). The latent series are still estimated on those days.
+
+
+[epidemia] saved figures/uk-forecast.png
+</code></pre></div>
+<p><img alt="png" src="../europe-covid_files/europe-covid_34_2.png" /></p>
+<p><strong>Counterfactual: all policies 3 days earlier.</strong> We shift each NPI indicator
+back three days for the UK and re-simulate deaths from the same posterior.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">shift_earlier</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">col</span><span class="p">[</span><span class="n">k</span><span class="p">:],</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">k</span><span class="p">)])</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="n">X_cf</span> <span class="o">=</span> <span class="n">X_uk</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X_cf</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>    <span class="n">X_cf</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">shift_earlier</span><span class="p">(</span><span class="n">X_cf</span><span class="p">[:,</span> <span class="n">j</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="n">cf</span> <span class="o">=</span> <span class="n">posterior_deaths</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="p">[</span><span class="n">X_cf</span><span class="p">],</span> <span class="n">config</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="n">cmp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">uk_dates</span><span class="p">,</span> <span class="s2">&quot;median&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>                  <span class="s2">&quot;lo&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a>                  <span class="s2">&quot;hi&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span> <span class="mf">97.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;scenario&quot;</span><span class="p">:</span> <span class="s2">&quot;actual&quot;</span><span class="p">}),</span>
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a>    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">uk_dates</span><span class="p">,</span> <span class="s2">&quot;median&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">cf</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a>                  <span class="s2">&quot;lo&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">cf</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a>                  <span class="s2">&quot;hi&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">cf</span><span class="p">,</span> <span class="mf">97.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;scenario&quot;</span><span class="p">:</span> <span class="s2">&quot;3 days earlier&quot;</span><span class="p">}),</span>
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a><span class="n">p</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a>    <span class="n">ggplot</span><span class="p">(</span><span class="n">cmp</span><span class="p">,</span> <span class="n">aes</span><span class="p">(</span><span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;scenario&quot;</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;scenario&quot;</span><span class="p">))</span>
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a>    <span class="o">+</span> <span class="n">geom_ribbon</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="o">=</span><span class="s2">&quot;lo&quot;</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=</span><span class="s2">&quot;hi&quot;</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<a id="__codelineno-18-21" name="__codelineno-18-21" href="#__codelineno-18-21"></a>    <span class="o">+</span> <span class="n">geom_line</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+<a id="__codelineno-18-22" name="__codelineno-18-22" href="#__codelineno-18-22"></a>    <span class="o">+</span> <span class="n">labs</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;Daily deaths&quot;</span><span class="p">,</span>
+<a id="__codelineno-18-23" name="__codelineno-18-23" href="#__codelineno-18-23"></a>           <span class="n">title</span><span class="o">=</span><span class="s2">&quot;United Kingdom: counterfactual (policies enacted 3 days earlier)&quot;</span><span class="p">)</span>
+<a id="__codelineno-18-24" name="__codelineno-18-24" href="#__codelineno-18-24"></a>    <span class="o">+</span> <span class="n">theme_epidemia</span><span class="p">()</span>
+<a id="__codelineno-18-25" name="__codelineno-18-25" href="#__codelineno-18-25"></a><span class="p">)</span>
+<a id="__codelineno-18-26" name="__codelineno-18-26" href="#__codelineno-18-26"></a><span class="n">save_plot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;uk-counterfactual&quot;</span><span class="p">)</span>
+<a id="__codelineno-18-27" name="__codelineno-18-27" href="#__codelineno-18-27"></a><span class="n">p</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[epidemia] saved figures/uk-counterfactual.png
+</code></pre></div>
+<p><img alt="png" src="../europe-covid_files/europe-covid_36_1.png" /></p>
+<p>As in the R vignette, enacting measures a few days earlier markedly lowers the
+projected death curve. These results illustrate usage rather than a rigorous
+analysis.</p>
+<h3 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Flaxman, S. et al. (2020). <em>Estimating the effects of non-pharmaceutical
+  interventions on COVID-19 in Europe.</em> Nature 584, 257–261.</li>
+<li>Bhatt, S. et al. <em>Semi-mechanistic Bayesian modelling of COVID-19.</em></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.tracking", "content.code.copy", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
