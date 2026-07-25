@@ -102,68 +102,75 @@
 <ul><li>
 <strong>R (repo root)</strong> — the <strong>reference</strong> implementation. Feature-complete: the full <code>epirt</code>/<code>epiinf</code>/<code>epiobs</code>/<code>epim</code> API, covariate formulas, multilevel/partial pooling, multiple joint observation series, latent infections, population/ susceptibility adjustment, the full prior system, forecasting via <code>newdata</code>, variational Bayes, and rich post-processing. Backend: <strong>CmdStanR</strong>.</li>
 <li>
-<strong>Python (<code>python/</code>)</strong> — a <strong>focused, fast core</strong> port. Single-population renewal model (<code>EpiConfig</code> + <code>build_model</code>), non-centred RW on <code>R_t</code>, log / scaled-logit links, Poisson / neg-binom / normal families, <code>plotnine</code> plots, a NumPy renewal reference. Backend: <strong>PyMC + nutpie</strong> (numba CPU, or JAX for GPU on Linux).</li>
+<strong>Python (<code>python/</code>)</strong> — a port that now covers essentially the same models: many regions, partial pooling (independent or correlated), covariates, random walks on <code>R_t</code> including per region, several joint observation series with their own delays and families, susceptibility adjustment, swappable priors, variational inference, forecast scoring and <code>plotnine</code> plots. Backend: <strong>PyMC + nutpie</strong> (numba CPU, or JAX for GPU on Linux). The current builder is <code>core.build_epidemia_model</code>; <code>model.build_model</code> and <code>multilevel.build_multilevel_model</code> predate it and are kept for the notebooks.</li>
 </ul><p>What is <strong>extra in each</strong>. Verified against the code (not aspirational) — if you change either side, re-check the row.</p>
 <table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Capability</th>
 <th>R (root)</th>
 <th>Python (<code>python/</code>)</th>
 </tr></thead><tbody><tr><td>Multiple regions / groups</td>
 <td>✅</td>
-<td>✅ <code>prepare_panel</code> → <code>build_multilevel_model</code>
-</td>
-</tr><tr><td>Multilevel / partial pooling across groups</td>
 <td>✅</td>
-<td>✅ <code>multilevel.py</code>, non-centred, 3 pooling regimes</td>
+</tr><tr><td>Multilevel / partial pooling</td>
+<td>✅</td>
+<td>✅</td>
+</tr><tr><td>Correlated random effects (<code>(x \| g)</code> + <code>decov</code>)</td>
+<td>✅</td>
+<td>✅ <code>EpiModelConfig(correlated=True)</code>
+</td>
+</tr><tr><td>Random walk on <code>R_t</code>, incl. <code>rw(gr=)</code>
+</td>
+<td>✅</td>
+<td>✅ <code>RandomWalk(by_region=True)</code>
+</td>
+</tr><tr><td>Multiple observation series (joint)</td>
+<td>✅ up to 10</td>
+<td>✅ unbounded, <code>list[ObsModel]</code>
+</td>
+</tr><tr><td>Time-varying ascertainment</td>
+<td>✅</td>
+<td>✅ <code>ObsModel(X=)</code>
+</td>
+</tr><tr><td>Population / susceptibility adjustment</td>
+<td>✅</td>
+<td>✅ <code>pop_adjust=True</code>
+</td>
+</tr><tr><td>Observation families</td>
+<td>✅ 5</td>
+<td>✅ 5</td>
+</tr><tr><td>Forecast scoring (CRPS / coverage)</td>
+<td>✅</td>
+<td>✅ <code>epidemia.scoring</code>
+</td>
+</tr><tr><td>Posterior predictive sampling</td>
+<td>✅</td>
+<td>✅ <code>epidemia.predict.posterior_predict</code>
+</td>
+</tr><tr><td>Spaghetti (per-draw) plots</td>
+<td>✅</td>
+<td>✅ <code>spaghetti_rt</code> / <code>_infections</code> / <code>_obs</code>
+</td>
+</tr><tr><td>Variational inference</td>
+<td>✅</td>
+<td>✅ <code>fit_variational</code>
+</td>
+</tr><tr><td>Swappable prior families</td>
+<td>✅</td>
+<td>✅ <code>epidemia.priors</code> (no autoscale, no <code>hs</code>/<code>lasso</code>)</td>
 </tr><tr><td>Covariates for <code>R_t</code>
 </td>
 <td>✅ formula mini-language</td>
-<td>⚠️ numeric <code>(M,T,K)</code> design matrix; no formula parser</td>
-</tr><tr><td>Correlated random effects (<code>(x \| g)</code> + <code>decov</code>)</td>
-<td>✅</td>
-<td>❌ independent (<code>\|\|</code>) only, no covariance matrix</td>
-</tr><tr><td>Random walk on <code>R_t</code>
+<td>⚠️ numeric <code>(M,T,K)</code> design matrix</td>
+</tr><tr><td>Forecasting via <code>newdata</code>
 </td>
-<td>✅ incl. <code>rw(gr=)</code> per group</td>
-<td>⚠️ single-population only; disjoint from the multilevel model</td>
-</tr><tr><td>Multiple observation series (joint)</td>
-<td>✅ up to 10</td>
-<td>❌ exactly one likelihood</td>
-</tr><tr><td>Time-varying ascertainment (obs-level RW)</td>
+<td>✅ one call</td>
+<td>⚠️ primitives in <code>epidemia.predict</code>, no wrapper</td>
+</tr><tr><td>Counterfactuals</td>
 <td>✅</td>
-<td>❌ scalar IFR only</td>
+<td>⚠️ <code>effect_table</code> covers <code>R_t</code> only</td>
 </tr><tr><td>Latent (stochastic) infections</td>
 <td>✅ <code>epiinf(latent=TRUE)</code>
 </td>
 <td>❌ deterministic renewal only</td>
-</tr><tr><td>Population / susceptibility adjustment</td>
-<td>✅</td>
-<td>❌ no susceptible pool</td>
-</tr><tr><td>Full prior system (swappable families)</td>
-<td>✅</td>
-<td>❌ families hardcoded; hyperparameters configurable</td>
-</tr><tr><td>
-<code>shifted_gamma</code>, <code>hexp</code> seeding</td>
-<td>✅</td>
-<td>⚠️ built in to the multilevel model, not reusable priors</td>
-</tr><tr><td>Forecasting via <code>newdata</code>
-</td>
-<td>✅</td>
-<td>❌ no <code>predict</code>; notebook code only</td>
-</tr><tr><td>Counterfactuals</td>
-<td>✅</td>
-<td>⚠️ <code>effect_table</code> does them for <code>R_t</code> only</td>
-</tr><tr><td>Forecast scoring (CRPS / coverage)</td>
-<td>✅</td>
-<td>❌</td>
-</tr><tr><td>Variational inference</td>
-<td>✅</td>
-<td>❌ NUTS only (<code>adaptation</code> picks a metric, not an algorithm)</td>
-</tr><tr><td>Posterior predictive</td>
-<td>✅ sampled</td>
-<td>⚠️ bands <code>E_obs</code>; excludes observation noise</td>
-</tr><tr><td>Spaghetti (per-draw) plots</td>
-<td>✅</td>
-<td>❌ draws always collapsed to intervals</td>
 </tr><tr><td>Non-centred RW parameterisation</td>
 <td>✅</td>
 <td>✅</td>
@@ -173,7 +180,8 @@
 </tr><tr><td>Grammar-of-graphics (<code>plotnine</code>) plots</td>
 <td>❌ (ggplot2 via R)</td>
 <td>✅</td>
-</tr></tbody></table><p>The three gaps that most affect someone following the R tutorials, in order: <strong>a time-varying <code>R_t</code> in a multi-region model</strong> (R’s tutorials routinely combine <code><a href="reference/rw.html">rw()</a></code> with grouped data; Python’s walk is single-population and its multilevel <code>R_t</code> is a deterministic covariate step function), <strong>multiple joint observation series</strong> (two whole vignettes rest on it), and <strong>population adjustment</strong> (without it long-horizon infections grow unbounded).</p>
+</tr></tbody></table><p>Python’s unified builder is <code>python/src/epidemia/core.py</code> (<code>build_epidemia_model</code>), which supersedes the two earlier ones: <code>model.py</code> had the random walk but one population, <code>multilevel.py</code> had regions but a deterministic <code>R_t</code> and a single series. Both are kept for the existing notebooks; new work should use <code>core</code>.</p>
+<p>What still differs: no formula parser (design matrices instead), forecasting is primitives rather than one <code>newdata</code> call, and <code>epiinf(latent=TRUE)</code> has no counterpart.</p>
 <p>For measured performance of the two backends on the same model, see <code>benchmarks/</code> and the “Performance” page of the Python docs.</p>
 <p><strong>The rule: a model change to one language should be ported to the other.</strong> When you add or change modelling behaviour (a new family, link, prior, the RW parameterisation, the renewal/observation recursion, seeding, …) in one implementation, port the equivalent change to the other so they stay in parity — and if a full port is out of scope for the change, <strong>use agentic coding assistance (e.g. Claude Code) to do the port and integrate it</strong>, then update the table above. Keep the two renewal cores mathematically identical: R’s <code>inst/stan/*</code> recursion and Python’s <code>python/src/epidemia/model.py</code> (PyTensor) + <code>renewal.py</code> (NumPy reference) must agree. If you intentionally leave a feature in only one language, say so in the table rather than letting the two silently drift.</p>
 </div>
