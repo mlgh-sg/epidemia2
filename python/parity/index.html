@@ -414,21 +414,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-three-that-will-bite-you-first" class="md-nav__link">
+  <a href="#what-is-still-not-here" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The three that will bite you first
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-partial-ones-precisely" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The partial ones, precisely
+        What is still not here
       
     </span>
   </a>
@@ -546,21 +535,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-three-that-will-bite-you-first" class="md-nav__link">
+  <a href="#what-is-still-not-here" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The three that will bite you first
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-partial-ones-precisely" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The partial ones, precisely
+        What is still not here
       
     </span>
   </a>
@@ -626,17 +604,67 @@ missing is halfway through an analysis.</p>
 <td style="text-align: center;">✅</td>
 </tr>
 <tr>
-<td>Non-centred parameterisation</td>
+<td>Correlated random effects</td>
 <td style="text-align: center;">✅</td>
-<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>correlated=True</code></td>
 </tr>
 <tr>
-<td>Deterministic renewal process</td>
+<td>Random walk on <code>R_t</code>, incl. per region</td>
 <td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>RandomWalk(by_region=)</code></td>
+</tr>
+<tr>
+<td>Multiple observation series</td>
 <td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>[ObsModel, ObsModel]</code></td>
+</tr>
+<tr>
+<td>Time-varying ascertainment</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>ObsModel(X=)</code></td>
+</tr>
+<tr>
+<td>Population / susceptibility adjustment</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>pop_adjust=True</code></td>
+</tr>
+<tr>
+<td>Observation families</td>
+<td style="text-align: center;">✅ 5</td>
+<td style="text-align: center;">✅ 5</td>
+</tr>
+<tr>
+<td>Forecast scoring (CRPS, coverage)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>epidemia.scoring</code></td>
+</tr>
+<tr>
+<td>Posterior predictive sampling</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>epidemia.predict</code></td>
+</tr>
+<tr>
+<td>Spaghetti plots</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>spaghetti_rt</code> etc.</td>
+</tr>
+<tr>
+<td>Variational inference</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>fit_variational</code></td>
+</tr>
+<tr>
+<td>Swappable prior families</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>epidemia.priors</code></td>
 </tr>
 <tr>
 <td>Hierarchical seeding</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+</tr>
+<tr>
+<td>Non-centred parameterisation</td>
 <td style="text-align: center;">✅</td>
 <td style="text-align: center;">✅</td>
 </tr>
@@ -646,34 +674,14 @@ missing is halfway through an analysis.</p>
 <td style="text-align: center;">⚠️ design matrix</td>
 </tr>
 <tr>
+<td>Forecasting from new data</td>
+<td style="text-align: center;">✅ one call</td>
+<td style="text-align: center;">⚠️ primitives, no wrapper</td>
+</tr>
+<tr>
 <td>Counterfactuals</td>
 <td style="text-align: center;">✅</td>
 <td style="text-align: center;">⚠️ <code>R_t</code> only</td>
-</tr>
-<tr>
-<td>Posterior predictive</td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: center;">⚠️ mean only</td>
-</tr>
-<tr>
-<td>Correlated random effects</td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: center;">❌</td>
-</tr>
-<tr>
-<td>Random walk on <code>R_t</code> in a multi-region model</td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: center;">❌</td>
-</tr>
-<tr>
-<td>Multiple observation series</td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: center;">❌</td>
-</tr>
-<tr>
-<td>Time-varying ascertainment</td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: center;">❌</td>
 </tr>
 <tr>
 <td>Stochastic latent infections</td>
@@ -681,27 +689,7 @@ missing is halfway through an analysis.</p>
 <td style="text-align: center;">❌</td>
 </tr>
 <tr>
-<td>Population / susceptibility adjustment</td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: center;">❌</td>
-</tr>
-<tr>
-<td>Forecasting from new data</td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: center;">❌</td>
-</tr>
-<tr>
-<td>Forecast scoring (CRPS, coverage)</td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: center;">❌</td>
-</tr>
-<tr>
-<td>Variational inference</td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: center;">❌</td>
-</tr>
-<tr>
-<td>Swappable prior families</td>
+<td>Autoscaled priors, <code>hs</code>/<code>lasso</code> families</td>
 <td style="text-align: center;">✅</td>
 <td style="text-align: center;">❌</td>
 </tr>
@@ -717,36 +705,56 @@ missing is halfway through an analysis.</p>
 </tr>
 </tbody>
 </table>
-<h2 id="the-three-that-will-bite-you-first">The three that will bite you first<a class="headerlink" href="#the-three-that-will-bite-you-first" title="Permanent link">&para;</a></h2>
-<p><strong>A time-varying <code>R_t</code> across regions.</strong> Almost every R tutorial combines a random
-walk with grouped data — <code>R(region, date) ~ 1 + rw(time = dt)</code>. Here the two
-features live in different models: <code>build_model</code> has the walk but is
-single-population, and <code>build_multilevel_model</code> is multi-region but its <code>R_t</code> is a
-deterministic step function of the covariates. There is no way to write the
-combination.</p>
-<p><strong>Several observation series at once.</strong> Two R vignettes fit deaths and cases
-jointly, each with its own delay distribution, family, link and priors. Both
-Python builders declare exactly one observed variable, so <code>EuropeCovid2</code>'s <code>cases</code>
-column is never used.</p>
-<p><strong>Population adjustment.</strong> Neither recursion carries a susceptible pool, so
-long-horizon infections grow without bound. Fine over the eight-week windows the
-notebooks use; wrong for anything longer.</p>
-<h2 id="the-partial-ones-precisely">The partial ones, precisely<a class="headerlink" href="#the-partial-ones-precisely" title="Permanent link">&para;</a></h2>
-<p><strong>Covariates</strong> are supplied as a numeric <code>(regions, time, covariates)</code> array from
-<code>prepare_panel</code>, not as a formula. You get covariates; you write the design matrix
-yourself.</p>
-<p><strong>Posterior predictive</strong> — <code>plots.plot_obs</code> bands the posterior of the expected
-count <code>E_deaths</code>. It does not draw from the negative binomial on top, so the
-ribbons are narrower than R's <code>plot_obs</code>, which does. They answer different
-questions: "where is the mean" versus "where would an observation fall".</p>
-<p><strong>Counterfactuals</strong> are available for effect sizes through <code>effect_table</code>, which
-re-evaluates <code>R_t</code> per draw under a modified design. Re-simulating <em>observations</em>
-under that design is notebook code, not a library function.</p>
+<p>Everything in the top block used to be missing. The model that expresses it is
+:func:<code>epidemia.build_epidemia_model</code>, which supersedes the two earlier builders:
+<code>build_model</code> had a random walk but one population, <code>build_multilevel_model</code> had
+regions but a deterministic <code>R_t</code> and a single series, and neither could write
+what the R tutorials write routinely.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">epidemia.core</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">EpiModelConfig</span><span class="p">,</span> <span class="n">ObsModel</span><span class="p">,</span> <span class="n">PanelData</span><span class="p">,</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                           <span class="n">RandomWalk</span><span class="p">,</span> <span class="n">build_epidemia_model</span><span class="p">,</span> <span class="n">prepare_panel</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">panel</span><span class="p">,</span> <span class="n">series</span> <span class="o">=</span> <span class="n">prepare_panel</span><span class="p">(</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">df</span><span class="p">,</span> <span class="n">npis</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;lockdown&quot;</span><span class="p">],</span> <span class="n">responses</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;deaths&quot;</span><span class="p">,</span> <span class="s2">&quot;cases&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">pop</span><span class="o">=</span><span class="s2">&quot;pop&quot;</span><span class="p">,</span> <span class="n">rw_by</span><span class="o">=</span><span class="s2">&quot;week&quot;</span><span class="p">,</span> <span class="n">fit_until</span><span class="o">=</span><span class="s2">&quot;2020-05-05&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">model</span> <span class="o">=</span> <span class="n">build_epidemia_model</span><span class="p">(</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">panel</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="p">[</span><span class="n">ObsModel</span><span class="p">(</span><span class="s2">&quot;deaths&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">series</span><span class="p">[</span><span class="s2">&quot;deaths&quot;</span><span class="p">],</span> <span class="n">i2o</span><span class="o">=</span><span class="n">inf2death</span><span class="p">,</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>              <span class="n">family</span><span class="o">=</span><span class="s2">&quot;neg_binom&quot;</span><span class="p">,</span> <span class="n">link_K</span><span class="o">=</span><span class="mf">0.02</span><span class="p">),</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>     <span class="n">ObsModel</span><span class="p">(</span><span class="s2">&quot;cases&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">series</span><span class="p">[</span><span class="s2">&quot;cases&quot;</span><span class="p">],</span> <span class="n">i2o</span><span class="o">=</span><span class="n">inf2case</span><span class="p">,</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>              <span class="n">family</span><span class="o">=</span><span class="s2">&quot;quasi_poisson&quot;</span><span class="p">,</span> <span class="n">link_K</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)],</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">EpiModelConfig</span><span class="p">(</span><span class="n">gen</span><span class="o">=</span><span class="n">si</span><span class="p">,</span> <span class="n">correlated</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pop_adjust</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                   <span class="n">rw</span><span class="o">=</span><span class="n">RandomWalk</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">panel</span><span class="o">.</span><span class="n">rw_index</span><span class="p">,</span> <span class="n">by_region</span><span class="o">=</span><span class="kc">True</span><span class="p">)),</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">)</span>
+</code></pre></div>
+<p>That is R's <code>R(country, date) ~ (1 + lockdown | country) + rw(time = week, gr = country)</code>
+with <code>obs = list(deaths, cases)</code> and <code>epiinf(pop_adjust = TRUE)</code>.</p>
+<h2 id="what-is-still-not-here">What is still not here<a class="headerlink" href="#what-is-still-not-here" title="Permanent link">&para;</a></h2>
+<p><strong>A formula interface.</strong> Covariates come in as a numeric
+<code>(regions, time, covariates)</code> array from <code>prepare_panel</code>; there is no
+<code>R(country, date) ~ ...</code> parser. You get the models, you write the design matrix.</p>
+<p><strong>Forecasting is primitives, not one call.</strong> <code>epidemia.predict</code> gives you
+<code>simulate</code> (forward renewal over posterior draws, with the susceptibility
+adjustment), <code>expected_observations</code> and <code>posterior_predict</code> (which draws from
+the observation family rather than banding the mean). What is missing is R's
+convenience of handing a whole <code>newdata</code> frame to one function.</p>
+<p><strong>Stochastic latent infections.</strong> R's <code>epiinf(latent = TRUE)</code> treats infections
+as parameters with noise around the renewal equation. Here the recursion stays
+deterministic.</p>
+<p><strong>Prior coverage is close but not complete.</strong> <code>epidemia.priors</code> mirrors R's
+constructors — <code>normal</code>, <code>student_t</code>, <code>cauchy</code>, <code>exponential</code>, <code>laplace</code>,
+<code>shifted_gamma</code>, <code>hexp</code>, <code>decov</code>, <code>lkj</code> — with R's argument names and
+validation. Not ported: <code>autoscale</code>, and the <code>hs</code>/<code>hs_plus</code>/<code>lasso</code>/
+<code>product_normal</code> shrinkage families.</p>
+<p><strong>Counterfactuals</strong> cover effect sizes through <code>effect_table</code>, which re-evaluates
+<code>R_t</code> per draw under a modified design. Re-simulating observations under that
+design is now possible with <code>epidemia.predict</code>, but it is your code, not a
+one-liner.</p>
 <h2 id="choosing-a-side">Choosing a side<a class="headerlink" href="#choosing-a-side" title="Permanent link">&para;</a></h2>
-<p>Use <strong>R</strong> for anything you intend to publish from: several data streams,
-forecasting and scoring, susceptibility, the full prior system.</p>
-<p>Use <strong>Python</strong> when the model is a partially pooled multi-region renewal model
-with fixed covariates and you want it in a PyMC/ArviZ workflow. See
+<p>The two now express the same models. Use <strong>R</strong> when you want the formula
+interface, one-call forecasting from a <code>newdata</code> frame, or stochastic latent
+infections. Use <strong>Python</strong> when you want a PyMC/ArviZ workflow, nutpie's
+sampler, or to build the design matrices yourself. See
 <a href="../performance/">Performance</a> for how the two backends actually compare on that
 model — the answer is less one-sided than "Rust sampler beats Stan" suggests.</p>
 
