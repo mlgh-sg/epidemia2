@@ -65,7 +65,11 @@ markdown_extensions:
 nav:
   - Home: index.md
   - User guide: guide.md
-  - Tutorials: tutorials.md
+  - Tutorials:
+      - Overview: tutorials.md
+      - Assessing the effects of interventions: tutorials/europe-covid.md
+      - Partial pooling: tutorials/partial-pooling.md
+      - Several observation series: tutorials/multilevel-multi-obs.md
   - Parity with R: parity.md
   - Performance: performance.md
   - API reference: reference.md

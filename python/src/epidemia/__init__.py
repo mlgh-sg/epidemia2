@@ -33,6 +33,7 @@ from .core import (
     PanelData,
     RandomWalk,
     build_epidemia_model,
+    fit_epidemia,
 )
 from .core import prepare_panel as prepare_panel_multi
 from .data import EUROPE_COVID_NPIS, EpiData, EuropeCovid2, europe_covid2, flu1918
@@ -69,6 +70,7 @@ __all__ = [
     "PanelData",
     "RandomWalk",
     "build_epidemia_model",
+    "fit_epidemia",
     "build_model",
     "build_multilevel_model",
     "crps",

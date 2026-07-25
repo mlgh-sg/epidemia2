@@ -91,7 +91,7 @@ from epidemia.plots import save_plot, theme_epidemia
 #
 # We use a small slice of the Europe/COVID data — three countries and a single
 # intervention (`lockdown`) — so the three regimes fit quickly and the shrinkage
-# is easy to see. (See the [europe-covid](europe-covid.py) notebook for the full
+# is easy to see. (See the [europe-covid](europe-covid.md) notebook for the full
 # 11-country, 5-NPI analysis.)
 #
 # **The countries are chosen for their contrast in *how much data they carry***,
@@ -107,7 +107,7 @@ from epidemia.plots import save_plot, theme_epidemia
 # > reproduce Sweden's deaths falling at all, and that misfit would leak into
 # > every shared parameter. Sweden *did* suppress its epidemic, with softer
 # > measures — which is exactly why it belongs in the full 5-NPI
-# > [europe-covid](europe-covid.py) analysis, where those measures exist, rather
+# > [europe-covid](europe-covid.md) analysis, where those measures exist, rather
 # > than in a one-covariate demo that cannot represent it. Adding a softer
 # > measure here would not rescue it either: the measures were enacted within days
 # > of each other, so a second covariate is collinear with `lockdown` and simply
@@ -299,7 +299,7 @@ epi.plots.plot_percent_effects(idata_pp, config, data=fit, save="pp-percent-effe
 # `epi.plots.plot_region_effects`) computes. And with several *collinear*
 # covariates, a single $\beta_k$ whose interval covers zero usually means "not
 # separately identifiable from the others", not "this measure did nothing". The
-# [europe-covid](europe-covid.py) notebook works through that case.
+# [europe-covid](europe-covid.md) notebook works through that case.
 #
 # ### References
 #

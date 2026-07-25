@@ -7,8 +7,23 @@ notebook — open it in Jupyter or VS Code, or run it with `python`.
 
 | Tutorial | R counterpart | What it covers |
 |---|---|---|
-| [Assessing the effects of interventions](https://github.com/mlgh-sg/epidemia2/blob/main/python/notebooks/europe-covid.py) | [Multilevel Modeling](https://mlgh-sg.com/epidemia2/articles/europe-covid.html) | A partially pooled model of five NPIs across 11 European countries, fitted to daily deaths. Effect sizes, per-region reproduction numbers, counterfactuals. |
-| [Partial pooling](https://github.com/mlgh-sg/epidemia2/blob/main/python/notebooks/partial-pooling.py) | [Partial Pooling](https://mlgh-sg.com/epidemia2/articles/partial-pooling.html) | How R's `(expr \| factor)` and `(expr \|\| factor)` map onto hierarchical priors here, and what no pooling, partial pooling and full pooling each do to the estimates. |
+| [Assessing the effects of interventions](tutorials/europe-covid.md) | [Multilevel Modeling](https://mlgh-sg.com/epidemia2/articles/europe-covid.html) | A partially pooled model of five NPIs across 11 European countries, fitted to daily deaths. Effect sizes, per-region reproduction numbers, counterfactuals. |
+| [Partial pooling](tutorials/partial-pooling.md) | [Partial Pooling](https://mlgh-sg.com/epidemia2/articles/partial-pooling.html) | How R's `(expr \| factor)` and `(expr \|\| factor)` map onto hierarchical priors here, and what no pooling, partial pooling and full pooling each do to the estimates. |
+| [Several observation series](tutorials/multilevel-multi-obs.md) | [Multilevel + Multiple Observations](https://mlgh-sg.com/epidemia2/articles/multilevel-multi-obs.html) | Deaths and cases fitted jointly, with correlated region effects, a weekly random walk per region, and a susceptibility adjustment. Scored with `epidemia.scoring`. |
+
+The pages above are **precomputed**: `scripts/precompute.py` executes each
+notebook once and commits the rendered markdown and figures, exactly as the R
+side's `vignettes/precompute.R` bakes the vignettes. Nothing is fitted when the
+documentation is built. Re-bake after changing the modelling code:
+
+```bash
+uv run --group dev python scripts/precompute.py            # all three
+uv run --group dev python scripts/precompute.py europe-covid
+```
+
+The notebook sources live in
+[`notebooks/`](https://github.com/mlgh-sg/epidemia2/tree/main/python/notebooks)
+as jupytext percent files — each is a runnable script *and* a notebook.
 
 ## One difference from the R vignettes worth knowing
 

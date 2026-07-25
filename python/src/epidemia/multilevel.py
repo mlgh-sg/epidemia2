@@ -539,7 +539,7 @@ def _compile(model, backend="numba", progress_bar=True, **sample_kw):
 
 
 def fit_multilevel(data: MultilevelData, config: MultilevelConfig,
-                   draws=1000, tune=1000, chains=4, seed=0, adaptation="diag",
+                   draws=1000, tune=1000, chains=4, seed=0, adaptation="low_rank",
                    backend="numba", progress_bar=True, target_accept=0.95, **kwargs):
     """Fit the multi-region renewal model with nutpie (NUTS / MCMC).
 
@@ -557,21 +557,30 @@ def fit_multilevel(data: MultilevelData, config: MultilevelConfig,
     full 11-country example. A divergence check is run after sampling and warns
     if any remain.
 
-    .. note:: **If your covariates are correlated, use ``adaptation="low_rank"``.**
+    ``adaptation`` defaults to ``"low_rank"`` rather than nutpie's ``"diag"``,
+    for the reason below.
+
+    .. note:: **Why the mass-matrix default differs from nutpie's.**
 
        Divergences and ``r_hat`` are *different* failures with different cures,
        and this model can hit both. Collinear covariates (NPIs enacted within
        days of each other, say) give a posterior with a long thin correlation
-       ridge that the default diagonal mass matrix cannot follow: the sampler
-       does not diverge, it simply fails to mix. On the 11-country example that
+       ridge that a diagonal mass matrix cannot follow: the sampler does not
+       diverge, it simply fails to mix. On the 11-country example ``"diag"``
        shows up as ``r_hat`` 1.08-1.11 and an effective sample size of 25-36 out
        of 4000 for the collinear coefficients -- and their estimates are biased
-       as a result. ``adaptation="low_rank"`` fits a low-rank correction to the
-       mass matrix and brings every ``r_hat`` to <= 1.04.
+       as a result. ``"low_rank"`` fits a low-rank correction and brings every
+       ``r_hat`` to <= 1.04.
 
-       Raising ``target_accept`` will not fix this, and a clean divergence count
-       is not evidence that it is absent. Always check ``arviz.summary`` for
-       ``r_hat`` and ``ess_bulk`` too.
+       Benchmarked, it is faster too, so this is not a speed/accuracy trade:
+       against ``"diag"`` it gave 1.3x the wall-clock speed and 4.6x the
+       effective samples per second on the 11-country model, and 4.7x / 6.3x on
+       a small single-population one. No case was found where ``"diag"`` won.
+       See ``benchmarks/`` and the docs' "Performance" page.
+
+       Raising ``target_accept`` will not fix a ridge, and a clean divergence
+       count is not evidence that one is absent. Always check ``arviz.summary``
+       for ``r_hat`` and ``ess_bulk`` too.
     """
     model = build_multilevel_model(data, config)
     idata = _compile(model, backend=backend, draws=draws, tune=tune, chains=chains,

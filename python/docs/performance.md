@@ -43,6 +43,24 @@ Now the picture separates:
 
 --8<-- "benchmark-table.md"
 
+## This is now the default
+
+Because it wins everywhere we measured, `adaptation="low_rank"` is what
+`fit`, `fit_multilevel` and `fit_epidemia` use — deliberately departing from
+nutpie's own `"diag"` default. The small single-population flu model shows the
+same pattern even more starkly than the eleven-country one, so there is no easy
+case in which the diagonal metric is the better choice:
+
+| Model | `diag` | `low_rank` | speed-up | ESS/s gain |
+|---|---:|---:|---:|---:|
+| Flu, 1 population, 92 days | 130.2s ±3.1 | **27.9s ±2.9** | 4.7× | 6.3× |
+| Europe COVID, 11 regions | 963s | **752s** | 1.3× | 4.6× |
+
+(Three seeds each on the small model; min bulk ESS was also higher for
+`low_rank` in both cases.)
+
+Pass `adaptation="diag"` explicitly if you want the old behaviour.
+
 ## Why `low_rank` matters so much here
 
 The five NPIs were enacted within days of each other across most of these

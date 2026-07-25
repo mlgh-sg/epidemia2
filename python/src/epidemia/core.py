@@ -40,6 +40,7 @@ __all__ = [
     "PanelData",
     "EpiModelConfig",
     "build_epidemia_model",
+    "fit_epidemia",
     "prepare_panel",
 ]
 
@@ -674,3 +675,36 @@ def prepare_panel(df, npis=(), responses=("deaths",), group="country",
     if rw_index is not None:
         panel.rw_index = rw_index
     return panel, series
+
+
+def fit_epidemia(data: PanelData, obs_models, config: EpiModelConfig,
+                 draws=1000, tune=1000, chains=4, seed=0,
+                 adaptation="low_rank", backend="numba", target_accept=0.95,
+                 progress_bar=True, **kwargs):
+    """Build and fit the model with nutpie, returning an ``InferenceData``.
+
+    The counterpart of R's ``epim()`` for :func:`build_epidemia_model`.
+
+    ``adaptation`` defaults to ``"low_rank"`` rather than nutpie's ``"diag"``:
+    these posteriors combine a hierarchy with a random walk and, often,
+    collinear covariates, leaving a correlated ridge that a diagonal mass matrix
+    cannot follow. It fails silently -- bad mixing without divergences.
+    Benchmarked, ``"low_rank"`` was both faster and better mixed on every model
+    tried; see the documentation's "Performance" page.
+
+    ``target_accept`` defaults to 0.95 rather than 0.8 for the related but
+    distinct funnel geometry between the between-region SDs and the non-centred
+    region effects.
+
+    Parameters mirror :func:`epidemia.multilevel.fit_multilevel`; extra keyword
+    arguments are passed through to ``nutpie.sample``.
+    """
+    from .multilevel import _compile, _warn_on_divergences
+
+    model = build_epidemia_model(data, obs_models, config)
+    idata = _compile(model, backend=backend, draws=draws, tune=tune,
+                     chains=chains, seed=seed, adaptation=adaptation,
+                     progress_bar=progress_bar, target_accept=target_accept,
+                     **kwargs)
+    _warn_on_divergences(idata)
+    return idata
