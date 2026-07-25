@@ -9,10 +9,11 @@ articles:
   model-implementation: model-implementation.html
   model-introduction: model-introduction.html
   model-schematic: model-schematic.html
+  multilevel-multi-obs: multilevel-multi-obs.html
   multiple-obs: multiple-obs.html
   partial-pooling: partial-pooling.html
   priors: priors.html
-last_built: 2026-07-17T03:15Z
+last_built: 2026-07-25T13:52Z
 urls:
   reference: https://mlgh-sg.com/epidemia2/reference
   article: https://mlgh-sg.com/epidemia2/articles

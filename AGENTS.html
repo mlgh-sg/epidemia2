@@ -65,6 +65,9 @@
     <li>
       <a href="articles/multiple-obs.html">Multiple Observations</a>
     </li>
+    <li>
+      <a href="articles/multilevel-multi-obs.html">Multilevel + Multiple Observations</a>
+    </li>
   </ul></li>
 <li>
   <a href="reference/index.html">Reference</a>
@@ -146,20 +149,21 @@
 </ul></div>
 <div class="section level2">
 <h2 id="environment-setup">Environment setup<a class="anchor" aria-label="anchor" href="#environment-setup"></a></h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># one-time</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cmdstanr"</span><span class="op">)</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://stan-dev.r-universe.dev"</span>, <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"repos"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu">cmdstanr</span><span class="fu">::</span><span class="fu"><a href="https://mc-stan.org/cmdstanr/reference/install_cmdstan.html" class="external-link">install_cmdstan</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co"># dev tooling</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"devtools"</span>, <span class="st">"roxygen2"</span>, <span class="st">"testthat"</span>, <span class="st">"pkgload"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>The R environment is locked with <strong>renv</strong> (<code>renv.lock</code>), and CmdStan is pinned separately at <strong>2.36.0</strong> — renv only manages R packages, and CmdStan is a C++ toolchain installed outside any R library.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">make</span> setup     <span class="co"># renv::restore() + install CmdStan 2.36.0 if absent</span></span></code></pre></div>
+<p>That is <code>Rscript tools/setup.R</code> if you would rather not use make. The project <code>.Rprofile</code> activates renv and puts the Stan r-universe on <code>getOption("repos")</code> so <code>cmdstanr</code> resolves.</p>
+<p>To rebuild the lockfile from scratch after changing <code>DESCRIPTION</code>, run <code>Rscript tools/renv-bootstrap.R</code>. Two things about that script are load-bearing: the snapshot type is <strong>implicit</strong> (renv scans the code) because an explicit snapshot would record only <code>Imports</code> and miss everything the tests and tutorials need; and <code>tools/dependencies.R</code> lists the handful of packages the scan cannot see, because they are used only inside <code>include = FALSE</code> chunks that <code>precompute.R</code> strips when baking the tutorials.</p>
+<p>The dev tooling (<code>roxygen2</code>, <code>devtools</code>, <code>pkgdown</code>, <code>covr</code>) is in the lockfile too, via that same file — it is referenced only from the <code>Makefile</code>, which renv does not scan, so <code>make document</code> and <code>make docs</code> would otherwise break on a bare restore.</p>
 </div>
 <div class="section level2">
 <h2 id="common-commands">Common commands<a class="anchor" aria-label="anchor" href="#common-commands"></a></h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">pkgload</span><span class="fu">::</span><span class="fu"><a href="https://pkgload.r-lib.org/reference/load_all.html" class="external-link">load_all</a></span><span class="op">(</span><span class="st">"."</span><span class="op">)</span>            <span class="co"># load the package for interactive work</span></span>
-<span><span class="fu">roxygen2</span><span class="fu">::</span><span class="fu">roxygenise</span><span class="op">(</span><span class="op">)</span>            <span class="co"># regenerate NAMESPACE + man/ after editing roxygen</span></span>
-<span><span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_dir.html" class="external-link">test_dir</a></span><span class="op">(</span><span class="st">"tests/testthat"</span><span class="op">)</span>   <span class="co"># run the test suite (fits several tiny models)</span></span>
-<span><span class="fu">epidemia</span><span class="fu">::</span><span class="fu"><a href="reference/compile_epidemia.html">compile_epidemia</a></span><span class="op">(</span><span class="op">)</span>      <span class="co"># precompile both Stan programs into the cache</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">make</span> test        <span class="co"># testthat suite, fast tier</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">make</span> test-slow   <span class="co"># ...including the heavier fitting tests (EPIDEMIA_SLOW_TESTS=true)</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">make</span> document    <span class="co"># roxygen2::roxygenise() -&gt; NAMESPACE + man/</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">make</span> compile     <span class="co"># precompile both Stan programs into the user cache</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">make</span> tutorials   <span class="co"># re-bake the precomputed tutorial vignettes</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="fu">make</span> check       <span class="co"># R CMD check</span></span></code></pre></div>
+<p>Tests run against the working tree via <code>pkgload::load_all(".")</code>, not an installed copy. <code>make tutorials-clean</code> drops <code>vignettes/cache/</code> first — without that, knitr replays the <code>cache = TRUE</code> chunks and the tutorials are not actually refitted.</p>
 <p>Do not edit <code>NAMESPACE</code> or <code>man/*.Rd</code> by hand — they are generated by roxygen2 from <code>#'</code> blocks in <code>R/</code>.</p>
 </div>
 <div class="section level2">
@@ -216,7 +220,13 @@
 <strong>Sparse CSR indices are 0-based</strong> throughout (<code>standata_reg.R</code> stores <code>parts$v - 1L</code>). The pure-Stan <code>csr_matrix_times_vector2</code> in <code>inst/stan/functions/common_functions.stan</code> matches that convention.</li>
 <li>
 <strong>Stan syntax</strong> must be canonical (CmdStan ≥ 2.33): <code>array[n] int x</code>, and <code>foo_cdf(y | ...)</code> with a vertical bar.</li>
-<li>The set of usable prior <em>families</em> is fixed by the Stan model, not R — see <code>ok_dists</code>/<code>ok_int_dists</code>/<code>ok_aux_dists</code>/<code>ok_cov_dists</code> in <code>R/utilities.R</code>. Adding a new family means adding an integer code branch in <code>inst/stan/model/priors_*.stan</code> and the R parser, plus a constructor in <code>R/priors.R</code>.</li>
+<li>The set of usable prior <em>families</em> is fixed by the Stan model, not R — see <code>ok_dists</code>/<code>ok_int_dists</code>/<code>ok_aux_dists</code>/<code>ok_cov_dists</code> in <code>R/utilities.R</code>. Adding a new family means adding an integer code branch in <code>inst/stan/model/priors_*.stan</code> and the R parser, plus a constructor in <code>R/priors.R</code>. <strong><code><a href="reference/priors.html">lkj()</a></code> is exported (it comes with the vendored rstanarm prior set) but is not usable as <code>prior_covariance</code>:</strong> the Stan program has only <code>decov_lp()</code>. <code><a href="reference/epirt.html">epirt()</a></code> rejects it explicitly, because letting it through produced standata with <code>shape = 0</code> and a fit that died inside CmdStan after compiling.</li>
+<li>
+<strong>Random effects are R_t-only.</strong> <code><a href="reference/epirt.html">epirt()</a></code> takes <code>prior_covariance</code>; <code><a href="reference/epiobs.html">epiobs()</a></code> has no such argument. The Stan program declares a single <code>z_b</code>/<code>b</code>/<code>theta_L</code> set, consumed by <code>tparameters/make_eta.stan</code> and never by <code>make_oeta.stan</code>. A formula like <code>deaths ~ (1|region)</code> passed to <code><a href="reference/epiobs.html">epiobs()</a></code> therefore will not do what it looks like it does.</li>
+<li>
+<strong>Forecasting cannot introduce a group.</strong> Passing <code>newdata</code> containing a group the model was not fitted on silently drops that group rather than predicting for it. The <code>_NEW_</code> level added by <code>pad_reTrms()</code> (<code>R/helpers.R</code>) exists for the internal design-matrix padding, not for out-of-sample groups.</li>
+<li>
+<strong>Fitted-model fixtures under <code>tests/data/</code> are coupled to the draws representation</strong> and go stale silently. Regenerate them with <code>Rscript tests/data/make-fixtures.R</code> after changing <code>build_draws()</code> or the <code>epimodel_draws</code> wrapper.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="conventions">Conventions<a class="anchor" aria-label="anchor" href="#conventions"></a></h2>

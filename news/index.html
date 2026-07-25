@@ -65,6 +65,9 @@
     <li>
       <a href="../articles/multiple-obs.html">Multiple Observations</a>
     </li>
+    <li>
+      <a href="../articles/multilevel-multi-obs.html">Multilevel + Multiple Observations</a>
+    </li>
   </ul></li>
 <li>
   <a href="../reference/index.html">Reference</a>
@@ -93,6 +96,40 @@
 
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.1.0" id="epidemia-110">epidemia 1.1.0<a class="anchor" aria-label="anchor" href="#epidemia-110"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-1-1-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-0"></a></h3>
+<ul><li>
+<strong>Models with a single group-level term now fit.</strong> <code>(1 | group)</code> — the simplest multilevel specification there is — failed with <code>'perm' is of wrong length 3 (!= 2)</code>. With one covariance entry, <code><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply()</a></code> returned a matrix rather than a 3-d array when rebuilding <code>Sigma</code> from <code>theta_L</code>, and the subsequent <code><a href="https://rdrr.io/r/base/aperm.html" class="external-link">aperm()</a></code> errored.</li>
+<li>
+<strong><code>prior_covariance = lkj()</code> is now rejected with an explanatory message.</strong> It was accepted by <code><a href="../reference/epirt.html">epirt()</a></code> but the Stan program implements only <code>decov</code>, so the fit failed inside CmdStan with an opaque “Unable to retrieve the metadata” after the model had compiled. Use <code><a href="../reference/priors.html">decov()</a></code>; with the <code>||</code> form of a random effect it reduces to independent scale priors.</li>
+<li>
+<strong>CRPS was computed against the wrong distribution.</strong> <code>crps()</code> pooled the entire <code>[observation, draw]</code> matrix into a single empirical distribution and scored every observation against that marginal, so each day’s score depended on the other dates and groups in the same call. With a point-mass predictive it returned 4.44 where the answer is 0, and on well-calibrated draws it overstated the score by one to two orders of magnitude. Every observation is now scored against its own predictive draws. This affects <code>crps</code> values from <code><a href="../reference/evaluate_forecast.html">evaluate_forecast()</a></code>, <code><a href="../reference/posterior_metrics.html">posterior_metrics()</a></code> and <code><a href="../reference/plot_metrics.html">plot_metrics()</a></code>; <code>mean_abs_error</code> and <code>median_abs_error</code> were unaffected.</li>
+<li>
+<strong>Forecast evaluation scored the wrong observation series.</strong> In <code><a href="../reference/evaluate_forecast.html">evaluate_forecast()</a></code> the index was <code>which(type %in% alltypes)</code>, which is <code><a href="https://rdrr.io/r/base/which.html" class="external-link">which()</a></code> of a length-1 logical and so evaluated to 1 for any modelled type. On a model with several series, every metric and coverage number for a non-first <code>type</code> compared that series’ predictions against the <em>first</em> series’ observations. Affects <code><a href="../reference/posterior_metrics.html">posterior_metrics()</a></code>, <code><a href="../reference/posterior_coverage.html">posterior_coverage()</a></code>, <code><a href="../reference/plot_metrics.html">plot_metrics()</a></code> and <code><a href="../reference/plot_coverage.html">plot_coverage()</a></code> equally.</li>
+<li>
+<strong><code><a href="https://mc-stan.org/rstantools/reference/posterior_predict.html" class="external-link">posterior_predict()</a></code> returned <code>NULL</code> for multi-series models.</strong> <code>types</code> defaults to every modelled type, and the return was <code>out[[types]]</code> — recursive indexing once <code>types</code> has length greater than one. The documented default call therefore returned <code>NULL</code> on any model with two or more observation series. A single requested type still unwraps, as <code><a href="../reference/plot_obs.html">plot_obs()</a></code> expects.</li>
+<li>
+<strong>Rows coded <code>-1</code> are no longer scored as observations.</strong> <code><a href="../reference/epiobs.html">epiobs()</a></code> documents <code>-1</code> as the placeholder for a forecast horizon, and the multiple-observations tutorial builds <code>newdata</code> that way, but the scoring path treated them as counts of −1: error inflated and interval coverage collapsed to zero on exactly the rows being forecast. The plotting path already dropped them, so the two disagreed about the same <code>newdata</code>.</li>
+<li>
+<strong><code>posterior_predict(draws = n)</code> paired mismatched draws.</strong> The predictive means were a random subsample of the posterior while the observation dispersion parameters were taken from the full posterior in its original order, so each simulated draw combined a mean from one posterior draw with an auxiliary parameter from another.</li>
+<li>
+<code>gr_subset()</code> no longer collapses the draws matrix to a vector when a subset leaves a single observation, and <code><a href="../reference/plot_coverage.html">plot_coverage()</a></code> no longer mis-assigns interval shading when <code>levels</code> is passed out of order.</li>
+<li>
+<strong><code>evaluate_forecast(groups = ...)</code> works with <code>newdata</code>.</strong> The predictions were restricted to the requested groups but the observations were not, so the call failed with “replacement has N rows, data has M”.</li>
+<li>
+<strong><code><a href="../reference/plot_metrics.html">plot_metrics()</a></code> now builds.</strong> It, and the <code>by_group</code> / <code>by_unseen</code> branches of <code><a href="../reference/plot_coverage.html">plot_coverage()</a></code>, used <code>facet_wrap(.data$col)</code>, which errors with “Can’t subset <code>.data</code> outside of a data mask context”.</li>
+<li>
+<strong><code><a href="https://mc-stan.org/rstantools/reference/posterior_predict.html" class="external-link">posterior_predict()</a></code> reports which observation types exist</strong> when given an unknown one; the message previously ended in a stray <code>FALSE</code>, because <code>call. = FALSE</code> had been placed inside <code><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0()</a></code> rather than <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code>.</li>
+<li>Generated quantities are now written to a directory owned by the call and read in a single pass, rather than lazily, once per latent series, from the shared session temporary directory. This is faster (one CSV parse instead of five) and fixes intermittent failures in sessions that fit many models — either “File does not exist: …epidemia_pp_base-<stamp>.csv” or a malformed read.</stamp></li>
+<li>The <code><a href="../reference/epim.html">epim()</a></code> example no longer uses variational Bayes. ADVI could not compute an initial ELBO for that particular model, so the documented call failed outright; it now uses <code>algorithm = "sampling"</code>, with a note on when variational Bayes is and is not appropriate.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="reproducibility-and-testing-1-1-0">Reproducibility and testing<a class="anchor" aria-label="anchor" href="#reproducibility-and-testing-1-1-0"></a></h3>
+<ul><li>The R environment is locked with <strong>renv</strong> (<code>renv.lock</code>) and CmdStan is pinned to 2.36.0. <code>make setup</code> restores both; see <code>AGENTS.md</code>.</li>
+<li>A <strong><code>R-CMD-check</code> workflow</strong> now runs <code>R CMD check</code> and the test suite on Ubuntu and macOS, on every branch. Previously no workflow ran the tests.</li>
+<li>New tests cover fitting models with <strong>multiple observation series</strong> and with <strong>multilevel / partially pooled</strong> effects, neither of which was previously fitted anywhere in the suite. Forecast evaluation is covered again.</li>
+<li>The test suite no longer requires <code>rstanarm</code>, which was an undeclared dependency of six test files even though the package itself had dropped it.</li>
+</ul></div>
 <div class="section level3">
 <h3 id="modernised-stan-toolchain-cmdstanr-1-1-0">Modernised Stan toolchain (CmdStanR)<a class="anchor" aria-label="anchor" href="#modernised-stan-toolchain-cmdstanr-1-1-0"></a></h3>
 <ul><li>

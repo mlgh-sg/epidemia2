@@ -90,6 +90,9 @@
     <li>
       <a href="../articles/multiple-obs.html">Multiple Observations</a>
     </li>
+    <li>
+      <a href="../articles/multilevel-multi-obs.html">Multilevel + Multiple Observations</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -266,9 +269,10 @@ matrix can be set using the <code>prior_covariance</code> argument in <code><a h
 it does not cleanly separate shape and scale <span class="citation">(<a href="#ref-tokuda2011">Tokuda et al. 2011</a>)</span>. A general approach
 is to decompose the prior on the covariance matrix into a prior on
 the correlation matrix and a vector of variances. This is the approach taken
-by the functions <code><a href="../reference/priors.html">decov()</a></code> and <code><a href="../reference/priors.html">lkj()</a></code>, which
-represent priors for covariance matrices. These are provided by <strong>epidemia</strong>
-for this purpose.</p>
+by <code><a href="../reference/priors.html">decov()</a></code>, which is the prior <strong>epidemia</strong> provides for this purpose.</p>
+<p><code><a href="../reference/priors.html">lkj()</a></code> is also exported, but it <strong>cannot</strong> be passed as <code>prior_covariance</code>:
+<strong>epidemia</strong>’s Stan program implements only the decov prior, and <code><a href="../reference/epirt.html">epirt()</a></code> will
+reject <code><a href="../reference/priors.html">lkj()</a></code> with an error rather than fail later during sampling.</p>
 <p>We briefly describe the decov prior, as it applies to partially
 pooled parameters in the regression for <span class="math inline">\(R_t\)</span>. Suppose the formula for <span class="math inline">\(R_t\)</span> contains a term of the form <code>(expr | factor)</code>, and
 that <code>expr</code> evaluates to a model matrix with <span class="math inline">\(p\)</span> columns, and <code>factor</code> has <span class="math inline">\(L\)</span>

@@ -70,6 +70,9 @@ epidemia so that rstanarm is not required."><meta property="og:image" content="h
     <li>
       <a href="../articles/multiple-obs.html">Multiple Observations</a>
     </li>
+    <li>
+      <a href="../articles/multilevel-multi-obs.html">Multilevel + Multiple Observations</a>
+    </li>
   </ul></li>
 <li>
   <a href="../reference/index.html">Reference</a>
@@ -209,8 +212,13 @@ and <code>epiobs</code>): <code>normal</code>, <code>student_t</code>, <code>cau
 <li><p><strong>Auxiliary parameters</strong> (<code>prior_aux</code>): <code>normal</code>,
 <code>student_t</code>, <code>cauchy</code>, <code>exponential</code>.</p></li>
 <li><p><strong>Covariance of group-specific terms</strong>
-(<code>prior_covariance</code>): <code>decov</code>, <code>lkj</code>.</p></li>
-</ul></div>
+(<code>prior_covariance</code>): <code>decov</code>.</p></li>
+</ul><p><code>lkj</code> is provided for completeness but <strong>cannot be used as
+<code>prior_covariance</code></strong>: the Stan program implements only the <code>decov</code>
+prior, and <code><a href="epirt.html">epirt</a></code> rejects <code>lkj</code> with an error. Use
+<code>decov</code>; combined with the <code>||</code> form of a group-specific term it
+reduces to independent priors on the individual standard deviations.</p>
+    </div>
     <div id="references">
     <h2>References</h2>
     <p>Piironen, J., and Vehtari, A. (2017). Sparsity information and regularization

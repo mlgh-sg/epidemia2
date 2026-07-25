@@ -90,6 +90,9 @@
     <li>
       <a href="../articles/multiple-obs.html">Multiple Observations</a>
     </li>
+    <li>
+      <a href="../articles/multilevel-multi-obs.html">Multilevel + Multiple Observations</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -404,14 +407,14 @@ poorly approximated by VB.</p>
 <span><span class="va">fm_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">epim</span>, <span class="va">pr_args</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running MCMC with 4 parallel chains...</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## Chain 3 finished in 8.4 seconds.</span></span>
-<span><span class="co">## Chain 1 finished in 8.5 seconds.</span></span>
-<span><span class="co">## Chain 2 finished in 8.7 seconds.</span></span>
-<span><span class="co">## Chain 4 finished in 8.8 seconds.</span></span>
+<span><span class="co">## Chain 3 finished in 11.4 seconds.</span></span>
+<span><span class="co">## Chain 1 finished in 11.5 seconds.</span></span>
+<span><span class="co">## Chain 2 finished in 11.8 seconds.</span></span>
+<span><span class="co">## Chain 4 finished in 11.8 seconds.</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## All 4 chains finished successfully.</span></span>
-<span><span class="co">## Mean chain execution time: 8.6 seconds.</span></span>
-<span><span class="co">## Total execution time: 8.9 seconds.</span></span></code></pre>
+<span><span class="co">## Mean chain execution time: 11.6 seconds.</span></span>
+<span><span class="co">## Total execution time: 12.0 seconds.</span></span></code></pre>
 <p>Figure <a href="#fig:multilevel-prior">1.1</a> shows approximate samples of <span class="math inline">\(R_{t,m}\)</span>
 from the prior distribution. This confirms that reproduction numbers
 follow a step function, and that rates can both increase and decrease as
@@ -444,8 +447,8 @@ the number of iterations to aid convergence.</p>
 <span><span class="co">##   This procedure has not been thoroughly tested and may be unstable </span></span>
 <span><span class="co">##   or buggy. The interface is subject to change. </span></span>
 <span><span class="co">## ------------------------------------------------------------ </span></span>
-<span><span class="co">## Gradient evaluation took 0.001376 seconds </span></span>
-<span><span class="co">## 1000 transitions using 10 leapfrog steps per transition would take 13.76 seconds. </span></span>
+<span><span class="co">## Gradient evaluation took 0.001371 seconds </span></span>
+<span><span class="co">## 1000 transitions using 10 leapfrog steps per transition would take 13.71 seconds. </span></span>
 <span><span class="co">## Adjust your expectations accordingly! </span></span>
 <span><span class="co">## Begin eta adaptation. </span></span>
 <span><span class="co">## Iteration:   1 / 250 [  0%]  (Adaptation) </span></span>
@@ -961,7 +964,7 @@ the number of iterations to aid convergence.</p>
 <span><span class="co">## This variational approximation is not guaranteed to be meaningful. </span></span>
 <span><span class="co">## Drawing a sample of size 1000 from the approximate posterior...  </span></span>
 <span><span class="co">## COMPLETED. </span></span>
-<span><span class="co">## Finished in  20.7 seconds.</span></span></code></pre>
+<span><span class="co">## Finished in  23.2 seconds.</span></span></code></pre>
 <p>A first step in evaluating the model fit is to perform posterior
 predictive checks. This is to confirm that the model adequately explains
 the observed daily deaths in each region. This can be done using the

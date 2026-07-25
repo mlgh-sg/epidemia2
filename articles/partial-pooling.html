@@ -90,6 +90,9 @@
     <li>
       <a href="../articles/multiple-obs.html">Multiple Observations</a>
     </li>
+    <li>
+      <a href="../articles/multilevel-multi-obs.html">Multilevel + Multiple Observations</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -167,9 +170,11 @@ is modeled as multivariate normal with an unknown covariance matrix. Specificall
 <span class="math display">\[\begin{equation}
   \theta_{l} \sim N(0, \Sigma),
 \end{equation}\]</span>
-where the covariance <span class="math inline">\(\Sigma\)</span> is given a prior. <strong>epidemia</strong> offers the same
-priors for covariance matrices as <strong>rstanarm</strong>; in particular the <code><a href="../reference/priors.html">decov()</a></code> and <code><a href="../reference/priors.html">lkj()</a></code> priors from <strong>rstanarm</strong> can be used. Note that <span class="math inline">\(\Sigma\)</span> is not assumed diagonal, i.e. 
-the effects within each level may be correlated.</p>
+where the covariance <span class="math inline">\(\Sigma\)</span> is given a prior. <strong>epidemia</strong> provides the
+<code><a href="../reference/priors.html">decov()</a></code> prior for this, using the same parameterisation as <strong>rstanarm</strong>. Note
+that <span class="math inline">\(\Sigma\)</span> is not assumed diagonal, i.e. the effects within each level may be
+correlated. (<code><a href="../reference/priors.html">lkj()</a></code> is exported alongside the other prior constructors but is
+not supported as <code>prior_covariance</code> — the Stan program implements only decov.)</p>
 <p>If independence is desired for parameters in <span class="math inline">\(\theta_l\)</span>, we can simply replace
 <code>(expr | factor)</code> with <code>(expr || factor)</code>. This latter term effectively
 expands into <span class="math inline">\(p\)</span> terms of the form <code>(expr_1 | factor)</code>, <span class="math inline">\(\ldots\)</span>, <code>(expr_p | factor)</code>,

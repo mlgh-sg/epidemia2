@@ -90,6 +90,9 @@
     <li>
       <a href="../articles/multiple-obs.html">Multiple Observations</a>
     </li>
+    <li>
+      <a href="../articles/multilevel-multi-obs.html">Multilevel + Multiple Observations</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -527,8 +530,8 @@ a variable in <code>data</code>. A possible model is the following.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">deaths</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/epiobs.html">epiobs</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">deaths</span> <span class="op">~</span> <span class="fl">1</span>, i2o <span class="op">=</span> <span class="va">EuropeCovid</span><span class="op">$</span><span class="va">inf2death</span>, </span>
 <span>                 link <span class="op">=</span> <span class="fu"><a href="../reference/scaled_logit.html">scaled_logit</a></span><span class="op">(</span><span class="fl">0.02</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning: the 'findbars' function has moved to the reformulas package. Please update your imports, or ask an upstream package maintainer to do so.</span></span>
-<span><span class="co">## <span style="color: #555555;">This warning is displayed once per session.</span></span></span></code></pre>
+<pre><code><span><span class="co">## Warning: the 'findbars' function has moved to the reformulas package. Please</span></span>
+<span><span class="co">## update your imports, or ask an upstream package maintainer to do so.</span></span></code></pre>
 <p>Here <span class="math inline">\(\alpha_t\)</span> corresponds to the infection fatality rate (IFR), and is modeled as an
 intercept transformed by the scaled-logit link. This implies that the IFR is constant over time and its value lies somewhere between 0% and 2%. If the prior on
 the intercept (specified by the <code>prior_intercept</code> argument) is chosen to be
@@ -674,30 +677,30 @@ not generally be used as such output is useful.</p>
 <code class="sourceCode R"><span><span class="va">fm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/epim.html">epim</a></span><span class="op">(</span>rt <span class="op">=</span> <span class="va">rt</span>, inf <span class="op">=</span> <span class="va">inf</span>, obs <span class="op">=</span> <span class="va">deaths</span>, data <span class="op">=</span> <span class="va">data</span>, </span>
 <span>           group_subset <span class="op">=</span> <span class="st">"France"</span>, algorithm <span class="op">=</span> <span class="st">"sampling"</span>, iter <span class="op">=</span> <span class="fl">1e3</span>, </span>
 <span>           seed <span class="op">=</span> <span class="fl">12345</span>, refresh <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Running MCMC with 4 chains, at most 2 in parallel...</span></span></code></pre>
+<pre><code><span><span class="co">## Running MCMC with 4 parallel chains...</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpmyqlIS/model-1d83481efc82.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpD7PpqR/model-67d0283165d6.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpmyqlIS/model-1d83481efc82.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpD7PpqR/model-67d0283165d6.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 finished in 11.5 seconds.</span></span>
-<span><span class="co">## Chain 2 finished in 12.7 seconds.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 4 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpmyqlIS/model-1d83481efc82.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpD7PpqR/model-67d0283165d6.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 3 finished in 13.0 seconds.</span></span>
-<span><span class="co">## Chain 4 finished in 12.5 seconds.</span></span>
+<pre><code><span><span class="co">## Chain 1 finished in 11.5 seconds.</span></span>
+<span><span class="co">## Chain 2 finished in 12.3 seconds.</span></span>
+<span><span class="co">## Chain 3 finished in 12.2 seconds.</span></span>
+<span><span class="co">## Chain 4 finished in 12.7 seconds.</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## All 4 chains finished successfully.</span></span>
-<span><span class="co">## Mean chain execution time: 12.5 seconds.</span></span>
-<span><span class="co">## Total execution time: 25.6 seconds.</span></span></code></pre>
+<span><span class="co">## Mean chain execution time: 12.2 seconds.</span></span>
+<span><span class="co">## Total execution time: 12.8 seconds.</span></span></code></pre>
 <p>The print method for <code>epimodel</code> objects prints summary statistics for
 model parameters. These are obtained from the sampled posterior distribution.
 Parameter are displayed
@@ -706,7 +709,7 @@ infections). An estimate of the standard deviation, labeled <code>MAD_SD</code> 
 displayed. This is the median absolute deviation from the median, and is more
 robust than naive estimates of the standard deviation for long-tailed
 distributions.</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fm</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## Rt regression parameters:</span></span>
@@ -731,7 +734,7 @@ distributions.</p>
 <span><span class="co">## seeds_aux     27.7   22.1</span></span></code></pre>
 <p>Alternatively, the summary method can be used. This gives quantiles of the
 posterior draws, and also displays some MCMC diagnostics.</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fm</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## </span></span>
 <span><span class="co">## </span></span>

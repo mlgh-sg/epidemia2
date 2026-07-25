@@ -69,6 +69,9 @@ vignette."><meta property="og:image" content="https://mlgh-sg.com/epidemia2/logo
     <li>
       <a href="../articles/multiple-obs.html">Multiple Observations</a>
     </li>
+    <li>
+      <a href="../articles/multilevel-multi-obs.html">Multilevel + Multiple Observations</a>
+    </li>
   </ul></li>
 <li>
   <a href="../reference/index.html">Reference</a>
@@ -151,13 +154,13 @@ priors on the centered covariates. Defaults to <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-prior">prior<a class="anchor" aria-label="anchor" href="#arg-prior"></a></dt>
-<dd><p>Same as in <code><code>stan_glm</code></code>. <strong>Note:</strong>
+<dd><p>Same as in <span class="pkg">rstanarm</span>'s <code>stan_glm</code>, using the prior constructors documented in <a href="priors.html">priors</a>. <strong>Note:</strong>
 If <code>autoscale=TRUE</code> in the call to the prior distribution
 then automatic rescaling of the prior may take place.</p></dd>
 
 
 <dt id="arg-prior-intercept">prior_intercept<a class="anchor" aria-label="anchor" href="#arg-prior-intercept"></a></dt>
-<dd><p>Same as in <code><code>stan_glm</code></code>. Prior
+<dd><p>Same as in <span class="pkg">rstanarm</span>'s <code>stan_glm</code>, using the prior constructors documented in <a href="priors.html">priors</a>. Prior
 for the regression intercept, if one has been specified.</p></dd>
 
 
