@@ -1,4 +1,3 @@
-context("Test plotting")
 
 # load data
 example.fit <- readRDS("../data/plot_test_fit.rds")
@@ -30,6 +29,8 @@ test_that("levels out of [0,100] throws error", {
 
 
 test_that("Rt smoothing", {
+  skip_on_cran()
+  skip_if_no_cmdstan()
   expect_warning(plot_rt(example.fit, smooth=-1), regexp = "smooth must be a positive integer")
   expect_warning(plot_rt(example.fit, smooth=0.5), regexp = "smooth must be a positive integer")
   expect_warning(plot_rt(example.fit, smooth=-0.5), regexp = "smooth must be a positive integer")
@@ -37,6 +38,8 @@ test_that("Rt smoothing", {
 })
 
 test_that("date subsetting",{
+  skip_on_cran()
+  skip_if_no_cmdstan()
   expect_error(plot_rt(example.fit, dates=c("2020-05-04", "2020-04-04")),
                  regexp = "end date must be after")
   expect_error(plot_rt(example.fit, dates=c("2020-05-04", "2020-05-04")),
@@ -70,6 +73,8 @@ test_that(".check_dates works as expected", {
 
 
 test_that("plot_rt runs through with various arguments", {
+  skip_on_cran()
+  skip_if_no_cmdstan()
   fun <- plot_rt
   expect_true(inherits(fun(fm), "ggplot"))
   expect_true(inherits(fun(fm, log=TRUE), "ggplot"))
@@ -77,6 +82,8 @@ test_that("plot_rt runs through with various arguments", {
 })
 
 test_that("plot_obs runs through with varioud arguments", {
+  skip_on_cran()
+  skip_if_no_cmdstan()
 fun <- function(x, ...) plot_obs(x, type="deaths", ...)
 expect_true(inherits(fun(fm), "ggplot"))
 expect_true(inherits(fun(fm, log=TRUE), "ggplot"))
@@ -84,6 +91,8 @@ expect_true(inherits(fun(fm, cumulative=T), "ggplot"))
 })
 
 test_that("plot_infections runs through with varioud arguments", {
+  skip_on_cran()
+  skip_if_no_cmdstan()
 fun <- plot_infections
 expect_true(inherits(fun(fm), "ggplot"))
 expect_true(inherits(fun(fm, log=TRUE), "ggplot"))
@@ -91,6 +100,8 @@ expect_true(inherits(fun(fm, cumulative=T), "ggplot"))
 })
 
 test_that("plot_infectious runs through with varioud arguments", {
+  skip_on_cran()
+  skip_if_no_cmdstan()
 fun <- plot_infectious
 expect_true(inherits(fun(fm), "ggplot"))
 expect_true(inherits(fun(fm, log=TRUE), "ggplot"))

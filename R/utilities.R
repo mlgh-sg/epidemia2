@@ -87,7 +87,7 @@ check_all_in_set <- function(vec, set) {
 
 check_prior <- function(prior, ok_dists) {
   s <- as.character.expr(substitute(prior))
-  msg <- paste(s, "must be a named list returned from an rstanarm prior function")
+  msg <- paste(s, "must be a named list returned from an epidemia prior function (see ?priors)")
   if (!is.list(prior)) 
     stop(msg, call. = FALSE)
   if (is.null(prior$dist))
@@ -630,9 +630,13 @@ ok_aux_dists <- nlist(
   "exponential"
 )
 
+# Only decov. The Stan program has a single covariance prior -- decov_lp() in
+# inst/stan/functions/common_functions.stan -- and no lkj branch. Advertising
+# lkj here let it reach standata, where the absent `shape`/`concentration`
+# fields silently became 0; CmdStan then rejected the data with an opaque
+# "Unable to retrieve the metadata", after the whole model had compiled.
 ok_cov_dists <- nlist(
- "decov", 
- "lkj"
+ "decov"
 )
 
 ok_families <- c(

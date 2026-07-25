@@ -103,8 +103,14 @@ and \code{epiobs}): \code{normal}, \code{student_t}, \code{cauchy},
 \item \strong{Auxiliary parameters} (\code{prior_aux}): \code{normal},
 \code{student_t}, \code{cauchy}, \code{exponential}.
 \item \strong{Covariance of group-specific terms}
-(\code{prior_covariance}): \code{decov}, \code{lkj}.
+(\code{prior_covariance}): \code{decov}.
 }
+
+\code{lkj} is provided for completeness but \strong{cannot be used as
+\code{prior_covariance}}: the Stan program implements only the \code{decov}
+prior, and \code{\link{epirt}} rejects \code{lkj} with an error. Use
+\code{decov}; combined with the \code{||} form of a group-specific term it
+reduces to independent priors on the individual standard deviations.
 }
 \references{
 Piironen, J., and Vehtari, A. (2017). Sparsity information and regularization

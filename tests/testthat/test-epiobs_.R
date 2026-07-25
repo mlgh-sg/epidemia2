@@ -1,4 +1,3 @@
-context("Check that epiobs_ parse model frame correctly")
 
 # Use a simple dataframe
 levels <- 3

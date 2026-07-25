@@ -28,9 +28,11 @@ posterior_predict.epimodel <-
     } else {
       w <- !(types %in% alltypes)
       if (any(w)) {
-        stop(paste0(types[w], " not a modeled type of observation.",
-          call. = FALSE
-        ))
+        stop(paste0(
+          paste(types[w], collapse = ", "),
+          " not a modeled type of observation. Modelled types are: ",
+          paste(alltypes, collapse = ", "), "."
+        ), call. = FALSE)
       }
     }
     out <- posterior_sims(
@@ -40,6 +42,12 @@ posterior_predict.epimodel <-
       seed = seed,
       ...
     )
+
+    # which posterior rows the simulations were drawn from, so the auxiliary
+    # parameters below come from the SAME draws (see subsamp()). Without this,
+    # `draws = n` paired a mean from a randomly-sampled draw with a dispersion
+    # from a different one, because R truncated the full-length aux vector.
+    idx <- attr(out, "subsample_idx")
 
     out <- out$E_obs
 
@@ -51,6 +59,9 @@ posterior_predict.epimodel <-
       # filter for required types and get associaited aux params
       obs <- object$obs[alltypes %in% types]
       mat <- as.matrix(object, pars = make_oaux_nms(obs))
+      if (!is.null(idx)) {
+        mat <- mat[idx, , drop = FALSE]
+      }
 
       for (o in obs) {
 
@@ -99,7 +110,13 @@ posterior_predict.epimodel <-
         out[[type]]$draws <- draws
       }
     }
-    return(out[[types]])
+    # `out[[types]]` is recursive indexing when `types` names more than one
+    # series -- out[[types[1]]][[types[2]]] -- which silently returned NULL.
+    # Since `types` defaults to every modelled type, the documented default call
+    # returned NULL on any model with two or more observation series. Unwrap
+    # only for a single type, which is what plot_obs() and evaluate_forecast()
+    # expect; otherwise return the named list the documentation promises.
+    if (length(types) == 1L) out[[types]] else out
   }
 
 

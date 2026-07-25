@@ -23,7 +23,9 @@ The primary model fitting function in \pkg{epidemia} is \code{\link[epidemia]{ep
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/mlgh-sg/epidemia2/}
+  \item \url{https://github.com/mlgh-sg/epidemia2}
+  \item \url{https://mlgh-sg.com/epidemia2/}
+  \item Report bugs at \url{https://github.com/mlgh-sg/epidemia2/issues}
 }
 
 }

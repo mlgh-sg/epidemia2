@@ -1,4 +1,3 @@
-context("Fixed effects stan data")
 
 library(epidemia)
 

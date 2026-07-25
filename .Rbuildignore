@@ -1,24 +1,26 @@
+^renv$
+^renv\.lock$
+^\.Rprofile$
+^\.renvignore$
+^Makefile$
+^tools$
+^data-raw$
+^python$
 ^epidemia\.Rproj$
-^doc$
-^Meta$
-^\.travis\.yml$     # Used for continuous integration testing with travis
-^.*\.Rproj$         # Automatically added by RStudio,
-^\.Rproj\.user$     # used for temporary files. 
-^README\.Rmd$       # An Rmarkdown file used to generate README.md
-^cran-comments\.md$ # Comments for CRAN submission
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
-^README\.Rmd$
 ^\.github$
-^\.covrignore$
 ^vignettes
 ^man-roxygen
 ^index\.Rmd$
 ^index\.md$
-^CRAN-RELEASE$
+^AGENTS\.md$
+^llms\.txt$
+^llms-full\.txt$
 ^inst/stan/epidemia_base$
 ^inst/stan/epidemia_pp_base$
 ^inst/stan/.*\.hpp$
-^AGENTS\.md$
-^llms\.txt$

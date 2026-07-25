@@ -332,14 +332,14 @@ fm_prior <- do.call(epim, pr_args)
 ```
 ## Running MCMC with 4 parallel chains...
 ## 
-## Chain 3 finished in 8.4 seconds.
-## Chain 1 finished in 8.5 seconds.
-## Chain 2 finished in 8.7 seconds.
-## Chain 4 finished in 8.8 seconds.
+## Chain 3 finished in 11.4 seconds.
+## Chain 1 finished in 11.5 seconds.
+## Chain 2 finished in 11.8 seconds.
+## Chain 4 finished in 11.8 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 8.6 seconds.
-## Total execution time: 8.9 seconds.
+## Mean chain execution time: 11.6 seconds.
+## Total execution time: 12.0 seconds.
 ```
 
 Figure \@ref(fig:multilevel-prior) shows approximate samples of $R_{t,m}$
@@ -381,8 +381,8 @@ fm <- do.call(epim, args)
 ##   This procedure has not been thoroughly tested and may be unstable 
 ##   or buggy. The interface is subject to change. 
 ## ------------------------------------------------------------ 
-## Gradient evaluation took 0.001376 seconds 
-## 1000 transitions using 10 leapfrog steps per transition would take 13.76 seconds. 
+## Gradient evaluation took 0.001371 seconds 
+## 1000 transitions using 10 leapfrog steps per transition would take 13.71 seconds. 
 ## Adjust your expectations accordingly! 
 ## Begin eta adaptation. 
 ## Iteration:   1 / 250 [  0%]  (Adaptation) 
@@ -898,7 +898,7 @@ fm <- do.call(epim, args)
 ## This variational approximation is not guaranteed to be meaningful. 
 ## Drawing a sample of size 1000 from the approximate posterior...  
 ## COMPLETED. 
-## Finished in  20.7 seconds.
+## Finished in  23.2 seconds.
 ```
 
 A first step in evaluating the model fit is to perform posterior

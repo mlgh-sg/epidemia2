@@ -1,4 +1,3 @@
-context("Test error handling of epiobs")
 
 form <- dummy ~ 1 + cov
 
@@ -33,16 +32,16 @@ test_that("center handled correctly", {
   expect_error(obs <- epiobs(formula = form, center = c(TRUE,TRUE), i2o = 1), regexp = "scalar")
 })
 
-test_that("prior functions require call to rstanarm prior", {
-  expect_error(obs <- epiobs(formula = form, i2o = 1, prior = "dummy"), regexp = "rstanarm prior")
-  expect_error(obs <- epiobs(formula = form, i2o = 1, prior_intercept = "dummy"), regexp = "rstanarm prior")
-  expect_error(obs <- epiobs(formula = form, i2o = 1, prior_aux = "dummy"), regexp = "rstanarm prior")
+test_that("prior functions require call to an epidemia prior", {
+  expect_error(obs <- epiobs(formula = form, i2o = 1, prior = "dummy"), regexp = "prior function")
+  expect_error(obs <- epiobs(formula = form, i2o = 1, prior_intercept = "dummy"), regexp = "prior function")
+  expect_error(obs <- epiobs(formula = form, i2o = 1, prior_aux = "dummy"), regexp = "prior function")
 })
 
 test_that("priors must be in restricted families", {
-  expect_error(obs <- epiobs(formula = form, i2o = 1, prior = rstanarm::cauchy()), regexp = "normal")
-  expect_error(obs <- epiobs(formula = form, i2o = 1, prior_intercept = rstanarm::cauchy()), regexp = "normal")
-  expect_error(obs <- epiobs(formula = form, i2o = 1, prior_aux = rstanarm::lasso()), regexp = "normal")
+  expect_error(obs <- epiobs(formula = form, i2o = 1, prior = cauchy()), regexp = "normal")
+  expect_error(obs <- epiobs(formula = form, i2o = 1, prior_intercept = cauchy()), regexp = "normal")
+  expect_error(obs <- epiobs(formula = form, i2o = 1, prior_aux = lasso()), regexp = "normal")
 })
 
 

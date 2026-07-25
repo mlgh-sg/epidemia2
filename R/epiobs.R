@@ -25,10 +25,10 @@
 #' @param center If \code{TRUE} then the covariates are centered to
 #'  have mean zero. All of the priors are then interpreted as
 #'  priors on the centered covariates. Defaults to \code{FALSE}.
-#' @param prior Same as in \code{\code{stan_glm}}. **Note:**
+#' @param prior Same as in \pkg{rstanarm}'s \code{stan_glm}, using the prior constructors documented in \link{priors}. **Note:**
 #'  If \code{autoscale=TRUE} in the call to the prior distribution
 #'  then automatic rescaling of the prior may take place.
-#' @param prior_intercept Same as in \code{\code{stan_glm}}. Prior
+#' @param prior_intercept Same as in \pkg{rstanarm}'s \code{stan_glm}, using the prior constructors documented in \link{priors}. Prior
 #'  for the regression intercept, if one has been specified.
 #' @param prior_aux 	The prior distribution for the auxiliary parameter, if it exists. 
 #' Only used if family is "neg_binom" (reciprocal dispersion), "quasi_poisson" (dispersion), "normal" (standard deviation) or "log_normal" (sigma parameter). Can be a call to \code{\link{exponential}}, 

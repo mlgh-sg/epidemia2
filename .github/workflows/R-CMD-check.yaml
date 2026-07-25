@@ -1,0 +1,97 @@
+# Run R CMD check and the testthat suite.
+#
+# This is the only workflow that runs the tests. It deliberately triggers on
+# every branch: the docs workflows are pinned to main/master, which meant that
+# for the whole cmdstanr migration nothing was checked automatically at all.
+#
+# The suite fits real (small) Stan models, so CmdStan is installed and cached.
+# The version must match tools/setup.R and the other workflows' cache keys.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+name: R-CMD-check
+
+permissions:
+  contents: read
+
+jobs:
+  R-CMD-check:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: ubuntu-latest,  r: 'release'}
+          - {os: macos-latest,   r: 'release'}
+
+    concurrency:
+      group: R-CMD-check-${{ matrix.config.os }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      # Exercise the heavier fitting tests here; locally `make test` stays fast.
+      EPIDEMIA_SLOW_TESTS: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          use-public-rspm: true
+
+      - name: Configure repositories (cmdstanr lives on the Stan r-universe)
+        run: |
+          cat("options(repos = c(stan = 'https://stan-dev.r-universe.dev', getOption('repos')))\n",
+              file = "~/.Rprofile", append = TRUE)
+        shell: Rscript {0}
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::rcmdcheck
+            any::cmdstanr
+            any::testthat
+          needs: check
+
+      # Cache key matches pkgdown.yaml and refresh-vignettes.yaml so a toolchain
+      # bump invalidates all three together.
+      - name: Cache CmdStan
+        id: cmdstan-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cmdstan
+          key: cmdstan-${{ runner.os }}-2.36.0
+
+      - name: Install CmdStan
+        if: steps.cmdstan-cache.outputs.cache-hit != 'true'
+        run: |
+          cmdstanr::check_cmdstan_toolchain(fix = TRUE)
+          cmdstanr::install_cmdstan(version = "2.36.0", cores = parallel::detectCores())
+        shell: Rscript {0}
+
+      - name: Check CmdStan is discoverable
+        run: cat("CmdStan:", cmdstanr::cmdstan_version(), "at", cmdstanr::cmdstan_path(), "\n")
+        shell: Rscript {0}
+
+      # Warm the Stan model cache once, so a compile failure is reported as
+      # itself rather than as an opaque timeout inside the first test that fits.
+      - name: Precompile the Stan programs
+        run: |
+          pkgload::load_all(".", quiet = TRUE)
+          compile_epidemia(quiet = FALSE)
+        shell: Rscript {0}
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          args: 'c("--no-manual", "--as-cran")'
+          error-on: '"warning"'
+          upload-snapshots: true

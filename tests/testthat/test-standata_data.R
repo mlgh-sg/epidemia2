@@ -1,4 +1,3 @@
-context("Test that data for standata parses correctly")
 
 # create a dummy dataframe with pops and susceptibles
 df <- data.frame(group = c(rep(1,5), rep(2, 7), rep(3, 12)))

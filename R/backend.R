@@ -225,7 +225,14 @@ transform_theta_L_draws <- function(draws, cnms) {
                              nms = nms)
     unlist(lapply(Sigma, function(x) x[lower.tri(x, diag = TRUE)]))
   })
-  # sig has dims: nSigma x iter x chain ; move to iter x chain x nSigma
+  # sig has dims: nSigma x iter x chain ; move to iter x chain x nSigma.
+  # When there is a single covariance entry -- a lone intercept-only term such
+  # as (1 | country), where len_theta_L is 1 -- the function above returns a
+  # scalar and apply() drops the leading dimension, leaving an iter x chain
+  # matrix. Restore it before permuting.
+  if (length(dim(sig)) == 2L) {
+    dim(sig) <- c(1L, dim(sig))
+  }
   sig <- aperm(sig, c(2, 3, 1))
 
   arr[, , seq_len(dim(sig)[3])] <- sig

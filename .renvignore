@@ -1,0 +1,15 @@
+# The Python port manages its own environment with uv (python/uv.lock); renv must
+# not crawl it -- python/.venv alone holds thousands of files and contains no R code.
+python/
+
+# Generated output, not sources.
+docs/
+man/
+llms.txt
+llms-full.txt
+renv/
+
+# NOTE: vignettes/*.Rmd (the baked tutorial output) IS scanned on purpose. renv
+# only recognises standard extensions, so the .Rmd.orig sources are invisible to
+# it; the baked .Rmd carry the same library() calls and are what pin the tutorial
+# dependencies in the lockfile.

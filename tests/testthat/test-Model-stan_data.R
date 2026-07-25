@@ -1,4 +1,3 @@
-context("Check Model data passed to stan")
 
 load("../data/NYWA.RData")
 

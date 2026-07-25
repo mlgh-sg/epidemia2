@@ -1,4 +1,3 @@
-context("Test error handling of epiinf")
 
 library(epidemia)
 library(testthat)
@@ -23,13 +22,13 @@ test_that("seed_days is positive, scalar integer", {
 
 test_that("Correct priors are enforced", {
   expect_error(inf <- epiinf(gen = rep(0.2,5), prior_seeds = "dummy"), regexp = "prior")
-  expect_error(inf <- epiinf(gen = rep(0.2,5), prior_seeds = rstanarm::lasso()), regexp = "exponential")
+  expect_error(inf <- epiinf(gen = rep(0.2,5), prior_seeds = lasso()), regexp = "exponential")
   expect_error(inf <- epiinf(gen = rep(0.2,5), prior_aux = "dummy"), regexp = "prior")
-  expect_error(inf <- epiinf(gen = rep(0.2,5), prior_aux = rstanarm::lasso()), regexp = "normal")
+  expect_error(inf <- epiinf(gen = rep(0.2,5), prior_aux = lasso()), regexp = "normal")
   expect_error(inf <- epiinf(gen = rep(0.2,5), prior_susc = "dummy"), regexp = "prior")
-  expect_error(inf <- epiinf(gen = rep(0.2,5), prior_susc = rstanarm::lasso()), regexp = "normal")
+  expect_error(inf <- epiinf(gen = rep(0.2,5), prior_susc = lasso()), regexp = "normal")
   expect_error(inf <- epiinf(gen = rep(0.2,5), prior_rm_noise = "dummy"), regexp = "prior")
-  expect_error(inf <- epiinf(gen = rep(0.2,5), prior_rm_noise = rstanarm::lasso()), regexp = "normal")
+  expect_error(inf <- epiinf(gen = rep(0.2,5), prior_rm_noise = lasso()), regexp = "normal")
 })
 
 test_that("latent and pop_adjust are logical scalars", {

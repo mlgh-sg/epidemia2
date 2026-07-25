@@ -1,4 +1,3 @@
-context("Test models with autocorrelation terms")
 
 data("EuropeCovid")
 

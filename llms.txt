@@ -68,7 +68,9 @@ plot_rt(fm); plot_obs(fm, type = "cases"); plot_infections(fm)
   `"identity"`, or `scaled_logit(K)` (e.g. `scaled_logit(0.02)` to cap an IFR at 2%).
 - Prior constructors provided by epidemia (identical to the same-named rstanarm
   functions): `normal()`, `student_t()`, `cauchy()`, `exponential()`, `laplace()`,
-  `lasso()`, `hs()`, `hs_plus()`, `product_normal()`, `lkj()`, `decov()`. Plus
+  `lasso()`, `hs()`, `hs_plus()`, `product_normal()`, `decov()`. (`lkj()` is
+  exported but NOT usable as `prior_covariance` — the Stan model implements only
+  `decov`, and `epirt()` rejects `lkj()` with an error.) Plus
   epidemia-specific `shifted_gamma()` (one-sided NPI effects) and `hexp()`
   (hierarchical seeding). Check the realised priors with `prior_summary(fm)`.
 
@@ -85,6 +87,11 @@ rt <- epirt(
   prior_covariance = decov(shape = c(2, 0.5), scale = 0.25),
   link = scaled_logit(6.5))
 ```
+Partial pooling applies to the **R_t regression only**: `epirt()` takes
+`prior_covariance`, `epiobs()` does not. For a group-varying ascertainment rate
+use fixed effects (`deaths ~ 0 + country`), not `(1 | country)`.
+Group-specific random walks are `rw(time = week, gr = country)`; omitting `gr`
+puts every group on one shared walk.
 
 ### Multiple observation series (fit jointly)
 ```r

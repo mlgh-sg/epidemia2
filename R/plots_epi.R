@@ -866,7 +866,10 @@ sub_ <- function(object, w) {
   if (!is.logical(w)) {
     stop("bug found. 'w' should be logical")
   }
-  object$draws <- object$draws[, w]
+  # drop = FALSE: columns of `draws` are observations, so a subset keeping a
+  # single observation would otherwise collapse the matrix to a vector and
+  # break every downstream consumer (get_quantiles() applies over margin 2).
+  object$draws <- object$draws[, w, drop = FALSE]
   object$time <- object$time[w]
   object$group <- droplevels(object$group[w])
   return(object)

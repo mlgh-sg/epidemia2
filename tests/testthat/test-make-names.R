@@ -1,4 +1,3 @@
-context("Test all make name functions in epim")
 
 data("EuropeCovid")
 data <- EuropeCovid$data

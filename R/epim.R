@@ -87,12 +87,17 @@
 #'  inf = epiinf(gen = Flu1918$si_distr),
 #'  obs = obs,
 #'  data = data,
-#'  algorithm = "fullrank",
-#'  iter = 1e4,
+#'  algorithm = "sampling",
+#'  iter = 1e3,
 #'  seed = 12345
 #' )
 #'
 #' fm <- do.call(epim, args)
+#'
+#' # Variational Bayes ("meanfield" / "fullrank") is much faster and useful for
+#' # iterating on a model, but it is not reliable for every model: ADVI can fail
+#' # to compute an initial ELBO, and it does not approximate the Gamma priors
+#' # used for NPI effects well. Use "sampling" for anything you intend to report.
 #'
 #' }
 #' @return An object of class \code{epimodel}.

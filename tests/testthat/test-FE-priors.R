@@ -1,5 +1,3 @@
-context("Prior distributions for fixed effect parameters and intercepts")
-library(rstanarm)
 
 load("../data/NYWA.RData")
 
@@ -19,7 +17,7 @@ test_that("test manual prior specification works (for parameters and intercept)"
 
   args$rt <- epirt(
     formula = R(code, date) ~ 1 + av_mobility,
-    prior = do.call(rstanarm::student_t, args = pargs)
+    prior = do.call(student_t, args = pargs)
   )
 
   sdat <- do.call("epim", args=args)
@@ -73,7 +71,7 @@ test_that("Prior scales by standard deviation of the predictor", {
 
   args$rt <- epirt(
     formula = R(code, date) ~ 1 + av_mobility,
-    prior = rstanarm::normal(location = 0,
+    prior = normal(location = 0,
                                 scale = 1,
                                 autoscale = TRUE)
   )

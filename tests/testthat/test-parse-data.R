@@ -1,5 +1,4 @@
 
-context("Testing that data argument to epim is parsed correctly")
 
 levels <- 3
 dates <- 5

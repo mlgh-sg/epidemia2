@@ -1,4 +1,3 @@
-context("Test expected behaviour for different arguments to epim")
 
 levels <- 3
 dates <- 5

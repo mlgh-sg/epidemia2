@@ -145,7 +145,7 @@ new_rw_stanmat <- function(object, stanmat) {
   return(out)
 }
 
-# Based on \code{\code{pp_b_ord}}
+# Based on rstanarm's pp_b_ord
 #
 # @param nms names of random effects from model matrix
 # @param stanmat Matrix of parameter draws

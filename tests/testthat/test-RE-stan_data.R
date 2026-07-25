@@ -1,4 +1,3 @@
-context("Random effects stan data")
 
 load(file = "../data/NYWA.RData")
 args <- list()

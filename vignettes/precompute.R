@@ -2,7 +2,7 @@
 #
 # Precompute ("bake") the model-fitting tutorial vignettes.
 #
-# The tutorials (flu, europe-covid, multiple-obs) fit real Stan models. To keep
+# The tutorials fit real Stan models. To keep
 # the documentation site fast to build and free of a live CmdStan dependency,
 # each tutorial is authored as `<name>.Rmd.orig` (the source, with live fits)
 # and this script knits it to `<name>.Rmd` with all model output and figures
@@ -17,7 +17,7 @@
 # Requires a working CmdStan installation (cmdstanr::install_cmdstan()).
 
 args <- commandArgs(trailingOnly = TRUE)
-all_vigs <- c("flu", "europe-covid", "multiple-obs")
+all_vigs <- c("flu", "europe-covid", "multiple-obs", "multilevel-multi-obs")
 vigs <- if (length(args)) intersect(args, all_vigs) else all_vigs
 if (!length(vigs)) stop("No known tutorial requested. Choose from: ",
                         paste(all_vigs, collapse = ", "))

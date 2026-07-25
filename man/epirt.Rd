@@ -27,16 +27,16 @@ to \code{\link{scaled_logit}}.}
 are centered to have mean zero. All of the priors are then interpreted as
 prior on the centered covariates. Defaults to \code{FALSE}.}
 
-\item{prior}{Same as in \code{\code{stan_glm}}. In addition to the
+\item{prior}{Same as in \pkg{rstanarm}'s \code{stan_glm}, using the prior constructors documented in \link{priors}. In addition to the
 \pkg{rstanarm} provided \link{priors},
 a \link[epidemia]{shifted_gamma} can be used. \strong{Note:} If
 \code{autoscale=TRUE} in the call to the prior distribution then
 automatic rescaling of the prior may take place.}
 
-\item{prior_intercept}{Same as in \code{\code{stan_glm}}. Prior for
+\item{prior_intercept}{Same as in \pkg{rstanarm}'s \code{stan_glm}, using the prior constructors documented in \link{priors}. Prior for
 the regression intercept (if it exists).}
 
-\item{prior_covariance}{Same as in \code{\code{stan_glmer}}. Only
+\item{prior_covariance}{Same as in \pkg{rstanarm}'s \code{stan_glmer}, using \code{\link{decov}}. Only
 used if the \code{formula} argument specifies random effects.}
 
 \item{...}{Additional arguments for \code{\link[stats]{model.frame}}}

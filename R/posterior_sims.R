@@ -92,9 +92,26 @@ posterior_sims <- function(object,
   idx  <- as.integer(sub("^[^\\[]*\\[([0-9]+)\\]$", "\\1", colnames(stanmat)))
   stanmat <- stanmat[, order(match(cont, pp_pars), idx), drop = FALSE]
 
+  # Give this run its own output directory, and read the result in one pass
+  # immediately afterwards.
+  #
+  # cmdstanr parses the output CSV lazily, on each $draws() call, and by default
+  # writes it into the session tempdir shared by every other CmdStan object. In
+  # a session that fits many models (the test suite, a vignette bake) that
+  # combination is racy: the files can be swept between the run and the read,
+  # which surfaced intermittently as either
+  #   "File does not exist: ...epidemia_pp_base-<stamp>.csv"
+  # or a malformed read ("subscript out of bounds" inside as_draws_array).
+  # An owned directory plus a single eager read closes both windows. The draws
+  # are plain arrays by the time this returns, so the directory can go with it.
+  gq_dir <- file.path(tempdir(), basename(tempfile("epidemia-gq-")))
+  dir.create(gq_dir, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(gq_dir, recursive = TRUE), add = TRUE)
+
   sims <- pp_mod$generate_quantities(
     fitted_params = posterior::as_draws_matrix(stanmat),
-    data = clean_standata(standata, model_data_vars(pp_mod))
+    data = clean_standata(standata, model_data_vars(pp_mod)),
+    output_dir = gq_dir
   )
 
   # get list of indices for slicing result of gqs
@@ -106,9 +123,12 @@ posterior_sims <- function(object,
 
   # get latent series
   nms <- c("Rt_unadj", "Rt", "infections", "infectiousness")
+
+  gq <- posterior::as_draws_rvars(sims$draws(c(nms, "E_obs")))
+
   out <- lapply(
     nms,
-    function(x) parse_latent(sims, x, ind, rt)
+    function(x) parse_latent(gq, x, ind, rt)
   )
   names(out) <- nms
 
@@ -116,8 +136,12 @@ posterior_sims <- function(object,
   n <- standata$oN[seq_len(standata$R)]
 
   out <- c(out, list(
-    E_obs = parse_obs(sims, "E_obs", n, obs)
+    E_obs = parse_obs(gq, "E_obs", n, obs)
   ))
+
+  # Carry the subsample through, so callers that pair other per-draw quantities
+  # with these simulations can select the same posterior rows.
+  attr(out, "subsample_idx") <- attr(stanmat, "subsample_idx")
 
   return(out)
 }
@@ -130,11 +154,11 @@ posterior_sims <- function(object,
 # @param n An integer vector giving number of observations 
 # of each type
 # @param obs List of epiobs_ objects
-# Extract a generated-quantities variable from a CmdStanGQ object as a plain
-# array with the draws in the first margin (matching rstan::extract()[[1]]).
-gq_extract <- function(sims, nme) {
-  rv <- posterior::as_draws_rvars(sims$draws(nme))[[nme]]
-  posterior::draws_of(rv, with_chains = FALSE)
+# Extract one generated-quantities variable from an already-read draws_rvars
+# object as a plain array with the draws in the first margin (matching the shape
+# rstan::extract()[[1]] used to return).
+gq_extract <- function(gq, nme) {
+  posterior::draws_of(gq[[nme]], with_chains = FALSE)
 }
 
 parse_obs <- function(sims, nme, n, obs) {
@@ -197,11 +221,20 @@ subsamp <- function(object, mat, draws=NULL) {
   if (draws > max_draws)
     stop(paste0("'draws' should be <= posterior sample size (",
                 max_draws, ")."), call.=FALSE)
-  
+
   some_draws <- isTRUE(draws < max_draws)
 
-  if (some_draws)
-    mat <- mat[sample(max_draws, draws), , drop = FALSE]
+  # Record which posterior rows were kept. Anything that later pairs another
+  # per-draw quantity with these draws -- posterior_predict() reading the
+  # observation dispersion parameters, for instance -- has to select the SAME
+  # rows, or it silently combines a mean from one draw with an auxiliary
+  # parameter from another.
+  idx <- seq_len(max_draws)
+  if (some_draws) {
+    idx <- sample(max_draws, draws)
+    mat <- mat[idx, , drop = FALSE]
+  }
+  attr(mat, "subsample_idx") <- idx
 
   return(mat)
 }

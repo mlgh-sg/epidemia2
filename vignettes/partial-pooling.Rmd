@@ -54,9 +54,11 @@ is modeled as multivariate normal with an unknown covariance matrix. Specificall
 \begin{equation}
   \theta_{l} \sim N(0, \Sigma),
 \end{equation}
-where the covariance $\Sigma$ is given a prior. **epidemia** offers the same 
-priors for covariance matrices as **rstanarm**; in particular the `decov()` and `lkj()` priors from **rstanarm** can be used. Note that $\Sigma$ is not assumed diagonal, i.e. 
-the effects within each level may be correlated.
+where the covariance $\Sigma$ is given a prior. **epidemia** provides the
+`decov()` prior for this, using the same parameterisation as **rstanarm**. Note
+that $\Sigma$ is not assumed diagonal, i.e. the effects within each level may be
+correlated. (`lkj()` is exported alongside the other prior constructors but is
+not supported as `prior_covariance` — the Stan program implements only decov.)
 
 If independence is desired for parameters in $\theta_l$, we can simply replace 
 `(expr | factor)` with `(expr || factor)`. This latter term effectively 

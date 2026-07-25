@@ -35,11 +35,11 @@ Defaults to \code{"logit"}.}
 have mean zero. All of the priors are then interpreted as
 priors on the centered covariates. Defaults to \code{FALSE}.}
 
-\item{prior}{Same as in \code{\code{stan_glm}}. \strong{Note:}
+\item{prior}{Same as in \pkg{rstanarm}'s \code{stan_glm}, using the prior constructors documented in \link{priors}. \strong{Note:}
 If \code{autoscale=TRUE} in the call to the prior distribution
 then automatic rescaling of the prior may take place.}
 
-\item{prior_intercept}{Same as in \code{\code{stan_glm}}. Prior
+\item{prior_intercept}{Same as in \pkg{rstanarm}'s \code{stan_glm}, using the prior constructors documented in \link{priors}. Prior
 for the regression intercept, if one has been specified.}
 
 \item{prior_aux}{The prior distribution for the auxiliary parameter, if it exists.

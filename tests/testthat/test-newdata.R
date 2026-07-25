@@ -1,6 +1,8 @@
-context("Correct data constructed with newdata")
 
 test_that("Test identical predictions when using same data that the model was fit with.", {
+
+  skip_on_cran()
+  skip_if_no_cmdstan()
 
   uk <- readRDS(file = "../data/fm-uk.rds")
   fit <- uk$fm

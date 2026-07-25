@@ -23,7 +23,12 @@ evaluate_forecast <-
       stop("must specify an observation type")
     }
     alltypes <- sapply(object$obs, function(x) .get_obs(formula(x)))
-    w <- which(type %in% alltypes)
+    # `which(type %in% alltypes)` reversed the operands: `type` is a single
+    # name, so `type %in% alltypes` is a length-1 logical and `which()` of it is
+    # 1 for ANY modelled type. Every series was therefore scored against the
+    # FIRST series' observations -- on a deaths+cases model, asking for "cases"
+    # compared case predictions to death counts.
+    w <- which(alltypes == type)
     if (length(w) == 0) {
       stop(paste0("obs does not contain any observations
     for type '", type, "'"), call. = FALSE)
@@ -56,11 +61,30 @@ evaluate_forecast <-
     } else {
       check_data(newdata, object$rt, object$inf, object$obs, object$groups)
       data <- parse_data(newdata, object$rt, object$inf, object$obs, object$groups)
-    }    
+      # `obs` was restricted to `groups` above, so the observed outcomes must be
+      # too. Without this, a `groups` subset combined with `newdata` fed all
+      # groups' observations into daily_error() against one group's predictions
+      # ("replacement has N rows, data has M").
+      data <- data[data$group %in% groups, ]
+    }
 
     # get observed outcomes
     obj <- epiobs_(object$obs[[w]], data)
     y <- get_obs(obj)
+
+    # Rows coded -1 are forecast placeholders, not observations -- epiobs_()
+    # documents them as such ("Must either be positive, NA, or coded -1 (for
+    # forecasting)") and the multiple-observations tutorial builds `newdata`
+    # that way. Scoring them treats the truth as -1, which inflates the error
+    # and collapses coverage. Drop them from the predictions and the outcomes
+    # together, so the two stay aligned.
+    keep <- !is.na(y) & y >= 0
+    if (!all(keep)) {
+      obs$group <- obs$group[keep]
+      obs$time <- obs$time[keep]
+      obs$draws <- obs$draws[, keep, drop = FALSE]
+      y <- y[keep]
+    }
 
     return(list(
       error = daily_error(obs, metrics, y), 
@@ -209,17 +233,21 @@ plot_coverage <-
     if ("group" %in% cols && "unseen" %in% cols) {
       p <- p + ggplot2::facet_grid(ggplot2::vars(.data$group), ggplot2::vars(.data$unseen))
     } else if ("group" %in% cols) {
-      p <- p + ggplot2::facet_wrap(.data$group)
+      p <- p + ggplot2::facet_wrap(~group)
     } else if ("unseen" %in% cols) {
-      p <- p + ggplot2::facet_wrap(.data$unseen)
+      p <- p + ggplot2::facet_wrap(~unseen)
     }
     
     p <- p +
       ggplot2::scale_fill_manual(
         name = "Fill",
+        # The `tag` factor these fills are matched against was built from
+        # check_levels(), which sorts ascending. Sort here too, or a caller
+        # passing levels out of order (e.g. c(95, 50)) gets the alpha values
+        # attached to the wrong credible intervals.
         values = ggplot2::alpha(
           "deepskyblue4",
-          rev(levels) / 100
+          rev(sort(levels)) / 100
         )
       )
     
@@ -276,9 +304,9 @@ plot_metrics <-
         color = .data$unseen
       )
     ) +
-      ggplot2::geom_line(alpha = 0.7, size = 0.8) +
+      ggplot2::geom_line(alpha = 0.7, linewidth = 0.8) +
       ggplot2::facet_wrap(
-        .data$group,
+        ~group,
         scales = "free_y"
       ) +
       ggplot2::labs(
@@ -330,10 +358,30 @@ daily_coverage <- function(obs, levels, y) {
   return(do.call(rbind, dfs))
 }
 
+# Continuous ranked probability score.
+#
+# `dat` is [observation, draw]: each ROW is the predictive sample for one
+# observation, and each observation must be scored against its own predictive
+# distribution.
+#
+# This previously pooled the entire matrix into a single empirical distribution
+# (`sort(dat)` over every date and group at once) and scored every observation
+# against that marginal. The result was not a forecast score at all: with a
+# point-mass predictive it returned 4.44 where the answer is 0, and on
+# well-calibrated draws it overstated the score by one to two orders of
+# magnitude. Every early day with an observed count of zero also received the
+# same non-zero value, which is what made the bug visible.
 crps <- function(y, dat) {
-  c_1n <- 1/length(dat)
-  x <- sort(dat)
-  a <- seq.int(0.5 * c_1n, 1 - 0.5 * c_1n, length.out = length(dat))
-  f <- function(s) 2 * c_1n * sum(((s < x) - a) * (x - s))
-  sapply(y, f)
+  dat <- as.matrix(dat)
+  vapply(seq_along(y), function(i) crps_sample(y[i], dat[i, ]), numeric(1))
+}
+
+# CRPS of a single observation `s` against a single predictive sample `x`, using
+# the standard sorted-sample estimator.
+crps_sample <- function(s, x) {
+  x <- sort(x)
+  n <- length(x)
+  c_1n <- 1 / n
+  a <- seq.int(0.5 * c_1n, 1 - 0.5 * c_1n, length.out = n)
+  2 * c_1n * sum(((s < x) - a) * (x - s))
 }

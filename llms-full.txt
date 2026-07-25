@@ -1487,11 +1487,13 @@ matrix can be set using the `prior_covariance` argument in `epirt()`.
 
 Although the Inverse-Wishart prior is a popular prior for covariance matrices, 
 it does not cleanly separate shape and scale [@tokuda2011]. A general approach 
-is to decompose the prior on the covariance matrix into a prior on 
-the correlation matrix and a vector of variances. This is the approach taken 
-by the functions `decov()` and `lkj()`, which
-represent priors for covariance matrices. These are provided by **epidemia**
-for this purpose.
+is to decompose the prior on the covariance matrix into a prior on
+the correlation matrix and a vector of variances. This is the approach taken
+by `decov()`, which is the prior **epidemia** provides for this purpose.
+
+`lkj()` is also exported, but it **cannot** be passed as `prior_covariance`:
+**epidemia**'s Stan program implements only the decov prior, and `epirt()` will
+reject `lkj()` with an error rather than fail later during sampling.
 
 We briefly describe the decov prior, as it applies to partially
 pooled parameters in the regression for $R_t$. Suppose the formula for $R_t$ contains a term of the form `(expr | factor)`, and 
@@ -1625,9 +1627,11 @@ is modeled as multivariate normal with an unknown covariance matrix. Specificall
 \begin{equation}
   \theta_{l} \sim N(0, \Sigma),
 \end{equation}
-where the covariance $\Sigma$ is given a prior. **epidemia** offers the same 
-priors for covariance matrices as **rstanarm**; in particular the `decov()` and `lkj()` priors from **rstanarm** can be used. Note that $\Sigma$ is not assumed diagonal, i.e. 
-the effects within each level may be correlated.
+where the covariance $\Sigma$ is given a prior. **epidemia** provides the
+`decov()` prior for this, using the same parameterisation as **rstanarm**. Note
+that $\Sigma$ is not assumed diagonal, i.e. the effects within each level may be
+correlated. (`lkj()` is exported alongside the other prior constructors but is
+not supported as `prior_covariance` — the Stan program implements only decov.)
 
 If independence is desired for parameters in $\theta_l$, we can simply replace 
 `(expr | factor)` with `(expr || factor)`. This latter term effectively 
@@ -2064,86 +2068,86 @@ fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data,
 ```
 
 ```
-## Chain 2 Iteration:  100 / 4000 [  2%]  (Warmup) 
 ## Chain 1 Iteration:  100 / 4000 [  2%]  (Warmup) 
+## Chain 2 Iteration:  100 / 4000 [  2%]  (Warmup) 
 ## Chain 3 Iteration:  100 / 4000 [  2%]  (Warmup) 
 ## Chain 4 Iteration:  100 / 4000 [  2%]  (Warmup) 
-## Chain 4 Iteration:  200 / 4000 [  5%]  (Warmup) 
-## Chain 1 Iteration:  200 / 4000 [  5%]  (Warmup) 
-## Chain 2 Iteration:  200 / 4000 [  5%]  (Warmup) 
 ## Chain 3 Iteration:  200 / 4000 [  5%]  (Warmup) 
-## Chain 4 Iteration:  300 / 4000 [  7%]  (Warmup) 
-## Chain 2 Iteration:  300 / 4000 [  7%]  (Warmup) 
-## Chain 1 Iteration:  300 / 4000 [  7%]  (Warmup) 
+## Chain 2 Iteration:  200 / 4000 [  5%]  (Warmup) 
+## Chain 1 Iteration:  200 / 4000 [  5%]  (Warmup) 
+## Chain 4 Iteration:  200 / 4000 [  5%]  (Warmup) 
 ## Chain 3 Iteration:  300 / 4000 [  7%]  (Warmup) 
-## Chain 4 Iteration:  400 / 4000 [ 10%]  (Warmup) 
-## Chain 2 Iteration:  400 / 4000 [ 10%]  (Warmup) 
+## Chain 2 Iteration:  300 / 4000 [  7%]  (Warmup) 
+## Chain 4 Iteration:  300 / 4000 [  7%]  (Warmup) 
+## Chain 1 Iteration:  300 / 4000 [  7%]  (Warmup) 
 ## Chain 3 Iteration:  400 / 4000 [ 10%]  (Warmup) 
+## Chain 2 Iteration:  400 / 4000 [ 10%]  (Warmup) 
+## Chain 4 Iteration:  400 / 4000 [ 10%]  (Warmup) 
 ## Chain 1 Iteration:  400 / 4000 [ 10%]  (Warmup) 
-## Chain 4 Iteration:  500 / 4000 [ 12%]  (Warmup) 
 ## Chain 2 Iteration:  500 / 4000 [ 12%]  (Warmup) 
 ## Chain 3 Iteration:  500 / 4000 [ 12%]  (Warmup) 
+## Chain 4 Iteration:  500 / 4000 [ 12%]  (Warmup) 
 ## Chain 1 Iteration:  500 / 4000 [ 12%]  (Warmup) 
-## Chain 4 Iteration:  600 / 4000 [ 15%]  (Warmup) 
 ## Chain 2 Iteration:  600 / 4000 [ 15%]  (Warmup) 
 ## Chain 3 Iteration:  600 / 4000 [ 15%]  (Warmup) 
 ## Chain 1 Iteration:  600 / 4000 [ 15%]  (Warmup) 
-## Chain 4 Iteration:  700 / 4000 [ 17%]  (Warmup) 
+## Chain 4 Iteration:  600 / 4000 [ 15%]  (Warmup) 
 ## Chain 2 Iteration:  700 / 4000 [ 17%]  (Warmup) 
-## Chain 3 Iteration:  700 / 4000 [ 17%]  (Warmup) 
-## Chain 4 Iteration:  800 / 4000 [ 20%]  (Warmup) 
 ## Chain 1 Iteration:  700 / 4000 [ 17%]  (Warmup) 
+## Chain 3 Iteration:  700 / 4000 [ 17%]  (Warmup) 
+## Chain 4 Iteration:  700 / 4000 [ 17%]  (Warmup) 
 ## Chain 2 Iteration:  800 / 4000 [ 20%]  (Warmup) 
-## Chain 3 Iteration:  800 / 4000 [ 20%]  (Warmup) 
 ## Chain 1 Iteration:  800 / 4000 [ 20%]  (Warmup) 
-## Chain 4 Iteration:  900 / 4000 [ 22%]  (Warmup) 
+## Chain 3 Iteration:  800 / 4000 [ 20%]  (Warmup) 
+## Chain 4 Iteration:  800 / 4000 [ 20%]  (Warmup) 
 ## Chain 2 Iteration:  900 / 4000 [ 22%]  (Warmup) 
-## Chain 3 Iteration:  900 / 4000 [ 22%]  (Warmup) 
 ## Chain 1 Iteration:  900 / 4000 [ 22%]  (Warmup) 
-## Chain 4 Iteration: 1000 / 4000 [ 25%]  (Warmup) 
+## Chain 3 Iteration:  900 / 4000 [ 22%]  (Warmup) 
+## Chain 4 Iteration:  900 / 4000 [ 22%]  (Warmup) 
 ## Chain 2 Iteration: 1000 / 4000 [ 25%]  (Warmup) 
-## Chain 3 Iteration: 1000 / 4000 [ 25%]  (Warmup) 
-## Chain 4 Iteration: 1100 / 4000 [ 27%]  (Warmup) 
 ## Chain 1 Iteration: 1000 / 4000 [ 25%]  (Warmup) 
+## Chain 3 Iteration: 1000 / 4000 [ 25%]  (Warmup) 
+## Chain 4 Iteration: 1000 / 4000 [ 25%]  (Warmup) 
 ## Chain 2 Iteration: 1100 / 4000 [ 27%]  (Warmup) 
-## Chain 3 Iteration: 1100 / 4000 [ 27%]  (Warmup) 
-## Chain 4 Iteration: 1200 / 4000 [ 30%]  (Warmup) 
 ## Chain 1 Iteration: 1100 / 4000 [ 27%]  (Warmup) 
+## Chain 3 Iteration: 1100 / 4000 [ 27%]  (Warmup) 
+## Chain 4 Iteration: 1100 / 4000 [ 27%]  (Warmup) 
 ## Chain 2 Iteration: 1200 / 4000 [ 30%]  (Warmup) 
-## Chain 3 Iteration: 1200 / 4000 [ 30%]  (Warmup) 
-## Chain 4 Iteration: 1300 / 4000 [ 32%]  (Warmup) 
 ## Chain 1 Iteration: 1200 / 4000 [ 30%]  (Warmup) 
+## Chain 3 Iteration: 1200 / 4000 [ 30%]  (Warmup) 
+## Chain 4 Iteration: 1200 / 4000 [ 30%]  (Warmup) 
 ## Chain 2 Iteration: 1300 / 4000 [ 32%]  (Warmup) 
-## Chain 3 Iteration: 1300 / 4000 [ 32%]  (Warmup) 
-## Chain 4 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
 ## Chain 1 Iteration: 1300 / 4000 [ 32%]  (Warmup) 
+## Chain 3 Iteration: 1300 / 4000 [ 32%]  (Warmup) 
+## Chain 4 Iteration: 1300 / 4000 [ 32%]  (Warmup) 
 ## Chain 2 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
-## Chain 3 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
-## Chain 4 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
 ## Chain 1 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
+## Chain 3 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
+## Chain 4 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
 ## Chain 2 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
-## Chain 3 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
 ## Chain 1 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
-## Chain 4 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
+## Chain 4 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
+## Chain 3 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
 ## Chain 2 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
 ## Chain 1 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
+## Chain 4 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
 ## Chain 3 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
-## Chain 4 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
-## Chain 2 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
 ## Chain 1 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
+## Chain 2 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
+## Chain 4 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
 ## Chain 3 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
-## Chain 4 Iteration: 1800 / 4000 [ 45%]  (Warmup) 
-## Chain 2 Iteration: 1800 / 4000 [ 45%]  (Warmup) 
 ## Chain 1 Iteration: 1800 / 4000 [ 45%]  (Warmup) 
+## Chain 2 Iteration: 1800 / 4000 [ 45%]  (Warmup) 
+## Chain 4 Iteration: 1800 / 4000 [ 45%]  (Warmup) 
 ## Chain 3 Iteration: 1800 / 4000 [ 45%]  (Warmup) 
-## Chain 4 Iteration: 1900 / 4000 [ 47%]  (Warmup) 
-## Chain 2 Iteration: 1900 / 4000 [ 47%]  (Warmup) 
 ## Chain 1 Iteration: 1900 / 4000 [ 47%]  (Warmup) 
+## Chain 2 Iteration: 1900 / 4000 [ 47%]  (Warmup) 
+## Chain 4 Iteration: 1900 / 4000 [ 47%]  (Warmup) 
 ## Chain 3 Iteration: 1900 / 4000 [ 47%]  (Warmup) 
-## Chain 4 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
-## Chain 4 Iteration: 2001 / 4000 [ 50%]  (Sampling) 
 ## Chain 1 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
 ## Chain 1 Iteration: 2001 / 4000 [ 50%]  (Sampling) 
+## Chain 4 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
+## Chain 4 Iteration: 2001 / 4000 [ 50%]  (Sampling) 
 ## Chain 2 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
 ## Chain 2 Iteration: 2001 / 4000 [ 50%]  (Sampling) 
 ## Chain 3 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
@@ -2153,89 +2157,89 @@ fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data,
 ## Chain 2 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
 ## Chain 3 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
 ## Chain 1 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
-## Chain 4 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
 ## Chain 2 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
-## Chain 1 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
+## Chain 4 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
 ## Chain 3 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
-## Chain 4 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
-## Chain 1 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
 ## Chain 2 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
+## Chain 4 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
 ## Chain 3 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
 ## Chain 4 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
-## Chain 1 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
+## Chain 1 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
 ## Chain 2 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
 ## Chain 3 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
-## Chain 1 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
 ## Chain 4 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
 ## Chain 2 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
+## Chain 1 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
 ## Chain 3 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
-## Chain 1 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
 ## Chain 4 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
 ## Chain 2 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
+## Chain 1 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
 ## Chain 3 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
-## Chain 1 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
 ## Chain 4 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
-## Chain 1 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
 ## Chain 2 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
+## Chain 1 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
 ## Chain 3 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
 ## Chain 4 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
 ## Chain 2 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
+## Chain 1 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
 ## Chain 3 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
-## Chain 4 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
 ## Chain 2 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
+## Chain 4 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
+## Chain 1 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
 ## Chain 3 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
-## Chain 1 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
 ## Chain 4 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
-## Chain 1 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 3 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
 ## Chain 2 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
+## Chain 3 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
 ## Chain 4 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
-## Chain 1 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 3 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
 ## Chain 2 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
+## Chain 1 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
+## Chain 3 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
 ## Chain 4 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
-## Chain 1 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 3 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
 ## Chain 2 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
+## Chain 1 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
+## Chain 3 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
 ## Chain 4 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 1 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
-## Chain 3 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
 ## Chain 2 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 1 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
+## Chain 1 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
+## Chain 3 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
 ## Chain 4 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 3 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
 ## Chain 2 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 1 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
+## Chain 3 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
 ## Chain 4 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 3 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
 ## Chain 2 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 1 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
+## Chain 1 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
+## Chain 3 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
 ## Chain 4 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
-## Chain 1 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 1 finished in 103.9 seconds.
-## Chain 3 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
 ## Chain 2 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
+## Chain 3 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
 ## Chain 4 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
-## Chain 3 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
 ## Chain 2 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
+## Chain 1 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
+## Chain 3 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
 ## Chain 4 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
-## Chain 3 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
 ## Chain 2 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
+## Chain 3 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
 ## Chain 4 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
-## Chain 3 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
 ## Chain 2 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
+## Chain 1 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
+## Chain 3 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
 ## Chain 4 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 4 finished in 117.0 seconds.
-## Chain 3 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 3 finished in 117.7 seconds.
+## Chain 4 finished in 154.3 seconds.
 ## Chain 2 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 2 finished in 118.9 seconds.
+## Chain 2 finished in 154.5 seconds.
+## Chain 1 Iteration: 4000 / 4000 [100%]  (Sampling) 
+## Chain 1 finished in 155.2 seconds.
+## Chain 3 Iteration: 4000 / 4000 [100%]  (Sampling) 
+## Chain 3 finished in 156.6 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 114.4 seconds.
-## Total execution time: 119.1 seconds.
+## Mean chain execution time: 155.2 seconds.
+## Total execution time: 156.7 seconds.
 ```
 
 Figure \@ref(fig:eng-rt) plots credible intervals for $R_t$ over the two
@@ -2546,59 +2550,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 1 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[11, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
 ```
 
 ```
@@ -2622,59 +2578,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 2 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[8, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[17, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
 ```
 
 ```
@@ -2698,59 +2606,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 3 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[88, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 3
-```
-
-```
-## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 3
-```
-
-```
-## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[11, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
 ```
 
 ```
@@ -2774,35 +2634,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[2, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 4 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 4
-```
-
-```
-## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[8, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
 ```
 
 ```
@@ -2818,127 +2654,103 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[17, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 4
-```
-
-```
-## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 ## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 ## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 ## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 ## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-## Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-## Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 4 finished in 19.0 seconds.
+## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 1 finished in 19.7 seconds.
+## Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
 ## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 2 finished in 20.7 seconds.
+## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 3 finished in 21.4 seconds.
+## Chain 3 finished in 29.2 seconds.
+## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 finished in 29.6 seconds.
+## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 1 finished in 29.7 seconds.
+## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 4 finished in 29.8 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 20.2 seconds.
-## Total execution time: 21.4 seconds.
+## Mean chain execution time: 29.5 seconds.
+## Total execution time: 29.9 seconds.
 ```
 
 ```
 ##    user  system elapsed 
-##  82.019   0.395  22.902
+## 111.923   2.763  31.666
 ```
 
 ``` r
@@ -2956,83 +2768,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 1 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
-```
-
-```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[23, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: normal_lpdf: Location parameter[47] is inf, but must be finite! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
-```
-
-```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
 ```
 
 ```
@@ -3056,83 +2796,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 2 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
-```
-
-```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[16, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: normal_lpdf: Location parameter[28] is inf, but must be finite! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
-```
-
-```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
 ```
 
 ```
@@ -3156,59 +2824,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 3 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[18, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
-```
-
-```
-## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 3
-```
-
-```
-## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 3 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
-```
-
-```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
-```
-
-```
-## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 3
-```
-
-```
-## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[23, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
 ```
 
 ```
@@ -3232,35 +2852,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 4 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
+## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
-```
-
-```
-## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 4
-```
-
-```
-## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 4 Exception: normal_lpdf: Scale parameter[27] is 0, but must be positive! (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//model/priors_inf.stan', line 13, column 6, included from
-```
-
-```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 141, column 0)
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
 ```
 
 ```
@@ -3276,127 +2872,103 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[23, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
-```
-
-```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpjLMmec/model-14cfd92d1684.stan', line 62, column 0)
-```
-
-```
-## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 4
-```
-
-```
-## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
+## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 ## Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 ## Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
+## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 ## Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
+## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
-## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
 ## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
-## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 3 finished in 3.8 seconds.
-## Chain 4 finished in 3.8 seconds.
-## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 3 finished in 3.4 seconds.
+## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 1 finished in 4.1 seconds.
+## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
 ## Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 1 finished in 4.3 seconds.
+## Chain 4 finished in 4.2 seconds.
 ## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 2 finished in 4.6 seconds.
+## Chain 2 finished in 4.4 seconds.
 ## 
 ## All 4 chains finished successfully.
 ## Mean chain execution time: 4.1 seconds.
-## Total execution time: 4.7 seconds.
+## Total execution time: 4.5 seconds.
 ```
 
 ```
 ##    user  system elapsed 
-##  17.638   0.314   6.212
+##  16.837   0.718   6.461
 ```
 Note the stark difference in running time. The extended model appears to fit 
 faster even though there are $87$ additional parameters being sampled (daily 
@@ -3792,14 +3364,14 @@ fm_prior <- do.call(epim, pr_args)
 ```
 ## Running MCMC with 4 parallel chains...
 ## 
-## Chain 3 finished in 8.4 seconds.
-## Chain 1 finished in 8.5 seconds.
-## Chain 2 finished in 8.7 seconds.
-## Chain 4 finished in 8.8 seconds.
+## Chain 3 finished in 11.4 seconds.
+## Chain 1 finished in 11.5 seconds.
+## Chain 2 finished in 11.8 seconds.
+## Chain 4 finished in 11.8 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 8.6 seconds.
-## Total execution time: 8.9 seconds.
+## Mean chain execution time: 11.6 seconds.
+## Total execution time: 12.0 seconds.
 ```
 
 Figure \@ref(fig:multilevel-prior) shows approximate samples of $R_{t,m}$
@@ -3841,8 +3413,8 @@ fm <- do.call(epim, args)
 ##   This procedure has not been thoroughly tested and may be unstable 
 ##   or buggy. The interface is subject to change. 
 ## ------------------------------------------------------------ 
-## Gradient evaluation took 0.001376 seconds 
-## 1000 transitions using 10 leapfrog steps per transition would take 13.76 seconds. 
+## Gradient evaluation took 0.001371 seconds 
+## 1000 transitions using 10 leapfrog steps per transition would take 13.71 seconds. 
 ## Adjust your expectations accordingly! 
 ## Begin eta adaptation. 
 ## Iteration:   1 / 250 [  0%]  (Adaptation) 
@@ -4358,7 +3930,7 @@ fm <- do.call(epim, args)
 ## This variational approximation is not guaranteed to be meaningful. 
 ## Drawing a sample of size 1000 from the approximate posterior...  
 ## COMPLETED. 
-## Finished in  20.7 seconds.
+## Finished in  23.2 seconds.
 ```
 
 A first step in evaluating the model fit is to perform posterior
@@ -4562,6 +4134,364 @@ simply there to illustrate usage of **epidemia**.
 </div>
 
 # References 
+<hr>
+
+:::
+
+<!-- ===== article: multilevel-multi-obs ===== -->
+
+# Multilevel Models with Multiple Observations
+
+
+<style>
+.contents .page-header {
+    display: none;
+}
+</style>
+
+::: {.article_container}
+
+
+
+# Combining Partial Pooling with Several Data Streams
+<hr>
+
+The [multilevel](europe-covid.html) tutorial pooled parameters across eleven
+countries, but fitted to a single data stream (deaths). The
+[multiple observations](multiple-obs.html) tutorial jointly fitted two data
+streams, but to a single region. These two capabilities are independent, and
+**epidemia** lets you use both at once: a hierarchical model for $R_t$ across
+groups, conditioned on several observation series simultaneously.
+
+That combination is worth its own example because the two features interact.
+Each observation series has its own ascertainment regression and its own
+auxiliary parameters, while the transmission model shares information across
+groups. Deaths pin down the absolute scale of the epidemic through a
+comparatively stable infection fatality rate; cases are far more numerous and
+so are more informative about *changes* in transmission, but their
+ascertainment rate is much more uncertain. Fitting both lets each do the job it
+is suited to, and partial pooling then lets countries with less informative data
+borrow strength from the rest.
+
+One limitation to keep in mind throughout: **partial pooling applies to the
+$R_t$ regression only.** `epirt()` takes a `prior_covariance` argument;
+`epiobs()` does not. Group-specific ascertainment must be written as fixed
+effects (for example `deaths ~ 0 + country`) rather than as `(1 | country)`.
+
+
+``` r
+library(epidemia)
+library(dplyr)
+options(mc.cores = parallel::detectCores())
+```
+
+## Data
+<hr>
+
+We use `EuropeCovid2`, which holds daily deaths *and* daily cases for eleven
+European countries, together with the binary intervention series used by
+@Flaxman2020. To keep the example quick we restrict it to three countries.
+
+
+``` r
+data("EuropeCovid2")
+data <- EuropeCovid2$data
+
+groups <- c("Austria", "Germany", "Italy")
+data <- filter(data, country %in% groups)
+```
+
+As in the multilevel tutorial, seeding is assumed to begin thirty days before
+the tenth cumulative death in each country, and the model is fitted up to the
+5^th^ of May. The remainder is held back so we can forecast into it.
+
+
+``` r
+data <- filter(data, date > date[which(cumsum(deaths) > 10)[1] - 30])
+fit_data <- filter(data, date < as.Date("2020-05-05"))
+```
+
+## Transmission
+<hr>
+
+Reproduction numbers follow the same partially pooled step function as the
+multilevel tutorial, simplified to a single intervention so that the example
+stays small:
+
+$$
+R^{(m)}_t = R' g^{-1}\left(b^{(m)}_0 + \left(\beta + b^{(m)}\right) I^{(m)}_t\right),
+$$
+
+where $I^{(m)}_t$ indicates lockdown in country $m$, $\beta$ is the average
+effect across countries, and $b^{(m)}_0$, $b^{(m)}$ are country deviations.
+
+
+``` r
+rt <- epirt(
+  formula = R(country, date) ~ 0 + (1 + lockdown || country) + lockdown,
+  prior = shifted_gamma(shape = 1/6, scale = 1, shift = log(1.05)/6),
+  prior_covariance = decov(shape = c(2, 0.5), scale = 0.25),
+  link = scaled_logit(6.5)
+)
+```
+
+`||` rather than `|` makes the intercept and lockdown deviations independent,
+so `decov()` reduces to a separate prior on each standard deviation. The vector
+`shape` gives the intercepts more prior variability than the effects. Note that
+`decov()` is the only covariance prior **epidemia** supports — `lkj()` is
+exported but the Stan program does not implement it, and `epirt()` will say so.
+
+
+``` r
+inf <- epiinf(gen = EuropeCovid$si, seed_days = 6)
+```
+
+## Two Observation Models
+<hr>
+
+### Deaths
+
+A constant infection fatality rate, as in the multilevel tutorial. The
+`scaled_logit(0.02)` link confines the IFR to $[0\%, 2\%]$, and the symmetric
+prior on the intercept centres it at $1\%$.
+
+
+``` r
+deaths <- epiobs(
+  formula = deaths ~ 1,
+  i2o = EuropeCovid2$inf2death,
+  prior_intercept = normal(0, 0.2),
+  link = scaled_logit(0.02)
+)
+```
+
+```
+## Warning: i2o does not sum to one. Please ensure this is intentional.
+```
+
+### Cases
+
+Case ascertainment differed markedly between these countries in early 2020, so
+unlike the IFR we let the intercept vary by country. Because `epiobs()` has no
+`prior_covariance`, this is a *fixed* effect per country — `0 + country` — not a
+partially pooled one.
+
+`scaled_logit(0.4)` lets the ascertainment rate range over $[0\%, 40\%]$. The
+infection-to-case delay is deliberately crude: we assume infections go
+undetected for four days and are then equally likely to be reported over the
+following week. A serious analysis would motivate this from testing data.
+
+
+``` r
+cases <- epiobs(
+  formula = cases ~ 0 + country,
+  i2o = c(rep(0, 4), rep(1/7, 7)),
+  prior = normal(0, 0.5),
+  link = scaled_logit(0.4)
+)
+```
+
+## Fitting
+<hr>
+
+Both series are passed together as a list. Everything else is unchanged from a
+single-series fit.
+
+
+``` r
+fm <- epim(
+  rt = rt, inf = inf, obs = list(deaths, cases),
+  data = fit_data, group_subset = groups,
+  iter = 1e3, seed = 12345, refresh = 0,
+  control = list(max_treedepth = 12, adapt_delta = 0.95)
+)
+```
+
+```
+## Running MCMC with 4 parallel chains...
+```
+
+```
+## Chain 1 finished in 91.6 seconds.
+## Chain 2 finished in 109.1 seconds.
+## Chain 3 finished in 110.7 seconds.
+## Chain 4 finished in 216.8 seconds.
+## 
+## All 4 chains finished successfully.
+## Mean chain execution time: 132.1 seconds.
+## Total execution time: 216.9 seconds.
+```
+
+`all_obs_types()` confirms both series are in the model, and each carries its
+own parameters.
+
+
+``` r
+all_obs_types(fm)
+```
+
+```
+## [1] "deaths" "cases"
+```
+
+## Checking Both Series
+<hr>
+
+A joint model must explain *every* series it is fitted to. `plot_obs()` takes a
+`type` argument to select one.
+
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+<div class="figure" style="text-align: center">
+<img src="figure/multilevel-multi-obs-mlmo-ppc-1.png" alt="Posterior predictive checks for both data streams. **Top**: daily deaths. **Bottom**: daily cases. Observed counts are the red bars; the posterior median is black, with 50\% and 95\% credible intervals in shades of blue." width="100%" />
+<p class="caption">(\#fig:mlmo-ppc)Posterior predictive checks for both data streams. **Top**: daily deaths. **Bottom**: daily cases. Observed counts are the red bars; the posterior median is black, with 50\% and 95\% credible intervals in shades of blue.</p>
+</div>
+
+Reproduction numbers are shown per country. Because the effects are partially
+pooled, each country's curve is informed by the others.
+
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+<div class="figure" style="text-align: center">
+<img src="figure/multilevel-multi-obs-mlmo-rt-plot-1.png" alt="Inferred reproduction numbers in each country, plotted as a step function because the only covariate is a binary policy indicator." width="100%" />
+<p class="caption">(\#fig:mlmo-rt-plot)Inferred reproduction numbers in each country, plotted as a step function because the only covariate is a binary policy indicator.</p>
+</div>
+
+## Where Partial Pooling Shows Up
+<hr>
+
+The global lockdown effect $\beta$ and the country deviations $b^{(m)}$ are
+separate parameters. As in the multilevel tutorial, a country's total effect is
+$\beta + b^{(m)}$, recovered from the draws with `as.matrix()`.
+
+
+``` r
+beta <- as.matrix(fm, par_models = "R", par_types = "fixed")
+b <- as.matrix(fm, regex_pars = "^R\\|b\\[lockdown", par_groups = groups)
+total <- sweep(b, MARGIN = 1, STATS = beta[, 1], FUN = "+")
+colnames(total) <- groups
+round(t(apply(total, 2, quantile, probs = c(0.05, 0.5, 0.95))), 2)
+```
+
+```
+##            5%   50%   95%
+## Austria -4.04 -3.62 -3.28
+## Germany -2.65 -2.52 -2.39
+## Italy   -2.52 -2.40 -2.29
+```
+
+The country-specific case ascertainment intercepts, by contrast, are ordinary
+fixed effects and can be read straight off the parameter names.
+
+
+``` r
+grep("^cases\\|", colnames(as.matrix(fm)), value = TRUE)
+```
+
+```
+## [1] "cases|countryAustria"        "cases|countryGermany"       
+## [3] "cases|countryItaly"          "cases|reciprocal dispersion"
+```
+
+## Forecasting Both Series
+<hr>
+
+Forecasting works exactly as in the single-series case: build a data frame
+covering the longer period and pass it as `newdata`. Every observation series is
+projected forward.
+
+
+``` r
+newdata <- data
+```
+
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+<div class="figure" style="text-align: center">
+<img src="figure/multilevel-multi-obs-mlmo-forecast-1.png" alt="Out-of-sample forecasts for both series. The model was fitted only up to the 5th of May; everything to the right of that date is a forecast, and the observed values there were not used in fitting." width="100%" />
+<p class="caption">(\#fig:mlmo-forecast)Out-of-sample forecasts for both series. The model was fitted only up to the 5th of May; everything to the right of that date is a forecast, and the observed values there were not used in fitting.</p>
+</div>
+
+Forecasts can also be scored. `evaluate_forecast()` returns daily error metrics
+and credible-interval coverage, for one series at a time.
+
+
+``` r
+ev <- evaluate_forecast(fm, newdata = newdata, type = "deaths",
+                        levels = c(50, 95))
+```
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+``` r
+head(ev$error)
+```
+
+```
+##     group       date     crps mean_abs_error median_abs_error
+## 1 Austria 2020-02-23 34.08106          0e+00                0
+## 2 Austria 2020-02-24 34.08106          0e+00                0
+## 3 Austria 2020-02-25 34.08106          0e+00                0
+## 4 Austria 2020-02-26 34.08106          0e+00                0
+## 5 Austria 2020-02-27 34.08106          5e-04                0
+## 6 Austria 2020-02-28 34.08106          1e-03                0
+```
+
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+<div class="figure" style="text-align: center">
+<img src="figure/multilevel-multi-obs-mlmo-coverage-1.png" alt="Empirical coverage of the 50\% and 95\% credible intervals for daily deaths, over the whole modelled period." width="70%" />
+<p class="caption">(\#fig:mlmo-coverage)Empirical coverage of the 50\% and 95\% credible intervals for daily deaths, over the whole modelled period.</p>
+</div>
+
+## Caveats
+<hr>
+
+As with the other tutorials, this example demonstrates the software rather than
+making a defensible epidemiological claim. Three countries is a thin basis for
+partial pooling; the infection-to-case distribution is invented; case
+ascertainment certainly varied over time as well as between countries, which an
+`rw()` term in the `cases` model would capture (see the
+[multiple observations](multiple-obs.html) tutorial); and no adjustment is made
+for the susceptible population.
+
+# References
 <hr>
 
 :::

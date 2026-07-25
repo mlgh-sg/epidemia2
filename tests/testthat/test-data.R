@@ -1,5 +1,4 @@
 
-context("Unit tests for functions that check and process data argument to epim")
 
 test_that("all_vars behaves correctly with rw terms and obs formulas", {
   expect_equal(all_vars(y ~ 1), "y")

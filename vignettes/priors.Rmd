@@ -147,11 +147,13 @@ matrix can be set using the `prior_covariance` argument in `epirt()`.
 
 Although the Inverse-Wishart prior is a popular prior for covariance matrices, 
 it does not cleanly separate shape and scale [@tokuda2011]. A general approach 
-is to decompose the prior on the covariance matrix into a prior on 
-the correlation matrix and a vector of variances. This is the approach taken 
-by the functions `decov()` and `lkj()`, which
-represent priors for covariance matrices. These are provided by **epidemia**
-for this purpose.
+is to decompose the prior on the covariance matrix into a prior on
+the correlation matrix and a vector of variances. This is the approach taken
+by `decov()`, which is the prior **epidemia** provides for this purpose.
+
+`lkj()` is also exported, but it **cannot** be passed as `prior_covariance`:
+**epidemia**'s Stan program implements only the decov prior, and `epirt()` will
+reject `lkj()` with an error rather than fail later during sampling.
 
 We briefly describe the decov prior, as it applies to partially
 pooled parameters in the regression for $R_t$. Suppose the formula for $R_t$ contains a term of the form `(expr | factor)`, and 

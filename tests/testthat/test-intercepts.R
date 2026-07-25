@@ -1,4 +1,3 @@
-context("Check form of standata related to intercepts")
 
 
 load("../data/NYWA.RData")
@@ -44,7 +43,7 @@ test_that("intercept in obs regression", {
 
   args$obs <- epiobs(
     formula = deaths ~ 1, i2o = NYWA$inf2death,
-    prior_intercept = rstanarm::normal(-4.5, 0.1)
+    prior_intercept = normal(-4.5, 0.1)
   )
 
   sdat <- do.call(epim, args)
@@ -55,7 +54,7 @@ test_that("intercept in obs regression", {
 
   args$obs <- epiobs(
     formula = deaths ~ 0, i2o = NYWA$inf2death,
-    prior_intercept = rstanarm::normal(-4.5, 0.1)
+    prior_intercept = normal(-4.5, 0.1)
   )
 
   sdat <- do.call(epim, args)

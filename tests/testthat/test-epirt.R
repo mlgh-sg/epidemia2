@@ -1,4 +1,3 @@
-context("Test error handling of epirt")
 
 test_that("Wrong LHS formula specifications are caught", {
 expect_error(rt <- epirt(formula = R(x, y) ~ 1 + cov), NA)
@@ -36,19 +35,32 @@ test_that("center handled correctly", {
 })
 
 test_that("handling of prior argument", {
-  expect_error(rt <- epirt(formula = form, prior = rstanarm::cauchy()), NA)
-  expect_error(rt <- epirt(formula = form, prior = "dummy"), regexp = "rstanarm prior")
-  expect_error(rt <- epirt(formula=form, prior = rstanarm::neg_binomial_2()), regexp = "rstanarm prior")
+  expect_error(rt <- epirt(formula = form, prior = cauchy()), NA)
+  expect_error(rt <- epirt(formula = form, prior = "dummy"), regexp = "prior function")
+  # a named list is not enough: check_prior() also requires a `dist` element,
+  # which is what distinguishes a prior from any other list the user might pass.
+  expect_error(rt <- epirt(formula = form, prior = list(location = 0, scale = 1)),
+               regexp = "prior function")
 })
 
 test_that("prior_intercept ok dists", {
-  expect_error(rt <- epirt(formula = form, prior_intercept = rstanarm::cauchy()), NA)
-  expect_error(rt <- epirt(formula = form, prior_intercept = rstanarm::lasso()), "must be one of")
+  expect_error(rt <- epirt(formula = form, prior_intercept = cauchy()), NA)
+  expect_error(rt <- epirt(formula = form, prior_intercept = lasso()), "must be one of")
 })
 
 test_that("prior_covariance ok dists", {
-  expect_error(rt <- epirt(formula = form, prior_covariance = rstanarm::lkj()), NA)
-  expect_error(rt <- epirt(formula = form, prior_covariance = rstanarm::normal()), "must be one of")
+  expect_error(rt <- epirt(formula = form, prior_covariance = decov()), NA)
+  expect_error(rt <- epirt(formula = form, prior_covariance = normal()), "must be one of")
+})
+
+test_that("prior_covariance = lkj() is rejected up front", {
+  # The Stan program has no lkj branch. Before this check, lkj() was accepted
+  # here and then produced standata with shape = 0, so the fit died inside
+  # CmdStan with "Unable to retrieve the metadata" only after compiling.
+  expect_error(epirt(formula = form, prior_covariance = lkj()),
+               regexp = "not supported")
+  expect_error(epirt(formula = form, prior_covariance = lkj()),
+               regexp = "decov")
 })
 
 

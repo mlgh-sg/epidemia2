@@ -23,14 +23,14 @@
 #' @param center If \code{TRUE} then the covariates for the regression
 #'  are centered to have mean zero. All of the priors are then interpreted as
 #'  prior on the centered covariates. Defaults to \code{FALSE}.
-#' @param prior Same as in \code{\code{stan_glm}}. In addition to the
+#' @param prior Same as in \pkg{rstanarm}'s \code{stan_glm}, using the prior constructors documented in \link{priors}. In addition to the
 #'  \pkg{rstanarm} provided \link{priors},
 #'         a \link[epidemia]{shifted_gamma} can be used. **Note:** If
 #'  \code{autoscale=TRUE} in the call to the prior distribution then
 #'  automatic rescaling of the prior may take place.
-#' @param prior_intercept Same as in \code{\code{stan_glm}}. Prior for
+#' @param prior_intercept Same as in \pkg{rstanarm}'s \code{stan_glm}, using the prior constructors documented in \link{priors}. Prior for
 #'  the regression intercept (if it exists).
-#' @param prior_covariance Same as in \code{\code{stan_glmer}}. Only
+#' @param prior_covariance Same as in \pkg{rstanarm}'s \code{stan_glmer}, using \code{\link{decov}}. Only
 #'  used if the \code{formula} argument specifies random effects.
 #' @param ... Additional arguments for \code{\link[stats]{model.frame}}
 #' @export
@@ -103,10 +103,20 @@ epirt <- function(formula,
   check_scalar(center)
   check_logical(center)
 
-  # check priors are returns from rstanarm prior functions
+  # check priors are returns from epidemia prior functions
   check_prior(prior, ok_dists)
   check_prior(prior_intercept, ok_int_dists)
   check_prior(prior_covariance, ok_cov_dists)
+
+  # lkj() is exported (it comes with the vendored rstanarm prior set) but the
+  # Stan program implements only decov, so give the specific reason rather than
+  # the generic "must be one of" from check_in_set() below.
+  if (identical(prior_covariance$dist, "lkj")) {
+    stop("prior_covariance = lkj() is not supported. epidemia's Stan model ",
+         "implements only the 'decov' prior for group-level covariance; use ",
+         "decov() instead. Note that decov() with the `||` form of a random ",
+         "effect reduces to independent scale priors.", call. = FALSE)
+  }
 
   # ensure they are in allowed set
   check_in_set(prior$dist, ok_dists)
