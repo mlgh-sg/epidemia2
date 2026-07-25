@@ -18,19 +18,41 @@ This repository ships **two implementations of the same model**, on one branch:
   links, Poisson / neg-binom / normal families, `plotnine` plots, a NumPy renewal
   reference. Backend: **PyMC + nutpie** (numba CPU, or JAX for GPU on Linux).
 
-What is **extra in each** (deliberately not yet mirrored):
+What is **extra in each**. Verified against the code (not aspirational) — if you
+change either side, re-check the row.
 
 | Capability | R (root) | Python (`python/`) |
 |---|---|---|
-| Covariates / formula interface for `R_t` | ✅ | ❌ (intercept + RW only) |
-| Multilevel / partial pooling across groups | ✅ | ❌ |
-| Multiple observation series (joint) | ✅ | ❌ (single series) |
-| Latent infections, population/susceptibility adjustment | ✅ | ❌ |
-| Full prior system (rstanarm-style + `shifted_gamma`, `hexp`) | ✅ | ❌ (fixed priors on `EpiConfig`) |
-| Forecasting / counterfactuals, VB, forecast evaluation | ✅ | ❌ |
+| Multiple regions / groups | ✅ | ✅ `prepare_panel` → `build_multilevel_model` |
+| Multilevel / partial pooling across groups | ✅ | ✅ `multilevel.py`, non-centred, 3 pooling regimes |
+| Covariates for `R_t` | ✅ formula mini-language | ⚠️ numeric `(M,T,K)` design matrix; no formula parser |
+| Correlated random effects (`(x \| g)` + `decov`) | ✅ | ❌ independent (`\|\|`) only, no covariance matrix |
+| Random walk on `R_t` | ✅ incl. `rw(gr=)` per group | ⚠️ single-population only; disjoint from the multilevel model |
+| Multiple observation series (joint) | ✅ up to 10 | ❌ exactly one likelihood |
+| Time-varying ascertainment (obs-level RW) | ✅ | ❌ scalar IFR only |
+| Latent (stochastic) infections | ✅ `epiinf(latent=TRUE)` | ❌ deterministic renewal only |
+| Population / susceptibility adjustment | ✅ | ❌ no susceptible pool |
+| Full prior system (swappable families) | ✅ | ❌ families hardcoded; hyperparameters configurable |
+| `shifted_gamma`, `hexp` seeding | ✅ | ⚠️ built in to the multilevel model, not reusable priors |
+| Forecasting via `newdata` | ✅ | ❌ no `predict`; notebook code only |
+| Counterfactuals | ✅ | ⚠️ `effect_table` does them for `R_t` only |
+| Forecast scoring (CRPS / coverage) | ✅ | ❌ |
+| Variational inference | ✅ | ❌ NUTS only (`adaptation` picks a metric, not an algorithm) |
+| Posterior predictive | ✅ sampled | ⚠️ bands `E_obs`; excludes observation noise |
+| Spaghetti (per-draw) plots | ✅ | ❌ draws always collapsed to intervals |
 | Non-centred RW parameterisation | ✅ | ✅ |
 | nutpie sampler + JAX/GPU backend option | ❌ | ✅ |
 | Grammar-of-graphics (`plotnine`) plots | ❌ (ggplot2 via R) | ✅ |
+
+The three gaps that most affect someone following the R tutorials, in order:
+**a time-varying `R_t` in a multi-region model** (R's tutorials routinely combine
+`rw()` with grouped data; Python's walk is single-population and its multilevel
+`R_t` is a deterministic covariate step function), **multiple joint observation
+series** (two whole vignettes rest on it), and **population adjustment** (without
+it long-horizon infections grow unbounded).
+
+For measured performance of the two backends on the same model, see
+`benchmarks/` and the "Performance" page of the Python docs.
 
 **The rule: a model change to one language should be ported to the other.** When you
 add or change modelling behaviour (a new family, link, prior, the RW

@@ -59,9 +59,13 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.inlinehilite
   - pymdownx.superfences
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      base_path: [docs]
 
 nav:
   - Home: index.md
   - User guide: guide.md
+  - Tutorials: tutorials.md
+  - Parity with R: parity.md
+  - Performance: performance.md
   - API reference: reference.md

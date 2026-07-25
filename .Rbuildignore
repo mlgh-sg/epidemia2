@@ -5,6 +5,7 @@
 ^Makefile$
 ^tools$
 ^data-raw$
+^benchmarks$
 # The Python port is a separate distribution (see python/pyproject.toml) and has
 # no business inside the R source tarball. Without this, R CMD build sweeps up
 # the whole tree -- ~887MB, almost all of it python/.venv.
