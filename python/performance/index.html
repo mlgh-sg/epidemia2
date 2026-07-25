@@ -10,25 +10,31 @@
       
       
       
+        <link rel="canonical" href="https://mlgh-sg.com/epidemia2/python/performance/">
       
+      
+        <link rel="prev" href="../parity/">
+      
+      
+        <link rel="next" href="../reference/">
       
       
         
       
       
-      <link rel="icon" href="/epidemia2/python/assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>epidemia (Python)</title>
+        <title>Performance - epidemia (Python)</title>
       
     
     
-      <link rel="stylesheet" href="/epidemia2/python/assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="/epidemia2/python/assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -47,9 +53,9 @@
       
     
     
-      <link rel="stylesheet" href="/epidemia2/python/assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("/epidemia2/python/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -73,6 +79,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#performance" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -85,7 +96,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/epidemia2/python/." title="epidemia (Python)" class="md-header__button md-logo" aria-label="epidemia (Python)" data-md-component="logo">
+    <a href=".." title="epidemia (Python)" class="md-header__button md-logo" aria-label="epidemia (Python)" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -105,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Performance
             
           </span>
         </div>
@@ -221,7 +232,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/epidemia2/python/." title="epidemia (Python)" class="md-nav__button md-logo" aria-label="epidemia (Python)" data-md-component="logo">
+    <a href=".." title="epidemia (Python)" class="md-nav__button md-logo" aria-label="epidemia (Python)" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -251,7 +262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/epidemia2/python/." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -278,7 +289,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/epidemia2/python/guide/" class="md-nav__link">
+      <a href="../guide/" class="md-nav__link">
         
   
   
@@ -305,7 +316,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/epidemia2/python/tutorials/" class="md-nav__link">
+      <a href="../tutorials/" class="md-nav__link">
         
   
   
@@ -332,7 +343,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/epidemia2/python/parity/" class="md-nav__link">
+      <a href="../parity/" class="md-nav__link">
         
   
   
@@ -356,10 +367,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/epidemia2/python/performance/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -375,6 +413,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#wall-clock" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wall-clock
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-number-that-matters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The number that matters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-low_rank-matters-so-much-here" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why low_rank matters so much here
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#do-the-two-implementations-agree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Do the two implementations agree?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compilation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compilation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-means-in-practice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this means in practice
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -386,7 +510,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/epidemia2/python/reference/" class="md-nav__link">
+      <a href="../reference/" class="md-nav__link">
         
   
   
@@ -423,6 +547,82 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#wall-clock" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wall-clock
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-number-that-matters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The number that matters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-low_rank-matters-so-much-here" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why low_rank matters so much here
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#do-the-two-implementations-agree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Do the two implementations agree?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compilation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compilation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-means-in-practice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this means in practice
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -435,8 +635,171 @@
               
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+  
+  
+
+
+<h1 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h1>
+<p>Is the Python port faster than the R package? On the model both can fit, the
+honest answer is: <strong>not by default — but it can be, and the difference comes
+from one argument.</strong></p>
+<p>The benchmark fits the <em>same</em> model in both: the eleven-country
+Europe/COVID-19 multilevel model, five NPIs, deaths, 4 chains of
+500 tuning + 500 draws. Engines run strictly one after another on an idle
+machine, so the timings are comparable.</p>
+<p>Reproduce it with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>--project<span class="w"> </span>python<span class="w"> </span>python<span class="w"> </span>benchmarks/run.py<span class="w"> </span>--draws<span class="w"> </span><span class="m">500</span><span class="w"> </span>--tune<span class="w"> </span><span class="m">500</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>run<span class="w"> </span>--project<span class="w"> </span>python<span class="w"> </span>python<span class="w"> </span>benchmarks/report.py<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span>--json<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$TMPDIR</span><span class="s2">/epidemia-bench/benchmark.json&quot;</span><span class="w"> </span>--out<span class="w"> </span>python/docs/img
+</code></pre></div>
+<h2 id="wall-clock">Wall-clock<a class="headerlink" href="#wall-clock" title="Permanent link">&para;</a></h2>
+<p><img alt="Sampling wall-clock by engine" src="../img/bench-speed.png" /></p>
+<p>nutpie with its default diagonal adaptation finishes in essentially the same
+time as Stan — 963s against 975s, a 1% difference that means nothing. Switching
+to <code>low_rank</code> adaptation drops it to 752s.</p>
+<h2 id="the-number-that-matters">The number that matters<a class="headerlink" href="#the-number-that-matters" title="Permanent link">&para;</a></h2>
+<p>Wall-clock alone is misleading, because a sampler that finishes quickly having
+explored badly has not saved you anything. The comparison worth making is
+<strong>effective samples per second</strong>.</p>
+<p><img alt="Effective samples per second by engine" src="../img/bench-efficiency.png" /></p>
+<p>Now the picture separates:</p>
+<ul>
+<li><strong>nutpie's default is the worst of the three.</strong> Same wall-clock as Stan, but
+  a minimum bulk ESS of 27 against Stan's 88, with 27 divergences and an R-hat
+  of 1.10 — which is to say it had not converged.</li>
+<li><strong>nutpie with <code>low_rank</code> is the best.</strong> 1.7× Stan's effective samples per
+  second, and <strong>4.6× nutpie's own default</strong>.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Engine</th>
+<th style="text-align: right;">Compile (s)</th>
+<th style="text-align: right;">Sample (s)</th>
+<th style="text-align: right;">min ESS</th>
+<th style="text-align: right;">ESS/s</th>
+<th style="text-align: right;">Divergences</th>
+<th style="text-align: right;">max R-hat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R / cmdstanr</td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">974.6</td>
+<td style="text-align: right;">88</td>
+<td style="text-align: right;">0.09</td>
+<td style="text-align: right;">None</td>
+<td style="text-align: right;">1.044</td>
+</tr>
+<tr>
+<td>Python / nutpie (diag)</td>
+<td style="text-align: right;">20.5</td>
+<td style="text-align: right;">963.1</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">0.03</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">1.100</td>
+</tr>
+<tr>
+<td>Python / nutpie (low_rank)</td>
+<td style="text-align: right;">20.2</td>
+<td style="text-align: right;">752.0</td>
+<td style="text-align: right;">114</td>
+<td style="text-align: right;">0.15</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.030</td>
+</tr>
+</tbody>
+</table>
+<p>4 chains x (500 tune + 500 draws), seed 12345. Model: Europe/COVID multilevel, 11 countries, 5 NPIs, deaths.</p>
+<p>Run on arm, 10 cores, macOS-26.5.2-arm64-arm-64bit. Python 3.12.9; pymc 5.28.5, nutpie 0.16.11, numba 0.66.0, numpy 2.4.6, pytensor 2.38.2, arviz 0.23.4</p>
+<p>min ESS is the smallest bulk effective sample size across the five NPI effects; ESS/s divides it by sampling wall-clock. Compile time is excluded from ESS/s because Stan caches its executable across runs while nutpie re-compiles each time.</p>
+<h2 id="why-low_rank-matters-so-much-here">Why <code>low_rank</code> matters so much here<a class="headerlink" href="#why-low_rank-matters-so-much-here" title="Permanent link">&para;</a></h2>
+<p>The five NPIs were enacted within days of each other across most of these
+countries — Germany banned public events on the same day it locked down. Their
+effects are therefore <strong>highly collinear</strong>, and the posterior has a narrow ridge
+that a diagonal mass matrix cannot follow. The sampler does not fall over; it
+just fails to move along the ridge.</p>
+<p>That is exactly the failure <code>low_rank</code> is for: it fits a low-rank correction to
+the mass matrix and recovers the ridge.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">idata</span> <span class="o">=</span> <span class="n">fit_multilevel</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;low_rank&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">A clean divergence count is not evidence of a good fit</p>
+<p>The default run above produced an R-hat of 1.10 and an ESS of 27. Always
+read <code>arviz.summary</code> for <code>r_hat</code> and <code>ess_bulk</code>; divergences alone would not
+have told you.</p>
+</div>
+<h2 id="do-the-two-implementations-agree">Do the two implementations agree?<a class="headerlink" href="#do-the-two-implementations-agree" title="Permanent link">&para;</a></h2>
+<p>They are the same model, so they should — and within Monte Carlo error, they do.</p>
+<p><img alt="NPI effect estimates by engine" src="../img/bench-agreement.png" /></p>
+<p>Every 95% interval overlaps across engines, and all three agree on the
+substance: lockdown carries by far the largest effect, distancing a smaller one,
+and the remaining three are indistinguishable from zero.</p>
+<p>The point estimates are not identical — lockdown is −2.18 in R against −1.78 in
+Python, roughly one posterior SD apart. Two things explain that, and neither is
+a discrepancy between the ports. The collinear effects <strong>trade off against one
+another</strong>, so what is attributed to lockdown versus distancing shifts between
+runs; and at a minimum ESS of around 100 out of 2000 draws, <strong>neither run is
+converged tightly enough</strong> to resolve a difference that size. Run either engine
+longer and the estimates converge on each other.</p>
+<h2 id="compilation">Compilation<a class="headerlink" href="#compilation" title="Permanent link">&para;</a></h2>
+<p>Stan compiles once per machine and caches the executable — 0.1s here, because it
+was already built. nutpie re-compiles the log-density on <strong>every run</strong>, about
+20s. Irrelevant for a real fit; noticeable if you are iterating on a small model.</p>
+<h2 id="what-this-means-in-practice">What this means in practice<a class="headerlink" href="#what-this-means-in-practice" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>If you…</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Are iterating on a model, or already work in PyMC/ArviZ</td>
+<td>Python, with <code>adaptation="low_rank"</code></td>
+</tr>
+<tr>
+<td>Have correlated covariates</td>
+<td>Python + <code>low_rank</code>, or Stan; <strong>not</strong> nutpie's default</td>
+</tr>
+<tr>
+<td>Need multiple observation series, forecasting, or scoring</td>
+<td>R — see <a href="../parity/">parity</a></td>
+</tr>
+<tr>
+<td>Want the fewest surprises</td>
+<td>R; it is the reference implementation</td>
+</tr>
+</tbody>
+</table>
+<p>The headline is not "Rust beats C++". Both samplers are good, both struggle on
+this posterior's ridge, and the one setting that actually changes the outcome is
+the mass-matrix adaptation.</p>
+<div class="admonition note">
+<p class="admonition-title">Your numbers will differ</p>
+<p>Measured on a 10-core Apple Silicon machine. The <em>ratios</em> should hold; the
+absolute times will not. Nothing here is fitted at documentation-build time,
+and the benchmark writes only to a temporary directory.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -479,10 +842,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "/epidemia2/python/", "features": ["navigation.sections", "navigation.top", "navigation.tracking", "content.code.copy", "toc.follow"], "search": "/epidemia2/python/assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.tracking", "content.code.copy", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="/epidemia2/python/assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

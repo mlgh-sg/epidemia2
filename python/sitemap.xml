@@ -2,14 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://mlgh-sg.com/epidemia2/python/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-25</lastmod>
+    </url>
+    <url>
+         <loc>https://mlgh-sg.com/epidemia2/python/benchmark-table/</loc>
+         <lastmod>2026-07-25</lastmod>
     </url>
     <url>
          <loc>https://mlgh-sg.com/epidemia2/python/guide/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-25</lastmod>
+    </url>
+    <url>
+         <loc>https://mlgh-sg.com/epidemia2/python/parity/</loc>
+         <lastmod>2026-07-25</lastmod>
+    </url>
+    <url>
+         <loc>https://mlgh-sg.com/epidemia2/python/performance/</loc>
+         <lastmod>2026-07-25</lastmod>
     </url>
     <url>
          <loc>https://mlgh-sg.com/epidemia2/python/reference/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-25</lastmod>
+    </url>
+    <url>
+         <loc>https://mlgh-sg.com/epidemia2/python/tutorials/</loc>
+         <lastmod>2026-07-25</lastmod>
     </url>
 </urlset>
