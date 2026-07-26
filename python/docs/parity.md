@@ -27,11 +27,11 @@ missing is halfway through an analysis.
 | Swappable prior families | ✅ | ✅ `epidemia.priors` |
 | Hierarchical seeding | ✅ | ✅ |
 | Non-centred parameterisation | ✅ | ✅ |
-| Covariates on `R_t` | ✅ formula | ⚠️ design matrix |
-| Forecasting from new data | ✅ one call | ⚠️ primitives, no wrapper |
-| Counterfactuals | ✅ | ⚠️ `R_t` only |
-| Stochastic latent infections | ✅ | ❌ |
-| Autoscaled priors, `hs`/`lasso` families | ✅ | ❌ |
+| Covariates on `R_t` | ✅ formula | ✅ `parse_formula` / `build_from_formula` |
+| Forecasting from new data | ✅ one call | ✅ `forecast(...)` |
+| Stochastic latent infections | ✅ | ✅ `latent=True` |
+| Autoscaled priors, `hs`/`lasso` families | ✅ | ✅ `epidemia.priors` |
+| Counterfactuals | ✅ | ⚠️ `R_t` via `effect_table`; observations via `forecast` |
 | nutpie sampler, JAX/GPU option | ❌ | ✅ |
 | `plotnine` plots | ❌ | ✅ |
 
@@ -63,32 +63,55 @@ model = build_epidemia_model(
 That is R's `R(country, date) ~ (1 + lockdown | country) + rw(time = week, gr = country)`
 with `obs = list(deaths, cases)` and `epiinf(pop_adjust = TRUE)`.
 
-## What is still not here
+## Writing a model as a formula
 
-**A formula interface.** Covariates come in as a numeric
-`(regions, time, covariates)` array from `prepare_panel`; there is no
-`R(country, date) ~ ...` parser. You get the models, you write the design matrix.
+```python
+from epidemia.formula import build_from_formula
+from epidemia.core import EpiModelConfig, ObsModel, fit_epidemia
 
-**Forecasting is primitives, not one call.** `epidemia.predict` gives you
-`simulate` (forward renewal over posterior draws, with the susceptibility
-adjustment), `expected_observations` and `posterior_predict` (which draws from
-the observation family rather than banding the mean). What is missing is R's
-convenience of handing a whole `newdata` frame to one function.
+panel, series, cfg = build_from_formula(
+    df,
+    "R(country, date) ~ 1 + rw(time = week, gr = country) + lockdown",
+    responses=["deaths", "cases"], pop="pop", fit_until="2020-05-05")
 
-**Stochastic latent infections.** R's `epiinf(latent = TRUE)` treats infections
-as parameters with noise around the renewal equation. Here the recursion stays
-deterministic.
+idata = fit_epidemia(panel, obs_models, EpiModelConfig(gen=si, **cfg))
+```
 
-**Prior coverage is close but not complete.** `epidemia.priors` mirrors R's
-constructors — `normal`, `student_t`, `cauchy`, `exponential`, `laplace`,
-`shifted_gamma`, `hexp`, `decov`, `lkj` — with R's argument names and
-validation. Not ported: `autoscale`, and the `hs`/`hs_plus`/`lasso`/
-`product_normal` shrinkage families.
+`||` gives independent region effects and `|` correlated ones; `0 +` drops the
+intercept; `rw(gr = x)` gives one walk per level of `x` and `rw()` one shared
+walk. Non-numeric covariates are dummy-coded with R's treatment contrasts.
 
-**Counterfactuals** cover effect sizes through `effect_table`, which re-evaluates
-`R_t` per draw under a modified design. Re-simulating observations under that
-design is now possible with `epidemia.predict`, but it is your code, not a
-one-liner.
+## Forecasting
+
+```python
+from epidemia.forecast import forecast
+
+fc = forecast(idata, panel, obs_models, config, newdata=longer_df)
+fc.to_frame()          # tidy long frame: region, date, variable, quantiles
+```
+
+Nothing is re-fitted: conditional on a posterior draw the latent series are
+deterministic, so this is forward simulation over draws. Covariates past the fit
+window carry forward, and the random walk is **held at its final fitted step** —
+the forecast says "`R_t` stays where it ended" rather than inventing increments.
+`fc.predicted` holds draws from the observation family, not just the mean.
+
+## The caveats that remain
+
+**The formula's fixed/random split is advisory.** `build_epidemia_model` shares
+one design matrix between the population-level `beta` and the region-level `b`,
+so a covariate appearing only inside `(... | group)` still gets a population
+coefficient, and vice versa. The *pooling* structure — `|` versus `||`, whether
+there is an intercept — is exact; the column split is not. Nesting
+(`(1 | county/district)`) and interactions (`a:b`) are rejected rather than
+silently mis-parsed, and only one `rw()` term is allowed.
+
+**Forecasting does not support `latent=True`.** With latent infections the
+post-seeding infections are free parameters, so there is no forward-simulable
+rule past the fitted window. Use the deterministic recursion to forecast.
+
+**Counterfactuals on observations** are now possible by editing the covariates in
+`newdata` and calling `forecast`, but there is no dedicated helper as in R.
 
 ## Choosing a side
 

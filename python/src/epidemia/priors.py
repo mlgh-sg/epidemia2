@@ -35,7 +35,7 @@ covariance yourself). See that function for the decomposition used.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, replace
 from typing import Any, ClassVar
 
 import numpy as np
@@ -444,9 +444,9 @@ def lkj(regularization: float = 1.0, scale: float = 10.0,
     return LKJPrior(regularization=regularization, scale=scale, df=df)
 
 
-#: Families accepted for regression coefficients (R's ``ok_dists``, restricted to
-#: those implemented here -- R additionally allows hs, hs_plus, lasso and
-#: product_normal, which this port does not provide).
+#: Families accepted for regression coefficients (R's ``ok_dists``). The
+#: shrinkage families -- hs, hs_plus, lasso, product_normal -- are defined at the
+#: bottom of this module and added there, so this set matches R's exactly.
 OK_DISTS = frozenset({"gamma", "normal", "t", "cauchy", "laplace", "hexp"})
 #: Families accepted for intercepts (R's ``ok_int_dists``).
 OK_INT_DISTS = frozenset({"normal", "t", "cauchy"})
@@ -601,3 +601,489 @@ def build_covariance(spec: Prior | str, name: str, n: int):
                           return_matrix=True)
         chol = sd[:, None] * pt.linalg.cholesky(corr)
     return pm.Deterministic(name, chol)
+
+
+# ===========================================================================
+# Shrinkage families and autoscaling
+# ===========================================================================
+#
+# R's ``ok_dists`` also admits hs, hs_plus, lasso and product_normal for
+# regression coefficients, and every scale-bearing constructor takes
+# ``autoscale``. Both are added below.
+#
+# The shrinkage families are *hierarchical*: like ``hexp`` and
+# ``shifted_gamma`` above, they have no single PyMC distribution, so
+# ``_pymc_dist()`` raises and ``build()`` assembles the graph. All four are
+# written non-centred (a standardised variable times its scales), because the
+# funnel between a coefficient and its own local scale is exactly the geometry
+# NUTS cannot traverse when written centred -- the same reason R's Stan program
+# stores ``z_beta`` and reconstructs ``beta`` in ``make_beta()``.
+
+
+class _ShrinkagePrior(Prior):
+    """Base for the shrinkage families: hierarchical, so no single PyMC family."""
+
+    def _pymc_dist(self):
+        raise ValueError(
+            f"{self.dist} is hierarchical (global and local scales, then the "
+            "coefficients given those scales) and has no single PyMC "
+            "distribution; use its build() method."
+        )
+
+    def _reject_positive(self, positive: bool) -> None:
+        """Shrinkage priors are symmetric about their location; truncation is out.
+
+        Truncating would silently break the non-centred parameterisation (the
+        scales would no longer be the scales of the truncated variable), and R
+        never applies a shrinkage prior to a ``real<lower=0>`` parameter -- they
+        are only in ``ok_dists``, never in ``ok_aux_dists``.
+        """
+        if positive:
+            raise ValueError(
+                f"{self.dist} is a shrinkage prior on regression coefficients "
+                "and is symmetric about its location; positive=True is not "
+                "meaningful for it. Use normal/student_t/cauchy/exponential for "
+                "a positive parameter."
+            )
+
+
+def _regularised_local_scale(name: str, lam, tau, slab_df: float,
+                             slab_scale: float):
+    """Slab-regularise a horseshoe's local scales (Piironen & Vehtari, 2017).
+
+    The plain horseshoe leaves the large coefficients essentially unpenalised,
+    which makes the posterior improper under a flat likelihood (e.g. separation)
+    and gives NUTS heavy tails to explore. The *regularised* horseshoe multiplies
+    each local scale by a slab of width ``c``, so a coefficient the data do not
+    pin down is shrunk towards a ``Normal(0, slab_scale)`` instead of towards
+    nothing::
+
+        c^2 ~ InvGamma(slab_df / 2, slab_df * slab_scale^2 / 2)
+        lambda_tilde^2 = c^2 lambda^2 / (c^2 + tau^2 lambda^2)
+
+    The squared slab ``c^2`` is registered as ``f"{name}_slab"``.
+    """
+    import pymc as pm
+    import pytensor.tensor as pt
+
+    c2 = pm.InverseGamma(
+        f"{name}_slab",
+        alpha=0.5 * slab_df,
+        beta=0.5 * slab_df * slab_scale ** 2,
+    )
+    lam2 = lam ** 2
+    return pt.sqrt(c2 * lam2 / (c2 + tau ** 2 * lam2))
+
+
+@dataclass(frozen=True)
+class HorseshoePrior(_ShrinkagePrior):
+    """Regularised horseshoe prior. See :func:`hs`."""
+
+    df: float = 1.0
+    global_df: float = 1.0
+    global_scale: float = 0.01
+    slab_df: float = 4.0
+    slab_scale: float = 2.5
+    dist: ClassVar[str] = "hs"
+
+    def __post_init__(self):
+        _validate_positive(self.df, "df")
+        _validate_positive(self.global_df, "global_df")
+        _validate_positive(self.global_scale, "global_scale")
+        _validate_positive(self.slab_df, "slab_df")
+        _validate_positive(self.slab_scale, "slab_scale")
+
+    # R's hs() also records location = 0 and scale = 1; they are fixed by the
+    # family rather than chosen, so they are properties here and stay out of
+    # params().
+    @property
+    def location(self) -> float:
+        """0 -- the horseshoe is centred at zero, as in R."""
+        return 0.0
+
+    @property
+    def scale(self) -> float:
+        """1 -- the overall scale is ``global_scale`` times the local scales."""
+        return 1.0
+
+    def build(self, name: str, shape=None, positive: bool = False, dims=None):
+        """Build the regularised horseshoe, non-centred.
+
+        ::
+
+            tau    ~ HalfStudentT(global_df, global_scale)      # global
+            lambda ~ HalfStudentT(df, 1)                        # local, per coef
+            c^2    ~ InvGamma(slab_df/2, slab_df slab_scale^2/2)
+            z      ~ Normal(0, 1)
+            beta   = z * tau * lambda_tilde
+
+        Sub-parameters are registered as ``f"{name}_global"``,
+        ``f"{name}_local"``, ``f"{name}_slab"`` and ``f"{name}_z"``; the returned
+        variable is a ``Deterministic`` named ``name``.
+        """
+        import pymc as pm
+
+        self._reject_positive(positive)
+        tau = pm.HalfStudentT(f"{name}_global", nu=self.global_df,
+                              sigma=self.global_scale)
+        lam = pm.HalfStudentT(f"{name}_local", nu=self.df, sigma=1.0,
+                              shape=shape, dims=dims)
+        # The slab is registered before z so that all the scales sit together
+        # in the model's variable order, ahead of the standardised coefficients.
+        lam_t = _regularised_local_scale(name, lam, tau, self.slab_df,
+                                         self.slab_scale)
+        z = pm.Normal(f"{name}_z", 0.0, 1.0, shape=shape, dims=dims)
+        return pm.Deterministic(name, z * tau * lam_t, dims=dims)
+
+
+@dataclass(frozen=True)
+class HorseshoePlusPrior(_ShrinkagePrior):
+    """Regularised horseshoe+ prior. See :func:`hs_plus`."""
+
+    df1: float = 1.0
+    df2: float = 1.0
+    global_df: float = 1.0
+    global_scale: float = 0.01
+    slab_df: float = 4.0
+    slab_scale: float = 2.5
+    dist: ClassVar[str] = "hs_plus"
+
+    def __post_init__(self):
+        _validate_positive(self.df1, "df1")
+        _validate_positive(self.df2, "df2")
+        _validate_positive(self.global_df, "global_df")
+        _validate_positive(self.global_scale, "global_scale")
+        _validate_positive(self.slab_df, "slab_df")
+        _validate_positive(self.slab_scale, "slab_scale")
+
+    # R packs the two local degrees of freedom into the generic slots of its
+    # prior list -- `df = df1`, `scale = df2` -- so that handle_glm_prior() can
+    # stay generic. Expose the same two names for anyone reading R code.
+    @property
+    def df(self) -> float:
+        """``df1`` -- the slot R's ``hs_plus()`` stores it in."""
+        return self.df1
+
+    @property
+    def scale(self) -> float:
+        """``df2`` -- the slot R's ``hs_plus()`` stores it in (not a scale)."""
+        return self.df2
+
+    @property
+    def location(self) -> float:
+        """0 -- the horseshoe+ is centred at zero, as in R."""
+        return 0.0
+
+    def build(self, name: str, shape=None, positive: bool = False, dims=None):
+        """Build the regularised horseshoe+, non-centred.
+
+        The horseshoe+ differs from the horseshoe only in the local scale, which
+        is a *product* of two half-t variables::
+
+            lambda = lambda1 * lambda2,
+            lambda1 ~ HalfStudentT(df1, 1), lambda2 ~ HalfStudentT(df2, 1)
+
+        The extra level puts even more mass near zero and even heavier tails, so
+        strong signals are shrunk less than under the horseshoe. Sub-parameters
+        are ``f"{name}_global"``, ``f"{name}_local1"``, ``f"{name}_local2"``,
+        ``f"{name}_slab"`` and ``f"{name}_z"``.
+        """
+        import pymc as pm
+
+        self._reject_positive(positive)
+        tau = pm.HalfStudentT(f"{name}_global", nu=self.global_df,
+                              sigma=self.global_scale)
+        lam1 = pm.HalfStudentT(f"{name}_local1", nu=self.df1, sigma=1.0,
+                               shape=shape, dims=dims)
+        lam2 = pm.HalfStudentT(f"{name}_local2", nu=self.df2, sigma=1.0,
+                               shape=shape, dims=dims)
+        lam_t = _regularised_local_scale(name, lam1 * lam2, tau, self.slab_df,
+                                         self.slab_scale)
+        z = pm.Normal(f"{name}_z", 0.0, 1.0, shape=shape, dims=dims)
+        return pm.Deterministic(name, z * tau * lam_t, dims=dims)
+
+
+@dataclass(frozen=True)
+class LassoPrior(_ShrinkagePrior):
+    """Bayesian lasso: Laplace with an estimated global scale. See :func:`lasso`."""
+
+    df: float = 1.0
+    location: float = 0.0
+    scale: float = 2.5
+    dist: ClassVar[str] = "lasso"
+
+    def __post_init__(self):
+        _validate_positive(self.df, "df")
+        _validate_positive(self.scale, "scale")
+
+    def build(self, name: str, shape=None, positive: bool = False, dims=None):
+        """Build ``location + global * scale * Laplace(0, 1)``.
+
+        This is the Bayesian lasso as rstanarm (and hence R's Stan program)
+        writes it: the double-exponential's scale is not fixed at ``scale`` but
+        multiplied by a shared ``global ~ ChiSquared(df)``, so the amount of
+        shrinkage is estimated from the data rather than assumed. Sub-parameters
+        are ``f"{name}_global"`` and ``f"{name}_z"``.
+        """
+        import pymc as pm
+
+        self._reject_positive(positive)
+        g = pm.ChiSquared(f"{name}_global", nu=self.df)
+        z = pm.Laplace(f"{name}_z", mu=0.0, b=1.0, shape=shape, dims=dims)
+        return pm.Deterministic(name, self.location + self.scale * g * z,
+                                dims=dims)
+
+
+@dataclass(frozen=True)
+class ProductNormalPrior(_ShrinkagePrior):
+    """Product of independent normals. See :func:`product_normal`."""
+
+    num_terms: int = 2
+    location: float = 0.0
+    scale: float = 1.0
+    #: R names this argument ``df``; see the :attr:`df` alias.
+    dist: ClassVar[str] = "product_normal"
+
+    def __post_init__(self):
+        _validate_positive(self.num_terms, "num_terms")
+        # R: stopifnot(all(df >= 1), all(df == as.integer(df)))
+        if int(self.num_terms) != self.num_terms or self.num_terms < 1:
+            raise ValueError(
+                f"num_terms should be an integer >= 1, got {self.num_terms!r}"
+            )
+        _validate_positive(self.scale, "scale")
+
+    @property
+    def df(self) -> float:
+        """``num_terms`` -- the slot R's ``product_normal()`` stores it in."""
+        return self.num_terms
+
+    def build(self, name: str, shape=None, positive: bool = False, dims=None):
+        """Build ``location + scale**num_terms * z_1 * ... * z_num_terms``.
+
+        A product of independent normals is a shrinkage prior with a spike at
+        zero (any factor near zero kills the coefficient) and polynomial tails;
+        with ``num_terms = 1`` it degenerates to ``Normal(location, scale)``.
+        Each factor is a standard normal registered as ``f"{name}_z1"`` ...
+        ``f"{name}_z{num_terms}"``; the scale is applied once per factor, as in
+        R's ``make_beta()`` (``beta *= prior_scale ^ num_normals``).
+        """
+        import pymc as pm
+
+        self._reject_positive(positive)
+        k = int(self.num_terms)
+        prod = None
+        for i in range(k):
+            z = pm.Normal(f"{name}_z{i + 1}", 0.0, 1.0, shape=shape, dims=dims)
+            prod = z if prod is None else prod * z
+        return pm.Deterministic(name, self.location + self.scale ** k * prod,
+                                dims=dims)
+
+
+def hs(df: float = 1.0, global_df: float = 1.0, global_scale: float = 0.01,
+       slab_df: float = 4.0, slab_scale: float = 2.5) -> HorseshoePrior:
+    """Regularised horseshoe prior for regression coefficients.
+
+    Shrinks small effects hard towards zero while leaving large ones alone --
+    useful when many of the covariates (e.g. NPIs) are expected to do nothing.
+    ``global_scale`` controls the overall sparsity and should be set from the
+    number of coefficients believed to be non-zero; ``slab_df``/``slab_scale``
+    describe the ``Student-t(slab_df, 0, slab_scale)`` slab that the
+    unambiguously non-zero coefficients are shrunk towards.
+
+    Takes no ``autoscale``: as in R the family fixes ``location = 0`` and
+    ``scale = 1``, and the scaling is expressed by ``global_scale`` instead.
+    """
+    return HorseshoePrior(df=df, global_df=global_df, global_scale=global_scale,
+                          slab_df=slab_df, slab_scale=slab_scale)
+
+
+def hs_plus(df1: float = 1.0, df2: float = 1.0, global_df: float = 1.0,
+            global_scale: float = 0.01, slab_df: float = 4.0,
+            slab_scale: float = 2.5) -> HorseshoePlusPrior:
+    """Regularised horseshoe+ prior: two nested local scales.
+
+    Like :func:`hs` but with ``lambda = lambda1 * lambda2``, which sharpens the
+    spike at zero and fattens the tails -- more aggressive sparsification at the
+    cost of a harder posterior geometry.
+    """
+    return HorseshoePlusPrior(df1=df1, df2=df2, global_df=global_df,
+                              global_scale=global_scale, slab_df=slab_df,
+                              slab_scale=slab_scale)
+
+
+def lasso(df: float = 1.0, location: float = 0.0,
+          scale: float = 2.5) -> LassoPrior:
+    """Bayesian lasso prior: Laplace with an estimated global scale.
+
+    The double-exponential's scale is ``scale`` times a shared
+    ``ChiSquared(df)`` variable, so the penalty is estimated rather than fixed.
+    Unlike the frequentist lasso this does not produce exact zeros; it is a
+    shrinkage prior, not a selection procedure.
+    """
+    return LassoPrior(df=df, location=location, scale=scale)
+
+
+def product_normal(num_terms: int = 2, location: float = 0.0,
+                   scale: float = 1.0) -> ProductNormalPrior:
+    """Prior on a coefficient that is a product of ``num_terms`` normals.
+
+    R calls the first argument ``df``; it is a count of factors, so it is named
+    ``num_terms`` here and mirrored back as ``.df``. It must be an integer
+    ``>= 1``.
+    """
+    return ProductNormalPrior(num_terms=num_terms, location=location,
+                              scale=scale)
+
+
+# ---------------------------------------------------------------------------
+# Autoscaling
+# ---------------------------------------------------------------------------
+
+#: Families for which :func:`autoscale` does anything -- the ones whose ``scale``
+#: is a scale *of the coefficient*, so dividing it by the predictor's scale keeps
+#: the prior invariant to the covariate's units. Mirrors R, where ``autoscale``
+#: is an argument of normal/student_t/cauchy/laplace/lasso.
+AUTOSCALE_DISTS = frozenset({"normal", "t", "cauchy", "laplace", "lasso"})
+
+#: R's ``min_prior_scale`` in standata_reg(): a floor, so a wildly-scaled
+#: predictor cannot collapse the prior to a point mass at zero.
+MIN_PRIOR_SCALE = 1e-12
+
+
+def predictor_scale(x) -> Any:
+    """Scale of a predictor, by R's rule in ``standata_reg()``.
+
+    R does not blindly use the standard deviation:
+
+    ==================== =========================================
+    unique values        scale
+    ==================== =========================================
+    1 (constant)         ``1`` -- nothing to rescale
+    2 (a dummy/binary)   ``max(x) - min(x)``, the range
+    > 2                  ``sd(x)`` (R's ``sd``, i.e. the n-1 divisor)
+    ==================== =========================================
+
+    The range is used for a binary covariate because there its coefficient is a
+    difference between two groups, not a per-standard-deviation slope.
+
+    Parameters
+    ----------
+    x : array_like
+        A predictor, shape ``(n,)``, or a design matrix, shape ``(n, k)``, in
+        which case the rule is applied column by column.
+
+    Returns
+    -------
+    float or numpy.ndarray
+        The scale (a scalar for a vector ``x``, one per column for a matrix).
+    """
+    x = np.asarray(x, dtype=float)
+    if x.ndim == 1:
+        u = np.unique(x[np.isfinite(x)])
+        if u.size <= 1:
+            return 1.0
+        if u.size == 2:
+            return float(u[-1] - u[0])
+        return float(np.std(x, ddof=1))
+    if x.ndim != 2:
+        raise ValueError(f"x should be 1- or 2-dimensional, got ndim={x.ndim}")
+    return np.array([predictor_scale(col) for col in x.T])
+
+
+def autoscale(spec: Prior | str, predictor_sd) -> Prior:
+    """Rescale a prior to the units of its predictor -- R's ``autoscale = TRUE``.
+
+    A ``normal(0, 0.5)`` prior on a coefficient means "half a unit of response
+    per unit of covariate", which is a completely different statement when the
+    covariate is measured in days rather than weeks. R's ``autoscale`` removes
+    that dependence by dividing the prior scale by the predictor's own scale, so
+    the prior is a statement about *standardised* covariates::
+
+        scale <- max(1e-12, scale / predictor_scale(x))
+
+    Use :func:`predictor_scale` to get ``predictor_sd`` the way R does (range for
+    binary covariates, standard deviation otherwise).
+
+    Parameters
+    ----------
+    spec : Prior | str
+        The prior to rescale. Not mutated -- specs are frozen, so a copy is
+        returned.
+    predictor_sd : float or array_like
+        Scale of the predictor(s), strictly positive. An array gives a per-
+        coefficient scale, which the families here accept (their PyMC
+        distributions broadcast over the coefficient axis).
+
+    Returns
+    -------
+    Prior
+        A copy of ``spec`` with ``scale`` divided by ``predictor_sd``, floored at
+        :data:`MIN_PRIOR_SCALE`.
+
+    Notes
+    -----
+    This is a **no-op** for every family outside :data:`AUTOSCALE_DISTS`, and the
+    spec is returned unchanged -- matching R, where those families either have no
+    ``autoscale`` argument (``hs``, ``hs_plus``, ``product_normal``, ``decov``)
+    or carry a ``scale`` that is not a coefficient scale and is never divided in
+    ``standata_reg()`` (``exponential``'s rate, ``shifted_gamma``'s gamma scale,
+    ``hexp``'s hierarchy, ``lkj``'s half-t scale).
+
+    The existing constructors deliberately gained no ``autoscale`` field:
+    ``normal()`` and friends are frozen dataclasses whose :meth:`Prior.params`
+    output is part of the tested R-parity contract, so adding a field would
+    change what they report even when it is ``False``. Autoscaling is therefore
+    exposed only through this function -- call it where R would have consulted
+    ``prior$autoscale``, i.e. once the design matrix is known.
+
+    Examples
+    --------
+    >>> autoscale(normal(0, 0.5), 2.0)
+    NormalPrior(location=0, scale=0.25)
+    """
+    spec = resolve(spec, what="autoscale")
+    if spec.dist not in AUTOSCALE_DISTS:
+        # Deliberately silent: a pipeline autoscales whatever prior the user
+        # supplied, and R likewise just leaves such a prior alone.
+        return spec
+
+    sd = np.asarray(predictor_sd, dtype=float)
+    if not np.all(np.isfinite(sd)) or np.any(sd <= 0):
+        raise ValueError(
+            "predictor_sd should be positive and finite, got "
+            f"{predictor_sd!r}; a constant predictor has scale 1 (see "
+            "predictor_scale)"
+        )
+    scale = np.asarray(spec.scale, dtype=float) / sd
+    # R: pmax(min_prior_scale, ...) then pmin(.Machine$double.xmax, ...)
+    scale = np.clip(scale, MIN_PRIOR_SCALE, np.finfo(float).max)
+    # replace() re-runs __post_init__, so the rescaled spec is validated too.
+    return replace(spec, scale=float(scale) if scale.ndim == 0 else scale)
+
+
+# The shrinkage families complete R's ok_dists; nothing else changes, since R
+# admits them for coefficients only (never for intercepts, aux or covariance).
+OK_DISTS = OK_DISTS | frozenset({"hs", "hs_plus", "lasso", "product_normal"})
+
+_FAMILIES.update({
+    "hs": hs,
+    "hs_plus": hs_plus,
+    "lasso": lasso,
+    "product_normal": product_normal,
+})
+
+__all__ += [
+    "AUTOSCALE_DISTS",
+    "MIN_PRIOR_SCALE",
+    "HorseshoePlusPrior",
+    "HorseshoePrior",
+    "LassoPrior",
+    "ProductNormalPrior",
+    "autoscale",
+    "hs",
+    "hs_plus",
+    "lasso",
+    "predictor_scale",
+    "product_normal",
+]

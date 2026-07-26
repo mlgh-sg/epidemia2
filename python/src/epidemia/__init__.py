@@ -26,6 +26,8 @@ Licensed GPL-3.0-or-later, as the R package is.
 
 from __future__ import annotations
 
+from . import forecast as forecast_mod
+from . import formula as formula_mod
 from . import plots, predict, priors, scoring
 from .core import (
     EpiModelConfig,
@@ -36,6 +38,8 @@ from .core import (
     fit_epidemia,
 )
 from .core import prepare_panel as prepare_panel_multi
+from .forecast import Forecast, forecast
+from .formula import build_from_formula, parse_formula
 from .data import EUROPE_COVID_NPIS, EpiData, EuropeCovid2, europe_covid2, flu1918
 from .infer import fit
 from .model import EpiConfig, build_model
@@ -70,6 +74,10 @@ __all__ = [
     "PanelData",
     "RandomWalk",
     "build_epidemia_model",
+    "parse_formula",
+    "forecast",
+    "build_from_formula",
+    "Forecast",
     "fit_epidemia",
     "build_model",
     "build_multilevel_model",

@@ -189,6 +189,18 @@ class EpiModelConfig:
     seed_pooling : bool
         Partially pool the seeded infections through a shared mean (R's ``hexp``).
     seed_aux_rate, seed_prior_mean : float
+    latent : bool
+        Treat infections as parameters with noise around the renewal equation,
+        rather than as a deterministic function of it -- R's
+        ``epiinf(latent = TRUE)``. Useful when counts are low enough that the
+        deterministic recursion is too rigid.
+    latent_aux_loc, latent_aux_scale : float
+        Prior on the infection dispersion: ``loc + scale * HalfNormal(1)``,
+        matching R's ``epiinf(prior_aux = normal(10, 5))`` truncated positive.
+    fixed_vtm : bool
+        With ``True`` (R's default) the auxiliary parameter is a
+        variance-to-mean ratio, so ``sd = sqrt(aux * mean)``. With ``False`` it
+        is a coefficient of variation, so ``sd = aux * mean``.
     pop_adjust : bool
         Deplete the susceptible population as infections accumulate. Requires
         ``PanelData.pops``. Without it, infections grow without bound and long
@@ -215,6 +227,10 @@ class EpiModelConfig:
     seed_pooling: bool = True
     seed_aux_rate: float = 0.03
     seed_prior_mean: float = 30.0
+    latent: bool = False
+    latent_aux_loc: float = 10.0
+    latent_aux_scale: float = 5.0
+    fixed_vtm: bool = True
     pop_adjust: bool = False
     prior_susc_mean: float | None = None
     prior_susc_sd: float = 0.1
@@ -458,6 +474,17 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
         buf0 = pt.zeros((M, L))
         buf0 = pt.set_subtensor(buf0[:, : min(v, L)], seed[:, None])
 
+        # Latent infections (R's epiinf(latent = TRUE)): the post-seeding
+        # infections become parameters, and the renewal equation supplies their
+        # MEAN rather than their value. R declares them as
+        # `vector<lower=0> infections_raw` whose only density is the state-space
+        # term added below, so the parameter itself is flat on the positive half
+        # line; the density is proper because each mean depends only on earlier
+        # infections.
+        latent = bool(config.latent)
+        if latent:
+            raw = pm.HalfFlat("infections_raw", shape=(M, T - v))
+
         if config.pop_adjust:
             pops = pt.as_tensor_variable(np.asarray(data.pops, dtype=float))
             if config.prior_susc_mean is None:
@@ -471,22 +498,37 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             # Seeded infections have already happened by the first modelled day.
             S_init = susc0 - v * seed
 
-            def step(R_t, buf, S):
-                i_prime = R_t * pt.dot(buf, gen)
-                # Saturating form, as in R's Stan: a large i_prime can never
-                # infect more people than remain susceptible.
-                i_t = S * (1.0 - pt.exp(-i_prime / pops))
-                return (
-                    pt.concatenate([i_t[:, None], buf[:, :-1]], axis=1),
-                    S - i_t,
-                    i_t,
-                )
+            if latent:
+                def step(R_t, raw_t, buf, S):
+                    i_prime = R_t * pt.dot(buf, gen)
+                    # Saturating form, as in R's Stan: a large i_prime can never
+                    # infect more people than remain susceptible.
+                    E_t = S * (1.0 - pt.exp(-i_prime / pops))
+                    return (
+                        pt.concatenate([raw_t[:, None], buf[:, :-1]], axis=1),
+                        S - raw_t,
+                        E_t,
+                    )
 
-            _, S_seq, infs = pytensor.scan(
-                fn=step, sequences=[R_unadj[:, v:].T],
+                seqs = [R_unadj[:, v:].T, raw.T]
+            else:
+                def step(R_t, buf, S):
+                    i_prime = R_t * pt.dot(buf, gen)
+                    i_t = S * (1.0 - pt.exp(-i_prime / pops))
+                    return (
+                        pt.concatenate([i_t[:, None], buf[:, :-1]], axis=1),
+                        S - i_t,
+                        i_t,
+                    )
+
+                seqs = [R_unadj[:, v:].T]
+
+            _, S_seq, E_seq = pytensor.scan(
+                fn=step, sequences=seqs,
                 outputs_info=[buf0, S_init, None], return_updates=False,
             )
-            infections = pt.concatenate([seeds, infs.T], axis=1)
+            post = raw if latent else E_seq.T
+            infections = pt.concatenate([seeds, post], axis=1)
             # R_t as actually realised: the unadjusted rate scaled by the
             # susceptible fraction at the previous step.
             S_full = pt.concatenate(
@@ -499,17 +541,47 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 dims=("region", "region_time"),
             )
         else:
-            def step(R_t, buf):
-                i_t = R_t * pt.dot(buf, gen)
-                return pt.concatenate([i_t[:, None], buf[:, :-1]], axis=1), i_t
+            if latent:
+                def step(R_t, raw_t, buf):
+                    E_t = R_t * pt.dot(buf, gen)
+                    return pt.concatenate([raw_t[:, None], buf[:, :-1]], axis=1), E_t
 
-            _, infs = pytensor.scan(
-                fn=step, sequences=[R_unadj[:, v:].T],
+                seqs = [R_unadj[:, v:].T, raw.T]
+            else:
+                def step(R_t, buf):
+                    i_t = R_t * pt.dot(buf, gen)
+                    return pt.concatenate([i_t[:, None], buf[:, :-1]], axis=1), i_t
+
+                seqs = [R_unadj[:, v:].T]
+
+            _, E_seq = pytensor.scan(
+                fn=step, sequences=seqs,
                 outputs_info=[buf0, None], return_updates=False,
             )
-            infections = pt.concatenate([seeds, infs.T], axis=1)
+            post = raw if latent else E_seq.T
+            infections = pt.concatenate([seeds, post], axis=1)
             R = pm.Deterministic("Rt", R_unadj,
                                  dims=("region", "region_time"))
+
+        if latent:
+            # The state-space density: infections scatter around the renewal
+            # mean. fixed_vtm=True makes `aux` a variance-to-mean ratio
+            # (sd = sqrt(aux * mean)), False a coefficient of variation
+            # (sd = aux * mean) -- R's two options.
+            aux_raw = pm.HalfNormal("inf_aux_raw", 1.0)
+            inf_aux = pm.Deterministic(
+                "inf_aux",
+                config.latent_aux_loc + config.latent_aux_scale * aux_raw,
+            )
+            mean = pt.maximum(E_seq.T, 1e-9)
+            sd = pt.sqrt(inf_aux * mean) if config.fixed_vtm else inf_aux * mean
+            pm.Deterministic("E_infections",
+                             pt.concatenate([seeds, mean], axis=1),
+                             dims=("region", "region_time"))
+            pm.Potential(
+                "infections_lp",
+                pm.logp(pm.Normal.dist(mu=mean, sigma=sd), raw).sum(),
+            )
 
         pm.Deterministic("infections", infections,
                          dims=("region", "region_time"))

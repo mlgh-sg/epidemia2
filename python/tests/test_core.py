@@ -85,9 +85,16 @@ CONFIGS = {
     "rw_by_region": {"rw": _rw(by_region=True)},
     "pop_adjust": {"pop_adjust": True},
     "pop_adjust_prior_susc": {"pop_adjust": True, "prior_susc_mean": 0.9},
+    "latent": {"latent": True},
+    "latent_pop_adjust": {"latent": True, "pop_adjust": True},
+    "latent_cv": {"latent": True, "fixed_vtm": False},
     "everything": {
         "correlated": True, "pop_adjust": True, "prior_susc_mean": 0.9,
         "rw": _rw(by_region=True),
+    },
+    "everything_latent": {
+        "correlated": True, "pop_adjust": True, "prior_susc_mean": 0.9,
+        "latent": True, "rw": _rw(by_region=True),
     },
 }
 
@@ -277,3 +284,88 @@ def test_a_joint_two_series_model_actually_samples():
     for series in ("deaths", "cases"):
         assert f"E_{series}" in idata.posterior
         assert np.all(np.isfinite(idata.posterior[f"E_{series}"].values))
+
+
+# ---------------------------------------------------------------------------
+# Latent infections (R's epiinf(latent = TRUE))
+
+
+def test_latent_makes_infections_parameters_around_a_renewal_mean():
+    cfg = EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS, latent=True)
+    model = build_epidemia_model(_panel(), _deaths(), cfg)
+    names = {v.name for v in model.named_vars.values()}
+
+    # the infections themselves are now sampled, and the renewal equation only
+    # supplies their mean
+    assert "infections_raw" in names
+    assert "E_infections" in names
+    assert "inf_aux" in names
+
+    deterministic = build_epidemia_model(
+        _panel(), _deaths(), EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS))
+    det_names = {v.name for v in deterministic.named_vars.values()}
+    assert "infections_raw" not in det_names
+    assert "E_infections" not in det_names
+
+
+def test_latent_infections_are_free_of_their_mean():
+    """The point of the latent model: infections need not equal the renewal mean.
+
+    Evaluated at a point rather than drawn from the prior: `infections_raw` is
+    a HalfFlat, matching R's `vector<lower=0>` whose only density is the
+    state-space term, and an improper distribution has no variate to draw.
+    """
+    cfg = EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS, latent=True)
+    model = build_epidemia_model(_panel(), _deaths(), cfg)
+    # inputs pinned to the full set of value vars: compile_fn otherwise builds a
+    # function over only the inputs its outputs need, and the point over-supplies it
+    outs = model.replace_rvs_by_values(
+        [model["infections"], model["E_infections"]])
+    fn = model.compile_fn(outs, inputs=model.value_vars, point_fn=True,
+                          on_unused_input="ignore")
+    inf, mean = fn(model.initial_point())
+
+    post = slice(SEED_DAYS, None)
+    assert not np.allclose(inf[:, post], mean[:, post]), (
+        "infections coincide with their mean, so they are not actually latent"
+    )
+    assert np.all(inf >= 0)
+    assert np.all(np.isfinite(mean))
+
+
+@pytest.mark.parametrize("fixed_vtm", [True, False])
+def test_variance_to_mean_and_coefficient_of_variation_both_build(fixed_vtm):
+    """R offers both readings of the auxiliary parameter; so do we."""
+    cfg = EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS, latent=True,
+                         fixed_vtm=fixed_vtm)
+    model = build_epidemia_model(_panel(), _deaths(), cfg)
+    assert np.isfinite(float(model.compile_logp()(model.initial_point())))
+
+
+def test_the_two_noise_scalings_give_different_densities():
+    common = dict(gen=_gen(), seed_days=SEED_DAYS, latent=True)
+    vtm = build_epidemia_model(_panel(), _deaths(),
+                               EpiModelConfig(fixed_vtm=True, **common))
+    cv = build_epidemia_model(_panel(), _deaths(),
+                              EpiModelConfig(fixed_vtm=False, **common))
+    a = float(vtm.compile_logp()(vtm.initial_point()))
+    b = float(cv.compile_logp()(cv.initial_point()))
+    assert a != b, "sd = sqrt(aux*mean) and sd = aux*mean should not coincide"
+
+
+def test_latent_composes_with_the_population_adjustment():
+    """A small population must still saturate when infections are latent."""
+    panel = _panel()
+    panel.pops = np.full(M, 5e4)
+    model = build_epidemia_model(
+        panel, _deaths(),
+        EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS, latent=True,
+                       pop_adjust=True),
+    )
+    outs = model.replace_rvs_by_values(
+        [model["susceptible"], model["Rt"], model["Rt_unadj"]])
+    fn = model.compile_fn(outs, inputs=model.value_vars, point_fn=True,
+                          on_unused_input="ignore")
+    S, R, R_un = fn(model.initial_point())
+    assert np.all(R <= R_un + 1e-9)
+    assert np.all(np.isfinite(S))

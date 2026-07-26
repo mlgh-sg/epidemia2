@@ -39,11 +39,12 @@ change either side, re-check the row.
 | Posterior predictive sampling | ✅ | ✅ `epidemia.predict.posterior_predict` |
 | Spaghetti (per-draw) plots | ✅ | ✅ `spaghetti_rt` / `_infections` / `_obs` |
 | Variational inference | ✅ | ✅ `fit_variational` |
-| Swappable prior families | ✅ | ✅ `epidemia.priors` (no autoscale, no `hs`/`lasso`) |
-| Covariates for `R_t` | ✅ formula mini-language | ⚠️ numeric `(M,T,K)` design matrix |
-| Forecasting via `newdata` | ✅ one call | ⚠️ primitives in `epidemia.predict`, no wrapper |
-| Counterfactuals | ✅ | ⚠️ `effect_table` covers `R_t` only |
-| Latent (stochastic) infections | ✅ `epiinf(latent=TRUE)` | ❌ deterministic renewal only |
+| Swappable prior families | ✅ | ✅ `epidemia.priors` |
+| Covariates for `R_t` | ✅ formula mini-language | ✅ `epidemia.formula` |
+| Forecasting via `newdata` | ✅ one call | ✅ `epidemia.forecast.forecast` |
+| Latent (stochastic) infections | ✅ `epiinf(latent=TRUE)` | ✅ `EpiModelConfig(latent=True)` |
+| Autoscaled / `hs` / `lasso` priors | ✅ | ✅ `epidemia.priors` |
+| Counterfactuals | ✅ | ⚠️ `effect_table` for `R_t`; `forecast` for observations |
 | Non-centred RW parameterisation | ✅ | ✅ |
 | nutpie sampler + JAX/GPU backend option | ❌ | ✅ |
 | Grammar-of-graphics (`plotnine`) plots | ❌ (ggplot2 via R) | ✅ |
@@ -54,9 +55,12 @@ the random walk but one population, `multilevel.py` had regions but a
 deterministic `R_t` and a single series. Both are kept for the existing
 notebooks; new work should use `core`.
 
-What still differs: no formula parser (design matrices instead), forecasting is
-primitives rather than one `newdata` call, and `epiinf(latent=TRUE)` has no
-counterpart.
+What still differs, and it is now narrow: the formula's split of covariates into
+fixed versus group-specific is advisory (core shares one design matrix between
+`beta` and `b`, so the *pooling* structure is exact but the column split is not);
+`forecast()` cannot extrapolate a `latent=True` fit, since those infections are
+free parameters with no forward rule; and there is no dedicated counterfactual
+helper for observations, though editing `newdata` and calling `forecast` does it.
 
 For measured performance of the two backends on the same model, see
 `benchmarks/` and the "Performance" page of the Python docs.
