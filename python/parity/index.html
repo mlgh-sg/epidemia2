@@ -558,10 +558,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-is-still-not-here" class="md-nav__link">
+  <a href="#writing-a-model-as-a-formula" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What is still not here
+        Writing a model as a formula
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forecasting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forecasting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-caveats-that-remain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The caveats that remain
       
     </span>
   </a>
@@ -679,10 +701,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-is-still-not-here" class="md-nav__link">
+  <a href="#writing-a-model-as-a-formula" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What is still not here
+        Writing a model as a formula
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forecasting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forecasting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-caveats-that-remain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The caveats that remain
       
     </span>
   </a>
@@ -815,27 +859,27 @@ missing is halfway through an analysis.</p>
 <tr>
 <td>Covariates on <code>R_t</code></td>
 <td style="text-align: center;">✅ formula</td>
-<td style="text-align: center;">⚠️ design matrix</td>
+<td style="text-align: center;">✅ <code>parse_formula</code> / <code>build_from_formula</code></td>
 </tr>
 <tr>
 <td>Forecasting from new data</td>
 <td style="text-align: center;">✅ one call</td>
-<td style="text-align: center;">⚠️ primitives, no wrapper</td>
-</tr>
-<tr>
-<td>Counterfactuals</td>
-<td style="text-align: center;">✅</td>
-<td style="text-align: center;">⚠️ <code>R_t</code> only</td>
+<td style="text-align: center;">✅ <code>forecast(...)</code></td>
 </tr>
 <tr>
 <td>Stochastic latent infections</td>
 <td style="text-align: center;">✅</td>
-<td style="text-align: center;">❌</td>
+<td style="text-align: center;">✅ <code>latent=True</code></td>
 </tr>
 <tr>
 <td>Autoscaled priors, <code>hs</code>/<code>lasso</code> families</td>
 <td style="text-align: center;">✅</td>
-<td style="text-align: center;">❌</td>
+<td style="text-align: center;">✅ <code>epidemia.priors</code></td>
+</tr>
+<tr>
+<td>Counterfactuals</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">⚠️ <code>R_t</code> via <code>effect_table</code>; observations via <code>forecast</code></td>
 </tr>
 <tr>
 <td>nutpie sampler, JAX/GPU option</td>
@@ -873,27 +917,44 @@ what the R tutorials write routinely.</p>
 </code></pre></div>
 <p>That is R's <code>R(country, date) ~ (1 + lockdown | country) + rw(time = week, gr = country)</code>
 with <code>obs = list(deaths, cases)</code> and <code>epiinf(pop_adjust = TRUE)</code>.</p>
-<h2 id="what-is-still-not-here">What is still not here<a class="headerlink" href="#what-is-still-not-here" title="Permanent link">&para;</a></h2>
-<p><strong>A formula interface.</strong> Covariates come in as a numeric
-<code>(regions, time, covariates)</code> array from <code>prepare_panel</code>; there is no
-<code>R(country, date) ~ ...</code> parser. You get the models, you write the design matrix.</p>
-<p><strong>Forecasting is primitives, not one call.</strong> <code>epidemia.predict</code> gives you
-<code>simulate</code> (forward renewal over posterior draws, with the susceptibility
-adjustment), <code>expected_observations</code> and <code>posterior_predict</code> (which draws from
-the observation family rather than banding the mean). What is missing is R's
-convenience of handing a whole <code>newdata</code> frame to one function.</p>
-<p><strong>Stochastic latent infections.</strong> R's <code>epiinf(latent = TRUE)</code> treats infections
-as parameters with noise around the renewal equation. Here the recursion stays
-deterministic.</p>
-<p><strong>Prior coverage is close but not complete.</strong> <code>epidemia.priors</code> mirrors R's
-constructors — <code>normal</code>, <code>student_t</code>, <code>cauchy</code>, <code>exponential</code>, <code>laplace</code>,
-<code>shifted_gamma</code>, <code>hexp</code>, <code>decov</code>, <code>lkj</code> — with R's argument names and
-validation. Not ported: <code>autoscale</code>, and the <code>hs</code>/<code>hs_plus</code>/<code>lasso</code>/
-<code>product_normal</code> shrinkage families.</p>
-<p><strong>Counterfactuals</strong> cover effect sizes through <code>effect_table</code>, which re-evaluates
-<code>R_t</code> per draw under a modified design. Re-simulating observations under that
-design is now possible with <code>epidemia.predict</code>, but it is your code, not a
-one-liner.</p>
+<h2 id="writing-a-model-as-a-formula">Writing a model as a formula<a class="headerlink" href="#writing-a-model-as-a-formula" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">epidemia.formula</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_from_formula</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">epidemia.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">EpiModelConfig</span><span class="p">,</span> <span class="n">ObsModel</span><span class="p">,</span> <span class="n">fit_epidemia</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">panel</span><span class="p">,</span> <span class="n">series</span><span class="p">,</span> <span class="n">cfg</span> <span class="o">=</span> <span class="n">build_from_formula</span><span class="p">(</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">df</span><span class="p">,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="s2">&quot;R(country, date) ~ 1 + rw(time = week, gr = country) + lockdown&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">responses</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;deaths&quot;</span><span class="p">,</span> <span class="s2">&quot;cases&quot;</span><span class="p">],</span> <span class="n">pop</span><span class="o">=</span><span class="s2">&quot;pop&quot;</span><span class="p">,</span> <span class="n">fit_until</span><span class="o">=</span><span class="s2">&quot;2020-05-05&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">idata</span> <span class="o">=</span> <span class="n">fit_epidemia</span><span class="p">(</span><span class="n">panel</span><span class="p">,</span> <span class="n">obs_models</span><span class="p">,</span> <span class="n">EpiModelConfig</span><span class="p">(</span><span class="n">gen</span><span class="o">=</span><span class="n">si</span><span class="p">,</span> <span class="o">**</span><span class="n">cfg</span><span class="p">))</span>
+</code></pre></div>
+<p><code>||</code> gives independent region effects and <code>|</code> correlated ones; <code>0 +</code> drops the
+intercept; <code>rw(gr = x)</code> gives one walk per level of <code>x</code> and <code>rw()</code> one shared
+walk. Non-numeric covariates are dummy-coded with R's treatment contrasts.</p>
+<h2 id="forecasting">Forecasting<a class="headerlink" href="#forecasting" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">epidemia.forecast</span><span class="w"> </span><span class="kn">import</span> <span class="n">forecast</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">fc</span> <span class="o">=</span> <span class="n">forecast</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">panel</span><span class="p">,</span> <span class="n">obs_models</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">newdata</span><span class="o">=</span><span class="n">longer_df</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">fc</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>          <span class="c1"># tidy long frame: region, date, variable, quantiles</span>
+</code></pre></div>
+<p>Nothing is re-fitted: conditional on a posterior draw the latent series are
+deterministic, so this is forward simulation over draws. Covariates past the fit
+window carry forward, and the random walk is <strong>held at its final fitted step</strong> —
+the forecast says "<code>R_t</code> stays where it ended" rather than inventing increments.
+<code>fc.predicted</code> holds draws from the observation family, not just the mean.</p>
+<h2 id="the-caveats-that-remain">The caveats that remain<a class="headerlink" href="#the-caveats-that-remain" title="Permanent link">&para;</a></h2>
+<p><strong>The formula's fixed/random split is advisory.</strong> <code>build_epidemia_model</code> shares
+one design matrix between the population-level <code>beta</code> and the region-level <code>b</code>,
+so a covariate appearing only inside <code>(... | group)</code> still gets a population
+coefficient, and vice versa. The <em>pooling</em> structure — <code>|</code> versus <code>||</code>, whether
+there is an intercept — is exact; the column split is not. Nesting
+(<code>(1 | county/district)</code>) and interactions (<code>a:b</code>) are rejected rather than
+silently mis-parsed, and only one <code>rw()</code> term is allowed.</p>
+<p><strong>Forecasting does not support <code>latent=True</code>.</strong> With latent infections the
+post-seeding infections are free parameters, so there is no forward-simulable
+rule past the fitted window. Use the deterministic recursion to forecast.</p>
+<p><strong>Counterfactuals on observations</strong> are now possible by editing the covariates in
+<code>newdata</code> and calling <code>forecast</code>, but there is no dedicated helper as in R.</p>
 <h2 id="choosing-a-side">Choosing a side<a class="headerlink" href="#choosing-a-side" title="Permanent link">&para;</a></h2>
 <p>The two now express the same models. Use <strong>R</strong> when you want the formula
 interface, one-call forecasting from a <code>newdata</code> frame, or stochastic latent
