@@ -105,8 +105,13 @@ class ObsModel:
     intercept : bool
         Include an intercept in the ascertainment regression. Set ``False`` with
         a full-rank ``X`` to get R's ``~ 0 + region``.
+    prior_intercept, prior, prior_aux : Prior | None
+        Prior specifications from :mod:`epidemia.priors`, mirroring R's
+        ``epiobs(prior_intercept =, prior =, prior_aux =)``. ``None`` keeps the
+        scalar-hyperparameter defaults below, so existing code is unaffected.
     prior_intercept_scale, prior_coef_scale : float
-        Normal prior scales for the ascertainment intercept and coefficients.
+        Normal prior scales for the ascertainment intercept and coefficients,
+        used when the corresponding ``prior_*`` object is ``None``.
     prior_aux_loc, prior_aux_scale : float
         Auxiliary parameter prior. For ``neg_binom`` the reciprocal dispersion is
         ``loc + scale * HalfNormal(1)``, matching R's ``normal(10, 5)`` truncated
@@ -122,6 +127,9 @@ class ObsModel:
     X: np.ndarray | None = None
     offset: np.ndarray | None = None
     intercept: bool = True
+    prior_intercept: object = None
+    prior: object = None
+    prior_aux: object = None
     prior_intercept_scale: float = 0.2
     prior_coef_scale: float = 0.5
     prior_aux_loc: float = 10.0
@@ -161,6 +169,14 @@ class EpiModelConfig:
     ----------
     gen : array (L,)
         Generation-interval kernel, lag-1-first.
+    prior_covariates, prior_intercept, prior_seeds, prior_aux : Prior | None
+        Prior specifications from :mod:`epidemia.priors`, mirroring R's
+        ``epirt(prior =, prior_intercept =)`` and
+        ``epiinf(prior_seeds =, prior_aux =)``. ``None`` keeps the
+        scalar-hyperparameter defaults documented below, so existing code is
+        unaffected. ``prior_covariates`` replaces the shifted-gamma built from
+        ``beta_shape``/``beta_scale``/``beta_shift``; ``prior_aux`` replaces the
+        latent-infection dispersion built from ``latent_aux_*``.
     R_link_K : float
         Carrying capacity of the scaled-logit link on ``R_t``.
     intercept : bool
@@ -211,6 +227,10 @@ class EpiModelConfig:
     """
 
     gen: np.ndarray
+    prior_covariates: object = None
+    prior_intercept: object = None
+    prior_seeds: object = None
+    prior_aux: object = None
     R_link_K: float = 6.5
     intercept: bool = False
     beta_shape: float = 1.0 / 6.0
@@ -343,6 +363,17 @@ def _convolve(pt, infections, kernel, M, T):
 
 def _likelihood(pm, pt, obs: ObsModel, E, aux_name):
     """Attach one series' likelihood on its own observed days."""
+    from . import priors as _priors
+
+    def _aux():
+        """The series' auxiliary parameter, from a Prior spec or the defaults."""
+        if obs.prior_aux is not None:
+            return _priors.build(obs.prior_aux, aux_name, positive=True)
+        raw = pm.HalfNormal(f"{aux_name}_raw", 1.0)
+        return pm.Deterministic(
+            aux_name, obs.prior_aux_loc + obs.prior_aux_scale * raw
+        )
+
     idx = np.where(np.asarray(obs.mask).reshape(-1))[0]
     mu = E.reshape((-1,))[idx]
     y = np.asarray(obs.y).reshape(-1)[idx]
@@ -359,10 +390,7 @@ def _likelihood(pm, pt, obs: ObsModel, E, aux_name):
         return
 
     if fam in ("neg_binom", "quasi_poisson"):
-        raw = pm.HalfNormal(f"{aux_name}_raw", 1.0)
-        aux = pm.Deterministic(
-            aux_name, obs.prior_aux_loc + obs.prior_aux_scale * raw
-        )
+        aux = _aux()
         if fam == "neg_binom":
             pm.NegativeBinomial(obs.name, mu=mu, alpha=aux, observed=y.astype(int))
         else:
@@ -374,10 +402,7 @@ def _likelihood(pm, pt, obs: ObsModel, E, aux_name):
                                 observed=y.astype(int))
         return
 
-    sigma_raw = pm.HalfNormal(f"{aux_name}_raw", 1.0)
-    sigma = pm.Deterministic(
-        aux_name, obs.prior_aux_loc + obs.prior_aux_scale * sigma_raw
-    )
+    sigma = _aux()
     if fam == "normal":
         pm.Normal(obs.name, mu=mu, sigma=sigma, observed=y.astype(float))
     else:  # log_normal
@@ -404,6 +429,8 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
     import pymc as pm
     import pytensor
     import pytensor.tensor as pt
+
+    from . import priors as _priors
 
     if isinstance(obs_models, ObsModel):
         obs_models = [obs_models]
@@ -442,15 +469,24 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
         eta = pt.zeros((M, T))
 
         if config.intercept:
-            eta = eta + pm.Normal("intercept", 0.0, 0.5)
+            eta = eta + (
+                _priors.build(config.prior_intercept, "intercept")
+                if config.prior_intercept is not None
+                else pm.Normal("intercept", 0.0, 0.5)
+            )
 
         b0, b = _region_effects(pm, pt, config, M, K)
         eta = eta + b0[:, None]
 
         if K:
-            g_beta = pm.Gamma("g_beta", alpha=config.beta_shape,
-                              beta=1.0 / config.beta_scale, dims="npi")
-            beta = pm.Deterministic("beta", config.beta_shift - g_beta, dims="npi")
+            if config.prior_covariates is not None:
+                beta = _priors.build(config.prior_covariates, "beta", shape=K)
+            else:
+                # the default is R's shifted_gamma: effects a priori non-positive
+                g_beta = pm.Gamma("g_beta", alpha=config.beta_shape,
+                                  beta=1.0 / config.beta_scale, dims="npi")
+                beta = pm.Deterministic("beta", config.beta_shift - g_beta,
+                                        dims="npi")
             coef = beta[None, :] + b                       # (M, K)
             eta = eta + (pt.as_tensor_variable(X) * coef[:, None, :]).sum(axis=2)
 
@@ -463,7 +499,12 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
         )
 
         # ---- infections ---------------------------------------------------
-        if config.seed_pooling:
+        if config.prior_seeds is not None:
+            # hexp() reproduces the pooled form below; any other family gives
+            # each region an independent draw.
+            seed = _priors.build(config.prior_seeds, "seed", shape=M,
+                                 positive=True)
+        elif config.seed_pooling:
             tau = pm.Exponential("seed_tau", config.seed_aux_rate)
             seed_raw = pm.Exponential("seed_raw", 1.0, dims="region")
             seed = pm.Deterministic("seed", tau * seed_raw, dims="region")
@@ -568,11 +609,15 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             # mean. fixed_vtm=True makes `aux` a variance-to-mean ratio
             # (sd = sqrt(aux * mean)), False a coefficient of variation
             # (sd = aux * mean) -- R's two options.
-            aux_raw = pm.HalfNormal("inf_aux_raw", 1.0)
-            inf_aux = pm.Deterministic(
-                "inf_aux",
-                config.latent_aux_loc + config.latent_aux_scale * aux_raw,
-            )
+            if config.prior_aux is not None:
+                inf_aux = _priors.build(config.prior_aux, "inf_aux",
+                                        positive=True)
+            else:
+                aux_raw = pm.HalfNormal("inf_aux_raw", 1.0)
+                inf_aux = pm.Deterministic(
+                    "inf_aux",
+                    config.latent_aux_loc + config.latent_aux_scale * aux_raw,
+                )
             mean = pt.maximum(E_seq.T, 1e-9)
             sd = pt.sqrt(inf_aux * mean) if config.fixed_vtm else inf_aux * mean
             pm.Deterministic("E_infections",
@@ -590,8 +635,11 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
         for o in obs_models:
             oeta = pt.zeros((M, T))
             if o.intercept:
-                oeta = oeta + pm.Normal(
-                    f"{o.name}|intercept", 0.0, o.prior_intercept_scale
+                oeta = oeta + (
+                    _priors.build(o.prior_intercept, f"{o.name}|intercept")
+                    if o.prior_intercept is not None
+                    else pm.Normal(f"{o.name}|intercept", 0.0,
+                                   o.prior_intercept_scale)
                 )
             if o.X is not None:
                 oX = np.asarray(o.X, dtype=float)
@@ -599,8 +647,12 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                     raise ValueError(
                         f"series {o.name!r}: X must be (M, T, Ks); got {oX.shape}"
                     )
-                ocoef = pm.Normal(f"{o.name}|coef", 0.0, o.prior_coef_scale,
-                                  shape=oX.shape[2])
+                ocoef = (
+                    _priors.build(o.prior, f"{o.name}|coef", shape=oX.shape[2])
+                    if o.prior is not None
+                    else pm.Normal(f"{o.name}|coef", 0.0, o.prior_coef_scale,
+                                   shape=oX.shape[2])
+                )
                 oeta = oeta + (pt.as_tensor_variable(oX) * ocoef[None, None, :]).sum(axis=2)
             if o.offset is not None:
                 oeta = oeta + pt.as_tensor_variable(

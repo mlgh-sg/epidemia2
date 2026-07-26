@@ -369,3 +369,55 @@ def test_latent_composes_with_the_population_adjustment():
     S, R, R_un = fn(model.initial_point())
     assert np.all(R <= R_un + 1e-9)
     assert np.all(np.isfinite(S))
+
+
+# ---------------------------------------------------------------------------
+# Swappable prior families (R's epirt(prior=) / epiobs(prior_aux=) / epiinf(...))
+
+
+def test_prior_objects_replace_the_default_families():
+    """A Prior spec must actually reach the model, not just be constructible."""
+    from epidemia import priors as pr
+
+    default = build_epidemia_model(
+        _panel(), _deaths(), EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS))
+    swapped = build_epidemia_model(
+        _panel(),
+        ObsModel("deaths", _deaths().y, _mask(), _i2o_deaths(),
+                 family="neg_binom", link_K=0.02,
+                 prior_intercept=pr.student_t(df=3, location=0.0, scale=0.2),
+                 prior_aux=pr.exponential(0.1)),
+        EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS, intercept=True,
+                       prior_covariates=pr.hs(),
+                       prior_intercept=pr.cauchy(0.0, 1.0),
+                       prior_seeds=pr.exponential(1 / 30)),
+    )
+
+    d = {v.name for v in default.free_RVs}
+    w = {v.name for v in swapped.free_RVs}
+
+    # the shifted gamma on the covariates is gone, replaced by a horseshoe
+    assert "g_beta" in d and "g_beta" not in w
+    assert {"beta_global", "beta_local", "beta_z"} <= w
+
+    # hexp pooling of the seeds is gone, replaced by a plain exponential
+    assert {"seed_tau", "seed_raw"} <= d
+    assert "seed_tau" not in w
+
+    # the observation dispersion is no longer the loc + scale * HalfNormal form
+    assert "deaths|aux_raw" in d and "deaths|aux_raw" not in w
+
+    assert np.isfinite(float(swapped.compile_logp()(swapped.initial_point())))
+
+
+def test_leaving_the_prior_fields_unset_changes_nothing():
+    """The scalar-hyperparameter path must be untouched when no spec is given."""
+    a = build_epidemia_model(
+        _panel(), _deaths(), EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS))
+    b = build_epidemia_model(
+        _panel(), _deaths(),
+        EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS,
+                       prior_covariates=None, prior_intercept=None,
+                       prior_seeds=None, prior_aux=None),
+    )
+    assert {v.name for v in a.free_RVs} == {v.name for v in b.free_RVs}
