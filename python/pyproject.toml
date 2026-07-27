@@ -20,6 +20,7 @@ dependencies = [
   "arviz>=0.18",
   "plotnine>=0.13",   # grammar-of-graphics plotting (ggplot2 for Python)
   "pandas>=2.0",      # panel data for the multilevel (Europe COVID) example
+  "scipy>=1.10",      # probit link; already a pymc dependency, declared so it is not transitive
 ]
 
 # NOTE: keep [project.urls] and every other sub-table BELOW the key/value pairs

@@ -156,14 +156,45 @@ def _is_multiregion(idata, var):
     return "region" in idata.posterior[var].dims
 
 
-def _pick_obs_var(idata):
-    """The expected-observation variable: ``E_deaths`` (multilevel) or ``E_obs``."""
-    for v in ("E_obs", "E_deaths"):
-        if v in idata.posterior:
-            return v
-    raise KeyError(
-        "no expected-observation variable found in the posterior "
-        f"(looked for E_obs / E_deaths; have {list(idata.posterior.data_vars)})"
+def available_series(idata):
+    """Names of the observation series present in ``idata``.
+
+    ``build_epidemia_model`` records one ``E_<name>`` per series and the names
+    are whatever the user called them, so they cannot be guessed.
+    """
+    return sorted(
+        v[2:] for v in idata.posterior.data_vars if str(v).startswith("E_")
+    )
+
+
+def _pick_obs_var(idata, series=None):
+    """The expected-observation variable for ``series``.
+
+    ``series`` names one of :func:`available_series`. Omitting it is only
+    unambiguous when the model has a single series: the previous behaviour --
+    scanning a fixed ("E_obs", "E_deaths") tuple and taking the first hit --
+    made every other name unreachable and silently picked one of several.
+    """
+    if series is not None:
+        var = f"E_{series}"
+        if var not in idata.posterior:
+            raise KeyError(
+                f"no series named {series!r} in the posterior; "
+                f"available: {available_series(idata) or 'none'}"
+            )
+        return var
+
+    found = available_series(idata)
+    if len(found) == 1:
+        return f"E_{found[0]}"
+    if not found:
+        raise KeyError(
+            "no expected-observation variable found in the posterior "
+            f"(have {list(idata.posterior.data_vars)})"
+        )
+    raise ValueError(
+        f"this fit has {len(found)} observation series ({', '.join(found)}); "
+        "pass series= to say which one to plot"
     )
 
 
@@ -364,6 +395,7 @@ def plot_infections(idata, data=None, group=None, levels=(50, 95), x=None, xlab=
 
 
 def plot_obs(idata, observed=None, data=None, group=None, levels=(50, 95), x=None,
+             series=None,
              xlab=None, ylab="Daily deaths", save=True, title=None):
     """Expected observations with the observed counts overlaid (a posterior check).
 
@@ -371,7 +403,7 @@ def plot_obs(idata, observed=None, data=None, group=None, levels=(50, 95), x=Non
     the fitted model defines. For a multilevel fit pass ``data``; the observed
     counts are then taken from ``data.deaths`` and ``observed`` is not needed.
     """
-    var = _pick_obs_var(idata)
+    var = _pick_obs_var(idata, series)
     obs = observed
     if _is_multiregion(idata, var) and obs is None:
         obs = True  # taken from data.deaths inside _series_plot
@@ -698,6 +730,7 @@ def spaghetti_infections(idata, data=None, group=None, draws=50, alpha=0.3, seed
 
 
 def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0.3,
+                  series=None,
                   seed=0, x=None, xlab=None, ylab="Daily deaths", save=True,
                   title=None, region=None):
     """Expected observations as individual paths, with the observed counts overlaid.
@@ -706,7 +739,7 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
     the fitted model defines; raises :class:`KeyError` if neither is present. For
     a multilevel fit pass ``data`` and the counts are taken from ``data.deaths``.
     """
-    var = _pick_obs_var(idata)
+    var = _pick_obs_var(idata, series)
     grp = group if group is not None else region
     obs = observed
     if _is_multiregion(idata, var) and obs is None:

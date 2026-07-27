@@ -160,7 +160,7 @@ def test_spaghetti_obs_needs_an_expected_observation_variable():
     idata = az.InferenceData(posterior=xr.Dataset({
         "Rt": (("chain", "draw", "time"), np.ones((C, D, T))),
     }))
-    with pytest.raises(KeyError, match="E_obs"):
+    with pytest.raises(KeyError, match="no expected-observation variable"):
         spaghetti_obs(idata, save=False)
 
 

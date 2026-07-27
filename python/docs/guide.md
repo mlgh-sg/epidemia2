@@ -75,7 +75,7 @@ idata = epi.fit(y, config, draws=1000, tune=1000, chains=4, seed=0,
 
 ## Plotting
 
-The [`plots`][epidemia.plots] module uses **plotnine** (a grammar of graphics)
+The [`plots`](reference.md#plots) module uses **plotnine** (a grammar of graphics)
 with publication-oriented defaults:
 
 ```python

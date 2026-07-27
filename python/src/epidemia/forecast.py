@@ -181,6 +181,34 @@ class Forecast:
 # --------------------------------------------------------------------------
 
 
+def _apply_link(link, eta, K):
+    """Inverse-link ``eta``. Mirrors :func:`epidemia.core._apply_link`.
+
+    Kept in step with core by the test that reproduces the model's own
+    E_<series> from a forecast over the fitted window: if the two drift apart,
+    that test fails.
+    """
+    import math
+
+    if link == "log":
+        return np.exp(eta)
+    if link == "identity":
+        return eta
+    if link == "scaled_logit":
+        return K * _sigmoid(eta)
+    if link == "logit":
+        return _sigmoid(eta)
+    if link == "probit":
+        from scipy.special import ndtr
+
+        return ndtr(eta)
+    if link == "cauchit":
+        return 0.5 + np.arctan(eta) / math.pi
+    if link == "cloglog":
+        return 1.0 - np.exp(-np.exp(eta))
+    raise ValueError(f"unknown link {link!r}")
+
+
 def _sigmoid(x):
     """Logistic function, written through ``tanh`` so large |x| cannot overflow."""
     return 0.5 * (np.tanh(0.5 * np.asarray(x, dtype=float)) + 1.0)
@@ -421,7 +449,7 @@ def _draw_series(E, obs: ObsModel, aux, rng):
 
 def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
              newdata=None, draws=None, seed=None, series=None,
-             group="country", date="date"):
+             group="country", date="date", allow_latent=False):
     """Forecast every latent and observed series from a fitted model.
 
     Rebuilds the model's design over a (possibly longer) window, reconstructs
@@ -480,6 +508,20 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
     forecast horizon (see the module docstring), so with covariates also carried
     forward the forecast says "R_t stays where it ended".
     """
+    # The docs have always said a latent fit cannot be forecast; until now the
+    # code did not enforce it and would quietly forward-simulate the
+    # DETERMINISTIC recursion instead, producing output that looks fine and is
+    # not the fitted model. With epiinf(latent = TRUE) the post-seeding
+    # infections are free parameters, so there is no rule to run forward.
+    if getattr(config, "latent", False) and not allow_latent:
+        raise ValueError(
+            "cannot forecast a fit made with latent=True: the post-seeding "
+            "infections are free parameters, so there is no forward rule "
+            "beyond the fitted window. Refit with latent=False to forecast, or "
+            "pass allow_latent=True to simulate the deterministic recursion "
+            "instead -- which is a DIFFERENT model from the one you fitted."
+        )
+
     if isinstance(obs_models, ObsModel):
         obs_models = [obs_models]
     obs_models = list(obs_models)
@@ -562,7 +604,8 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
             )
         eta += walk[:, proc[:, None], idx_ext]
 
-    Rt_unadj = float(config.R_link_K) * _sigmoid(eta)
+    Rt_unadj = _apply_link(getattr(config, "link", "scaled_logit"), eta,
+                           float(config.R_link_K))
 
     # ---- infections ------------------------------------------------------
     seed_draws = take("seed")                                    # (S, M)
@@ -597,7 +640,8 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
             oeta += _carry_forward(np.asarray(o.offset, dtype=float),
                                    lengths, T_ext)[None]
 
-        rate = float(o.link_K) * _sigmoid(oeta)
+        rate = _apply_link(getattr(o, "link", "scaled_logit"), oeta,
+                           float(o.link_K))
         # 1e-6 floor, exactly as build_epidemia_model records E_<series>.
         E = expected_observations(infections, np.asarray(o.i2o, dtype=float),
                                   rate) + 1e-6
