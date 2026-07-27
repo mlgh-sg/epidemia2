@@ -55,12 +55,21 @@ the random walk but one population, `multilevel.py` had regions but a
 deterministic `R_t` and a single series. Both are kept for the existing
 notebooks; new work should use `core`.
 
-What still differs, and it is now narrow: the formula's split of covariates into
+Two numerical divergences remain in the Python `pop_adjust` path: R saturates
+the seeded days too and starts the susceptible pool at the full population,
+whereas Python holds the seeds fixed and pre-subtracts them, and R applies
+`rm=` from the first modelled day rather than after seeding. Both are negligible
+for large populations and grow as the population shrinks; closing them means
+running the renewal scan over all days with a seeding indicator.
+
+What still differs otherwise: the formula's split of covariates into
 fixed versus group-specific is advisory (core shares one design matrix between
 `beta` and `b`, so the *pooling* structure is exact but the column split is not);
 `forecast()` cannot extrapolate a `latent=True` fit, since those infections are
-free parameters with no forward rule; and there is no dedicated counterfactual
-helper for observations, though editing `newdata` and calling `forecast` does it.
+free parameters with no forward rule (it now raises rather than silently
+simulating a different model); only one `rw()` term per formula, where R
+concatenates any number; and the plotting arguments are a subset of R's --
+`dates`, `log`, `cumulative`, `by_100k`, `step` and `bar` are not all there.
 
 For measured performance of the two backends on the same model, see
 `benchmarks/` and the "Performance" page of the Python docs.
