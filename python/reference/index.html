@@ -882,6 +882,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#epidemia.data.EuropeCovid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EuropeCovid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#epidemia.data.flu1918" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -897,6 +908,28 @@
     <span class="md-ellipsis">
       
         europe_covid2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epidemia.data.europe_covid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        europe_covid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epidemia.data.england_new_cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        england_new_cases
       
     </span>
   </a>
@@ -1386,6 +1419,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#epidemia.data.EuropeCovid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EuropeCovid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#epidemia.data.flu1918" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1401,6 +1445,28 @@
     <span class="md-ellipsis">
       
         europe_covid2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epidemia.data.europe_covid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        europe_covid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#epidemia.data.england_new_cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        england_new_cases
       
     </span>
   </a>
@@ -4539,6 +4605,10 @@ the R package's basic tutorial (originally from the EpiEstim package).</p>
 <p><code>europe_covid2</code> is the <code>EuropeCovid2</code> dataset from the R package: daily case
 and death counts plus NPI indicators for 11 European countries during the first
 wave of COVID-19 (used in the multilevel / partial-pooling example).</p>
+<p><code>europe_covid</code> is the original <code>EuropeCovid</code> dataset -- the deaths-only data
+exactly as used in Flaxman et al. (2020), before the WHO revised the counts
+retrospectively. <code>england_new_cases</code> is <code>EnglandNewCases</code>, PHE "New Cases by
+Specimen Date" for England.</p>
 
 
 
@@ -4737,6 +4807,112 @@ five binary NPI indicators in :data:<code>EUROPE_COVID_NPIS</code>. <code>date</
 
 </div>
 
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="epidemia.data.EuropeCovid" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">EuropeCovid</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#epidemia.data.EuropeCovid" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">EuropeCovid</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">si</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">inf2death</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>The <code>EuropeCovid</code> dataset (Flaxman et al. 2020, 11 European countries).</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="epidemia.data.EuropeCovid.data">data</span></code></td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Long panel with columns <code>country, date, deaths, pop</code> and the five
+binary NPI indicators in :data:<code>EUROPE_COVID_NPIS</code>. <code>date</code> is a
+<code>datetime64</code> column. Unlike :class:<code>EuropeCovid2</code> there are no case
+counts: Flaxman et al. modelled deaths alone. Each country's first row is
+exactly 30 days before it recorded 10 cumulative deaths, so the panel is
+ragged (899 rows in total, running 2020-01-27 to 2020-05-05).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="epidemia.data.EuropeCovid.si">si</span></code></td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Serial-interval PMF of length 100, summing to 1. It has no leading
+zero -- <code>si[k] = P(serial interval = k+1 days)</code> -- so it can be passed
+straight to :func:<code>epidemia.renewal.renewal_infections</code> as the
+generation kernel, unlike :attr:<code>EpiData.serial_interval</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="epidemia.data.EuropeCovid.inf2death">inf2death</span></code></td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Infection-to-death delay PMF of length 101, summing to 1.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
 
 <div class="doc doc-object doc-function">
 
@@ -4756,17 +4932,17 @@ five binary NPI indicators in :data:<code>EUROPE_COVID_NPIS</code>. <code>date</
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/epidemia/data.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="k">def</span><span class="w"> </span><span class="nf">flu1918</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">EpiData</span><span class="p">:</span>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the 1918 Baltimore influenza data (92 days) with its serial interval.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="k">return</span> <span class="n">EpiData</span><span class="p">(</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="n">incidence</span><span class="o">=</span><span class="n">_FLU1918_INCIDENCE</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="n">serial_interval</span><span class="o">=</span><span class="n">_FLU1918_SI</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="p">)</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-58">58</a></span>
+<span class="normal"><a href="#__codelineno-0-59">59</a></span>
+<span class="normal"><a href="#__codelineno-0-60">60</a></span>
+<span class="normal"><a href="#__codelineno-0-61">61</a></span>
+<span class="normal"><a href="#__codelineno-0-62">62</a></span>
+<span class="normal"><a href="#__codelineno-0-63">63</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="k">def</span><span class="w"> </span><span class="nf">flu1918</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">EpiData</span><span class="p">:</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the 1918 Baltimore influenza data (92 days) with its serial interval.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="k">return</span> <span class="n">EpiData</span><span class="p">(</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61"></a>        <span class="n">incidence</span><span class="o">=</span><span class="n">_FLU1918_INCIDENCE</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="n">serial_interval</span><span class="o">=</span><span class="n">_FLU1918_SI</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63"></a>    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4795,12 +4971,7 @@ the R package.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/epidemia/data.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-92"> 92</a></span>
-<span class="normal"><a href="#__codelineno-0-93"> 93</a></span>
-<span class="normal"><a href="#__codelineno-0-94"> 94</a></span>
-<span class="normal"><a href="#__codelineno-0-95"> 95</a></span>
-<span class="normal"><a href="#__codelineno-0-96"> 96</a></span>
-<span class="normal"><a href="#__codelineno-0-97"> 97</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-97"> 97</a></span>
 <span class="normal"><a href="#__codelineno-0-98"> 98</a></span>
 <span class="normal"><a href="#__codelineno-0-99"> 99</a></span>
 <span class="normal"><a href="#__codelineno-0-100">100</a></span>
@@ -4812,24 +4983,238 @@ the R package.</p>
 <span class="normal"><a href="#__codelineno-0-106">106</a></span>
 <span class="normal"><a href="#__codelineno-0-107">107</a></span>
 <span class="normal"><a href="#__codelineno-0-108">108</a></span>
-<span class="normal"><a href="#__codelineno-0-109">109</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="k">def</span><span class="w"> </span><span class="nf">europe_covid2</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">EuropeCovid2</span><span class="p">:</span>
-<a id="__codelineno-0-93" name="__codelineno-0-93"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the ``EuropeCovid2`` dataset used in the multilevel example.</span>
-<a id="__codelineno-0-94" name="__codelineno-0-94"></a>
-<a id="__codelineno-0-95" name="__codelineno-0-95"></a><span class="sd">    Daily case/death counts and NPI indicators for 11 European countries up to</span>
-<a id="__codelineno-0-96" name="__codelineno-0-96"></a><span class="sd">    1 July 2020, together with the serial interval and infection-to-death delay</span>
-<a id="__codelineno-0-97" name="__codelineno-0-97"></a><span class="sd">    distributions from Flaxman et al. (2020). Mirrors ``data(&quot;EuropeCovid2&quot;)`` in</span>
-<a id="__codelineno-0-98" name="__codelineno-0-98"></a><span class="sd">    the R package.</span>
-<a id="__codelineno-0-99" name="__codelineno-0-99"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-100" name="__codelineno-0-100"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<a id="__codelineno-0-101" name="__codelineno-0-101"></a>
-<a id="__codelineno-0-102" name="__codelineno-0-102"></a>    <span class="n">files</span> <span class="o">=</span> <span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s2">&quot;epidemia.data_files&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-103" name="__codelineno-0-103"></a>    <span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">files</span> <span class="o">/</span> <span class="s2">&quot;europe_covid2.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
-<a id="__codelineno-0-104" name="__codelineno-0-104"></a>        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">])</span>
-<a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">files</span> <span class="o">/</span> <span class="s2">&quot;europe_covid2_si.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
-<a id="__codelineno-0-106" name="__codelineno-0-106"></a>        <span class="n">si</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="s2">&quot;si&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-<a id="__codelineno-0-107" name="__codelineno-0-107"></a>    <span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">files</span> <span class="o">/</span> <span class="s2">&quot;europe_covid2_inf2death.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
-<a id="__codelineno-0-108" name="__codelineno-0-108"></a>        <span class="n">inf2death</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="s2">&quot;inf2death&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
-<a id="__codelineno-0-109" name="__codelineno-0-109"></a>    <span class="k">return</span> <span class="n">EuropeCovid2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">si</span><span class="o">=</span><span class="n">si</span><span class="p">,</span> <span class="n">inf2death</span><span class="o">=</span><span class="n">inf2death</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-109">109</a></span>
+<span class="normal"><a href="#__codelineno-0-110">110</a></span>
+<span class="normal"><a href="#__codelineno-0-111">111</a></span>
+<span class="normal"><a href="#__codelineno-0-112">112</a></span>
+<span class="normal"><a href="#__codelineno-0-113">113</a></span>
+<span class="normal"><a href="#__codelineno-0-114">114</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-97" name="__codelineno-0-97"></a><span class="k">def</span><span class="w"> </span><span class="nf">europe_covid2</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">EuropeCovid2</span><span class="p">:</span>
+<a id="__codelineno-0-98" name="__codelineno-0-98"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the ``EuropeCovid2`` dataset used in the multilevel example.</span>
+<a id="__codelineno-0-99" name="__codelineno-0-99"></a>
+<a id="__codelineno-0-100" name="__codelineno-0-100"></a><span class="sd">    Daily case/death counts and NPI indicators for 11 European countries up to</span>
+<a id="__codelineno-0-101" name="__codelineno-0-101"></a><span class="sd">    1 July 2020, together with the serial interval and infection-to-death delay</span>
+<a id="__codelineno-0-102" name="__codelineno-0-102"></a><span class="sd">    distributions from Flaxman et al. (2020). Mirrors ``data(&quot;EuropeCovid2&quot;)`` in</span>
+<a id="__codelineno-0-103" name="__codelineno-0-103"></a><span class="sd">    the R package.</span>
+<a id="__codelineno-0-104" name="__codelineno-0-104"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<a id="__codelineno-0-106" name="__codelineno-0-106"></a>
+<a id="__codelineno-0-107" name="__codelineno-0-107"></a>    <span class="n">files</span> <span class="o">=</span> <span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s2">&quot;epidemia.data_files&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-108" name="__codelineno-0-108"></a>    <span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">files</span> <span class="o">/</span> <span class="s2">&quot;europe_covid2.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+<a id="__codelineno-0-109" name="__codelineno-0-109"></a>        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">])</span>
+<a id="__codelineno-0-110" name="__codelineno-0-110"></a>    <span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">files</span> <span class="o">/</span> <span class="s2">&quot;europe_covid2_si.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+<a id="__codelineno-0-111" name="__codelineno-0-111"></a>        <span class="n">si</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="s2">&quot;si&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<a id="__codelineno-0-112" name="__codelineno-0-112"></a>    <span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">files</span> <span class="o">/</span> <span class="s2">&quot;europe_covid2_inf2death.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+<a id="__codelineno-0-113" name="__codelineno-0-113"></a>        <span class="n">inf2death</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="s2">&quot;inf2death&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<a id="__codelineno-0-114" name="__codelineno-0-114"></a>    <span class="k">return</span> <span class="n">EuropeCovid2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">si</span><span class="o">=</span><span class="n">si</span><span class="p">,</span> <span class="n">inf2death</span><span class="o">=</span><span class="n">inf2death</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="epidemia.data.europe_covid" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">europe_covid</span>
+
+
+<a href="#epidemia.data.europe_covid" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">europe_covid</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">EuropeCovid</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the <code>EuropeCovid</code> dataset used in Flaxman et al. (2020).</p>
+<p>Daily death counts, NPI indicators and populations for 11 European countries
+up to 5 May 2020, together with the serial interval and infection-to-death
+delay distributions. Mirrors <code>data("EuropeCovid")</code> in the R package.</p>
+<p>Note that this is the <em>original</em> Flaxman data; :func:<code>europe_covid2</code> carries
+the retrospectively revised WHO counts plus case data, and is what the
+multilevel vignette uses.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="EuropeCovid
+
+
+  
+      dataclass
+   (epidemia.data.EuropeCovid)" href="#epidemia.data.EuropeCovid">EuropeCovid</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Panel, serial interval and infection-to-death delay.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/epidemia/data.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-163">163</a></span>
+<span class="normal"><a href="#__codelineno-0-164">164</a></span>
+<span class="normal"><a href="#__codelineno-0-165">165</a></span>
+<span class="normal"><a href="#__codelineno-0-166">166</a></span>
+<span class="normal"><a href="#__codelineno-0-167">167</a></span>
+<span class="normal"><a href="#__codelineno-0-168">168</a></span>
+<span class="normal"><a href="#__codelineno-0-169">169</a></span>
+<span class="normal"><a href="#__codelineno-0-170">170</a></span>
+<span class="normal"><a href="#__codelineno-0-171">171</a></span>
+<span class="normal"><a href="#__codelineno-0-172">172</a></span>
+<span class="normal"><a href="#__codelineno-0-173">173</a></span>
+<span class="normal"><a href="#__codelineno-0-174">174</a></span>
+<span class="normal"><a href="#__codelineno-0-175">175</a></span>
+<span class="normal"><a href="#__codelineno-0-176">176</a></span>
+<span class="normal"><a href="#__codelineno-0-177">177</a></span>
+<span class="normal"><a href="#__codelineno-0-178">178</a></span>
+<span class="normal"><a href="#__codelineno-0-179">179</a></span>
+<span class="normal"><a href="#__codelineno-0-180">180</a></span>
+<span class="normal"><a href="#__codelineno-0-181">181</a></span>
+<span class="normal"><a href="#__codelineno-0-182">182</a></span>
+<span class="normal"><a href="#__codelineno-0-183">183</a></span>
+<span class="normal"><a href="#__codelineno-0-184">184</a></span>
+<span class="normal"><a href="#__codelineno-0-185">185</a></span>
+<span class="normal"><a href="#__codelineno-0-186">186</a></span>
+<span class="normal"><a href="#__codelineno-0-187">187</a></span>
+<span class="normal"><a href="#__codelineno-0-188">188</a></span>
+<span class="normal"><a href="#__codelineno-0-189">189</a></span>
+<span class="normal"><a href="#__codelineno-0-190">190</a></span>
+<span class="normal"><a href="#__codelineno-0-191">191</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="k">def</span><span class="w"> </span><span class="nf">europe_covid</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">EuropeCovid</span><span class="p">:</span>
+<a id="__codelineno-0-164" name="__codelineno-0-164"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the ``EuropeCovid`` dataset used in Flaxman et al. (2020).</span>
+<a id="__codelineno-0-165" name="__codelineno-0-165"></a>
+<a id="__codelineno-0-166" name="__codelineno-0-166"></a><span class="sd">    Daily death counts, NPI indicators and populations for 11 European countries</span>
+<a id="__codelineno-0-167" name="__codelineno-0-167"></a><span class="sd">    up to 5 May 2020, together with the serial interval and infection-to-death</span>
+<a id="__codelineno-0-168" name="__codelineno-0-168"></a><span class="sd">    delay distributions. Mirrors ``data(&quot;EuropeCovid&quot;)`` in the R package.</span>
+<a id="__codelineno-0-169" name="__codelineno-0-169"></a>
+<a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="sd">    Note that this is the *original* Flaxman data; :func:`europe_covid2` carries</span>
+<a id="__codelineno-0-171" name="__codelineno-0-171"></a><span class="sd">    the retrospectively revised WHO counts plus case data, and is what the</span>
+<a id="__codelineno-0-172" name="__codelineno-0-172"></a><span class="sd">    multilevel vignette uses.</span>
+<a id="__codelineno-0-173" name="__codelineno-0-173"></a>
+<a id="__codelineno-0-174" name="__codelineno-0-174"></a><span class="sd">    Returns</span>
+<a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="sd">    -------</span>
+<a id="__codelineno-0-176" name="__codelineno-0-176"></a><span class="sd">    EuropeCovid</span>
+<a id="__codelineno-0-177" name="__codelineno-0-177"></a><span class="sd">        Panel, serial interval and infection-to-death delay.</span>
+<a id="__codelineno-0-178" name="__codelineno-0-178"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-179" name="__codelineno-0-179"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<a id="__codelineno-0-180" name="__codelineno-0-180"></a>
+<a id="__codelineno-0-181" name="__codelineno-0-181"></a>    <span class="n">files</span> <span class="o">=</span> <span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s2">&quot;epidemia.data_files&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-182" name="__codelineno-0-182"></a>    <span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">files</span> <span class="o">/</span> <span class="s2">&quot;europe_covid.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+<a id="__codelineno-0-183" name="__codelineno-0-183"></a>        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">])</span>
+<a id="__codelineno-0-184" name="__codelineno-0-184"></a>    <span class="c1"># si/inf2death are shipped as their own CSVs (rather than reusing the</span>
+<a id="__codelineno-0-185" name="__codelineno-0-185"></a>    <span class="c1"># europe_covid2_* ones they currently duplicate) because R ships them as</span>
+<a id="__codelineno-0-186" name="__codelineno-0-186"></a>    <span class="c1"># separate objects and the two datasets are free to diverge.</span>
+<a id="__codelineno-0-187" name="__codelineno-0-187"></a>    <span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">files</span> <span class="o">/</span> <span class="s2">&quot;europe_covid_si.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+<a id="__codelineno-0-188" name="__codelineno-0-188"></a>        <span class="n">si</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="s2">&quot;si&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<a id="__codelineno-0-189" name="__codelineno-0-189"></a>    <span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">files</span> <span class="o">/</span> <span class="s2">&quot;europe_covid_inf2death.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+<a id="__codelineno-0-190" name="__codelineno-0-190"></a>        <span class="n">inf2death</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="s2">&quot;inf2death&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<a id="__codelineno-0-191" name="__codelineno-0-191"></a>    <span class="k">return</span> <span class="n">EuropeCovid</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">si</span><span class="o">=</span><span class="n">si</span><span class="p">,</span> <span class="n">inf2death</span><span class="o">=</span><span class="n">inf2death</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="epidemia.data.england_new_cases" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">england_new_cases</span>
+
+
+<a href="#epidemia.data.england_new_cases" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">england_new_cases</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the <code>EnglandNewCases</code> dataset as a :class:<code>pandas.DataFrame</code>.</p>
+<p>SARS-CoV-2 "New Cases by Specimen Date" for England as published by Public
+Health England, downloaded 2021-06-01. 487 rows covering 2020-01-30 to
+2021-05-30, with columns <code>date</code> (<code>datetime64</code>), <code>region</code> (always
+<code>"England"</code>) and <code>cases</code>.</p>
+<p>Counts in the last few days of May 2021 are likely under-reported: not every
+specimen had been counted by the download date.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>One row per day.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/epidemia/data.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-194">194</a></span>
+<span class="normal"><a href="#__codelineno-0-195">195</a></span>
+<span class="normal"><a href="#__codelineno-0-196">196</a></span>
+<span class="normal"><a href="#__codelineno-0-197">197</a></span>
+<span class="normal"><a href="#__codelineno-0-198">198</a></span>
+<span class="normal"><a href="#__codelineno-0-199">199</a></span>
+<span class="normal"><a href="#__codelineno-0-200">200</a></span>
+<span class="normal"><a href="#__codelineno-0-201">201</a></span>
+<span class="normal"><a href="#__codelineno-0-202">202</a></span>
+<span class="normal"><a href="#__codelineno-0-203">203</a></span>
+<span class="normal"><a href="#__codelineno-0-204">204</a></span>
+<span class="normal"><a href="#__codelineno-0-205">205</a></span>
+<span class="normal"><a href="#__codelineno-0-206">206</a></span>
+<span class="normal"><a href="#__codelineno-0-207">207</a></span>
+<span class="normal"><a href="#__codelineno-0-208">208</a></span>
+<span class="normal"><a href="#__codelineno-0-209">209</a></span>
+<span class="normal"><a href="#__codelineno-0-210">210</a></span>
+<span class="normal"><a href="#__codelineno-0-211">211</a></span>
+<span class="normal"><a href="#__codelineno-0-212">212</a></span>
+<span class="normal"><a href="#__codelineno-0-213">213</a></span>
+<span class="normal"><a href="#__codelineno-0-214">214</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-194" name="__codelineno-0-194"></a><span class="k">def</span><span class="w"> </span><span class="nf">england_new_cases</span><span class="p">():</span>
+<a id="__codelineno-0-195" name="__codelineno-0-195"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the ``EnglandNewCases`` dataset as a :class:`pandas.DataFrame`.</span>
+<a id="__codelineno-0-196" name="__codelineno-0-196"></a>
+<a id="__codelineno-0-197" name="__codelineno-0-197"></a><span class="sd">    SARS-CoV-2 &quot;New Cases by Specimen Date&quot; for England as published by Public</span>
+<a id="__codelineno-0-198" name="__codelineno-0-198"></a><span class="sd">    Health England, downloaded 2021-06-01. 487 rows covering 2020-01-30 to</span>
+<a id="__codelineno-0-199" name="__codelineno-0-199"></a><span class="sd">    2021-05-30, with columns ``date`` (``datetime64``), ``region`` (always</span>
+<a id="__codelineno-0-200" name="__codelineno-0-200"></a><span class="sd">    ``&quot;England&quot;``) and ``cases``.</span>
+<a id="__codelineno-0-201" name="__codelineno-0-201"></a>
+<a id="__codelineno-0-202" name="__codelineno-0-202"></a><span class="sd">    Counts in the last few days of May 2021 are likely under-reported: not every</span>
+<a id="__codelineno-0-203" name="__codelineno-0-203"></a><span class="sd">    specimen had been counted by the download date.</span>
+<a id="__codelineno-0-204" name="__codelineno-0-204"></a>
+<a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="sd">    Returns</span>
+<a id="__codelineno-0-206" name="__codelineno-0-206"></a><span class="sd">    -------</span>
+<a id="__codelineno-0-207" name="__codelineno-0-207"></a><span class="sd">    pandas.DataFrame</span>
+<a id="__codelineno-0-208" name="__codelineno-0-208"></a><span class="sd">        One row per day.</span>
+<a id="__codelineno-0-209" name="__codelineno-0-209"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-210" name="__codelineno-0-210"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<a id="__codelineno-0-211" name="__codelineno-0-211"></a>
+<a id="__codelineno-0-212" name="__codelineno-0-212"></a>    <span class="n">files</span> <span class="o">=</span> <span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s2">&quot;epidemia.data_files&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-213" name="__codelineno-0-213"></a>    <span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">files</span> <span class="o">/</span> <span class="s2">&quot;england_new_cases.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+<a id="__codelineno-0-214" name="__codelineno-0-214"></a>        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">])</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
