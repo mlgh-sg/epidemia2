@@ -58,7 +58,15 @@ from .multilevel import (
     fit_multilevel,
     prepare_panel,
 )
-from .plots import spaghetti_infections, spaghetti_obs, spaghetti_rt
+from .plots import (
+    available_series,
+    plot_infections,
+    plot_obs,
+    plot_rt,
+    spaghetti_infections,
+    spaghetti_obs,
+    spaghetti_rt,
+)
 from .predict import posterior_predict, simulate
 from .renewal import (
     expected_observations,
@@ -115,6 +123,10 @@ __all__ = [
     "renewal_infections",
     "scoring",
     "simulate",
+    "available_series",
+    "plot_infections",
+    "plot_obs",
+    "plot_rt",
     "spaghetti_infections",
     "spaghetti_obs",
     "spaghetti_rt",

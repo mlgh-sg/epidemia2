@@ -223,7 +223,7 @@ def _median_frame(draws, x):
     return pd.DataFrame({"x": x, "median": np.median(draws, axis=0)})
 
 
-def _region_frame(idata, var, data, levels, group=None):
+def _region_frame(idata, var, data, levels, group=None, transform=None):
     """Per-region interval + median frames on real dates, padded days dropped.
 
     ``data`` is the :class:`~epidemia.multilevel.MultilevelData` that was fitted;
@@ -245,6 +245,8 @@ def _region_frame(idata, var, data, levels, group=None):
         n = int(data.lengths[data.regions.index(r)])
         x = pd.to_datetime(data.dates[data.regions.index(r)])[:n]
         d = arr[:, m, :n]
+        if transform is not None:
+            d = transform(d, data.regions.index(r))
         b = _interval_frame(d, x, levels)
         b["region"] = r
         bands.append(b)
@@ -254,7 +256,7 @@ def _region_frame(idata, var, data, levels, group=None):
     return pd.concat(bands, ignore_index=True), pd.concat(meds, ignore_index=True), keep
 
 
-def _observed_frame(data, group=None):
+def _observed_frame(data, group=None, obs_model=None):
     """Long frame of the genuinely **observed** counts per region on real dates.
 
     Days ``prepare_panel`` masked out (a missing count) are dropped rather than
@@ -262,13 +264,27 @@ def _observed_frame(data, group=None):
     that the zero is a placeholder -- so reading ``deaths`` alone would plot a
     fabricated zero-death observation the model was never fit to.
     """
+    # MultilevelData carries the counts on the panel itself (`deaths`/`mask`);
+    # PanelData does not -- with several series the observations live on each
+    # ObsModel, so they have to be supplied.
+    if obs_model is not None:
+        counts, valid = np.asarray(obs_model.y), np.asarray(obs_model.mask)
+    elif hasattr(data, "deaths"):
+        counts, valid = np.asarray(data.deaths), np.asarray(data.mask)
+    else:
+        raise ValueError(
+            "this panel carries no observed counts (PanelData holds only the "
+            "design); pass obs_model=<the ObsModel for this series> so the "
+            "observations can be overlaid"
+        )
+
     keep = data.regions if group is None else [str(group)]
     rows = []
     for r in keep:
         m = data.regions.index(r)
         n = int(data.lengths[m])
-        obs = np.asarray(data.deaths[m, :n], dtype=float)
-        obs[~np.asarray(data.mask)[m, :n]] = np.nan  # missing is not a zero
+        obs = np.asarray(counts[m, :n], dtype=float)
+        obs[~valid[m, :n]] = np.nan                  # missing is not a zero
         df = pd.DataFrame({
             "x": pd.to_datetime(data.dates[m])[:n], "obs": obs, "region": r,
         })
@@ -301,7 +317,7 @@ def _level_colours(palette, levels):
 
 
 def _ribbon_plot(band, med, palette, levels, ylab, xlab, hline=None, facet=0,
-                 title=None, obs=None, obs_kind="point"):
+                 title=None, obs=None, obs_kind="point", step=False):
     """``facet`` is the number of region panels (0/1 => no faceting)."""
     cols = _level_colours(palette, levels)
     p = (
@@ -317,7 +333,15 @@ def _ribbon_plot(band, med, palette, levels, ylab, xlab, hline=None, facet=0,
             p = p + geom_col(obs, aes("x", "obs"), fill="#b2182b", alpha=0.45, width=1.0)
         else:
             p = p + geom_point(obs, aes("x", "obs"), color="#b2182b", size=1.1, alpha=0.8)
-    p = p + geom_line(med, aes("x", "median"), color="black", size=0.6) + labs(x=xlab, y=ylab)
+    if step:
+        # R's plot_rt(step = TRUE): a covariate-driven R_t is piecewise constant,
+        # so a step reads more honestly than an interpolating line.
+        from plotnine import geom_step
+
+        p = p + geom_step(med, aes("x", "median"), color="black", size=0.6)
+    else:
+        p = p + geom_line(med, aes("x", "median"), color="black", size=0.6)
+    p = p + labs(x=xlab, y=ylab)
     if hline is not None:
         p = p + geom_hline(yintercept=hline, linetype="dotted", color="#555555")
     if title:
@@ -329,9 +353,72 @@ def _ribbon_plot(band, med, palette, levels, ylab, xlab, hline=None, facet=0,
     return p
 
 
+def _window(band, med, obs_df, dates):
+    """Restrict the frames to ``dates=(start, end)``; either end may be None."""
+    if not dates:
+        return band, med, obs_df
+    lo, hi = dates
+    def cut(df):
+        if df is None or not len(df):
+            return df
+        keep = pd.Series(True, index=df.index)
+        if lo is not None:
+            keep &= df["x"] >= pd.to_datetime(lo)
+        if hi is not None:
+            keep &= df["x"] <= pd.to_datetime(hi)
+        return df[keep]
+    return cut(band), cut(med), cut(obs_df)
+
+
+def _log_scale(p, log):
+    """Log-10 the y axis, as R's ``log = TRUE`` does."""
+    if not log:
+        return p
+    from plotnine import scale_y_log10
+
+    return p + scale_y_log10()
+
+
+def _draw_transform(cumulative=False, smooth=None, by_100k=False, pops=None):
+    """A transform applied to a region's ``(draws, time)`` array before summarising.
+
+    It has to act on the DRAWS, not on the quantiles: a quantile of a cumulative
+    sum is not the cumulative sum of the quantiles, and the same goes for a
+    rolling mean. Scaling alone would commute, but it is cheaper to keep all
+    three in one place.
+    """
+    if not (cumulative or smooth or by_100k):
+        return None
+
+    def apply(d, region_index):
+        out = d
+        if cumulative:
+            out = np.cumsum(out, axis=-1)
+        if smooth:
+            k = int(smooth)
+            if k > 1:
+                kernel = np.ones(k) / k
+                out = np.apply_along_axis(
+                    lambda v: np.convolve(v, kernel, mode="same"), -1, out)
+        if by_100k:
+            if pops is None:
+                raise ValueError(
+                    "by_100k=True needs region populations; pass data= whose "
+                    "PanelData carries .pops"
+                )
+            out = out / (np.asarray(pops, dtype=float)[region_index] / 1e5)
+        return out
+
+    return apply
+
+
 def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
-                 save, default_name, title=None, obs=None, obs_kind="point"):
+                 save, default_name, title=None, obs=None, obs_kind="point",
+                 dates=None, log=False, cumulative=False, smooth=None,
+                 by_100k=False, step=False, obs_model=None):
     """Dispatch: multi-region (facet on real dates) vs single-population."""
+    transform = _draw_transform(cumulative, smooth, by_100k,
+                                getattr(data, "pops", None))
     if _is_multiregion(idata, var):
         if data is None:
             raise ValueError(
@@ -340,10 +427,11 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                 "back to its own dates. Pass data=<your prepare_panel result> "
                 "(and optionally group='Italy' for a single region)."
             )
-        band, med, keep = _region_frame(idata, var, data, levels, group)
+        band, med, keep = _region_frame(idata, var, data, levels, group,
+                                        transform=transform)
         obs_df = None
         if obs is True:  # sentinel: take the counts from the panel
-            obs_df = _observed_frame(data, group)
+            obs_df = _observed_frame(data, group, obs_model=obs_model)
         elif obs is not None:
             raise ValueError(
                 "for a multi-region fit the observed counts come from `data` "
@@ -352,12 +440,16 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                 "data=fit) already overlays the right counts -- or pass "
                 "group='<region>' to plot a single region."
             )
+        band, med, obs_df = _window(band, med, obs_df, dates)
         p = _ribbon_plot(band, med, palette, levels, ylab, xlab or "", hline,
                          facet=len(keep) if len(keep) > 1 else 0, title=title,
-                         obs=obs_df, obs_kind=obs_kind)
+                         obs=obs_df, obs_kind=obs_kind, step=step)
+        p = _log_scale(p, log)
         return _maybe_save(p, save, default_name, n_panels=len(keep))
 
     arr, _ = _draws(idata, var)
+    if transform is not None:
+        arr = transform(arr, 0)
     if x is None:
         x = np.arange(arr.shape[-1])
     band, med = _interval_frame(arr, x, levels), _median_frame(arr, x)
@@ -366,8 +458,11 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
         o = np.asarray(obs, dtype=float)
         obs_df = pd.DataFrame({"x": x, "obs": o})
         obs_df = obs_df[np.isfinite(obs_df["obs"])]
+    band, med, obs_df = _window(band, med, obs_df, dates)
     p = _ribbon_plot(band, med, palette, levels, ylab, xlab or "Day", hline,
-                     facet=False, title=title, obs=obs_df, obs_kind=obs_kind)
+                     facet=False, title=title, obs=obs_df, obs_kind=obs_kind,
+                     step=step)
+    p = _log_scale(p, log)
     return _maybe_save(p, save, default_name)
 
 
@@ -377,26 +472,32 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
 
 
 def plot_rt(idata, data=None, group=None, levels=(50, 95), x=None, xlab=None,
-            save=True, title=None):
+            save=True, title=None, dates=None, log=False, smooth=None,
+            step=False):
     """Reproduction numbers: posterior median and credible bands.
 
     For a multilevel fit pass ``data`` (the ``prepare_panel`` result) to get one
     panel per region on real dates; ``group="Italy"`` restricts to one region.
     """
     return _series_plot(idata, "Rt", data, group, levels, x, xlab, "$R_t$",
-                        _GREENS, 1.0, save, "rt", title=title)
+                        _GREENS, 1.0, save, "rt", title=title, dates=dates,
+                        log=log, smooth=smooth, step=step)
 
 
-def plot_infections(idata, data=None, group=None, levels=(50, 95), x=None, xlab=None,
-                    save=True, title=None):
+def plot_infections(idata, data=None, group=None, levels=(50, 95), x=None,
+                    xlab=None, save=True, title=None, dates=None, log=False,
+                    cumulative=False, smooth=None, by_100k=False):
     """Latent daily infections: posterior median and credible bands."""
-    return _series_plot(idata, "infections", data, group, levels, x, xlab, "Infections",
-                        _BLUES, None, save, "infections", title=title)
+    return _series_plot(idata, "infections", data, group, levels, x, xlab,
+                        "Infections", _BLUES, None, save, "infections",
+                        title=title, dates=dates, log=log,
+                        cumulative=cumulative, smooth=smooth, by_100k=by_100k)
 
 
 def plot_obs(idata, observed=None, data=None, group=None, levels=(50, 95), x=None,
-             series=None,
-             xlab=None, ylab="Daily deaths", save=True, title=None):
+             series=None, xlab=None, ylab="Daily deaths", save=True, title=None,
+             dates=None, log=False, cumulative=False, smooth=None,
+             by_100k=False, bar=True, obs_model=None):
     """Expected observations with the observed counts overlaid (a posterior check).
 
     Reads ``E_obs`` (single-population) or ``E_deaths`` (multilevel), whichever
@@ -408,8 +509,13 @@ def plot_obs(idata, observed=None, data=None, group=None, levels=(50, 95), x=Non
     if _is_multiregion(idata, var) and obs is None:
         obs = True  # taken from data.deaths inside _series_plot
     kind = "col" if _is_multiregion(idata, var) else "point"
+    if not bar and kind == "bar":
+        kind = "point"
     return _series_plot(idata, var, data, group, levels, x, xlab, ylab,
-                        _BLUES, None, save, "obs", title=title, obs=obs, obs_kind=kind)
+                        _BLUES, None, save, "obs", title=title, obs=obs,
+                        obs_kind=kind, dates=dates, log=log,
+                        cumulative=cumulative, smooth=smooth, by_100k=by_100k,
+                        obs_model=obs_model)
 
 
 # --------------------------------------------------------------------------
@@ -658,7 +764,7 @@ def _spaghetti_plot(paths, med, color, alpha, ylab, xlab, hline=None, facet=0,
 
 def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab,
                       color, hline, save, default_name, title=None, obs=None,
-                      obs_kind="point"):
+                      obs_kind="point", obs_model=None):
     """Dispatch: multi-region (facet on real dates) vs single-population."""
     _check_alpha(alpha)
     arr, _ = _draws(idata, var)
@@ -675,7 +781,7 @@ def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab
         paths, med, keep = _region_path_frame(idata, var, data, idx, group)
         obs_df = None
         if obs is True:  # sentinel: take the counts from the panel
-            obs_df = _observed_frame(data, group)
+            obs_df = _observed_frame(data, group, obs_model=obs_model)
         elif obs is not None:
             raise ValueError(
                 "for a multi-region fit the observed counts come from `data` "
@@ -732,12 +838,14 @@ def spaghetti_infections(idata, data=None, group=None, draws=50, alpha=0.3, seed
 def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0.3,
                   series=None,
                   seed=0, x=None, xlab=None, ylab="Daily deaths", save=True,
-                  title=None, region=None):
+                  title=None, region=None, obs_model=None):
     """Expected observations as individual paths, with the observed counts overlaid.
 
     Reads ``E_obs`` (single-population) or ``E_deaths`` (multilevel), whichever
     the fitted model defines; raises :class:`KeyError` if neither is present. For
-    a multilevel fit pass ``data`` and the counts are taken from ``data.deaths``.
+    a multilevel fit pass ``data`` and the counts are taken from ``data.deaths``;
+    a :class:`~epidemia.core.PanelData` carries no counts, so pass
+    ``obs_model=`` (the :class:`~epidemia.core.ObsModel` for this series) there.
     """
     var = _pick_obs_var(idata, series)
     grp = group if group is not None else region
@@ -747,4 +855,4 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
     kind = "col" if _is_multiregion(idata, var) else "point"
     return _spaghetti_series(idata, var, data, grp, draws, alpha, seed, x, xlab, ylab,
                              _OBS_PATH_COLOR, None, save, "spaghetti-obs", title=title,
-                             obs=obs, obs_kind=kind)
+                             obs=obs, obs_kind=kind, obs_model=obs_model)

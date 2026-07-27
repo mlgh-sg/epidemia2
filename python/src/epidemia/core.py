@@ -107,8 +107,8 @@ class ObsModel:
         intercept-only rate (R's ``deaths ~ 1``).
     offset : array (M, T) | None
         Optional known additive term on the linear predictor.
-    rw : RandomWalk | None
-        A random walk on THIS series' ascertainment rate, as R permits with an
+    rw : RandomWalk | list[RandomWalk] | None
+        One or more random walks on THIS series' ascertainment rate, as R permits with an
         ``rw()`` term in an ``epiobs`` formula. Independent of the walk on
         ``R_t``; it gets its own scale, named ``<series>|rw_scale``.
     intercept : bool
@@ -214,8 +214,9 @@ class EpiModelConfig:
     sd_slope_fixed : object
         Hold the slope SDs fixed instead of estimating them, selecting the
         no-pooling / full-pooling regimes. Ignored when ``correlated``.
-    rw : RandomWalk | None
-        Optional random walk on the ``R_t`` linear predictor.
+    rw : RandomWalk | list[RandomWalk] | None
+        One or more random walks on the ``R_t`` linear predictor; a list is
+        summed, as R does with several ``rw()`` terms in one formula.
     seed_days : int
     seed_pooling : bool
         Partially pool the seeded infections through a shared mean (R's ``hexp``).
@@ -275,7 +276,7 @@ class EpiModelConfig:
     sd_slope_shape: float = 0.5
     sd_scale: float = 0.25
     sd_slope_fixed: object = None
-    rw: RandomWalk | None = None
+    rw: RandomWalk | list[RandomWalk] | None = None
     seed_days: int = 6
     seed_pooling: bool = True
     seed_aux_rate: float = 0.03
@@ -389,7 +390,7 @@ def _region_effects(pm, pt, config, M, K):
     return b0, b
 
 
-def _random_walk(pm, pt, rw: RandomWalk, M, T, prefix=""):
+def _random_walk(pm, pt, rw: RandomWalk, M, T, name="rw"):
     """The walk contribution to the linear predictor, shape ``(M, T)``.
 
     One shared walk, or one per region when ``by_region``. Non-centred: unit
@@ -403,13 +404,40 @@ def _random_walk(pm, pt, rw: RandomWalk, M, T, prefix=""):
     n_steps = int(index.max()) + 1
     n_procs = M if rw.by_region else 1
 
-    scale = pm.HalfNormal(f"{prefix}rw_scale", rw.prior_scale, shape=n_procs)
-    noise = pm.Normal(f"{prefix}rw_noise", 0.0, 1.0, shape=(n_procs, n_steps))
+    scale = pm.HalfNormal(f"{name}_scale", rw.prior_scale, shape=n_procs)
+    noise = pm.Normal(f"{name}_noise", 0.0, 1.0, shape=(n_procs, n_steps))
     walk = pt.cumsum(scale[:, None] * noise, axis=1)          # (n_procs, n_steps)
-    pm.Deterministic(f"{prefix}rw", walk)
+    pm.Deterministic(name, walk)
 
     proc = np.arange(M) if rw.by_region else np.zeros(M, dtype=int)
     return walk[proc[:, None], index]                          # (M, T)
+
+
+def _walks(pm, pt, rw, M, T, prefix=""):
+    """Sum of one or more random walks on a linear predictor.
+
+    ``rw`` may be a single :class:`RandomWalk` or a list of them. R's
+    ``parse_all_terms`` concatenates any number of ``rw()`` terms, each with its
+    own time index and grouping, and adds them all to the predictor.
+
+    The first walk keeps the unprefixed names (``rw_scale``, ``rw_noise``,
+    ``rw``) so a single-walk model is named exactly as before; subsequent walks
+    are ``rw2_*``, ``rw3_*`` and so on.
+    """
+    terms = [rw] if isinstance(rw, RandomWalk) else list(rw)
+    if not terms:
+        raise ValueError("rw= was given an empty list of walks")
+
+    total = None
+    for i, term in enumerate(terms):
+        if not isinstance(term, RandomWalk):
+            raise TypeError(
+                f"rw= expects RandomWalk objects; item {i} is {type(term).__name__}"
+            )
+        tag = f"{prefix}rw" if i == 0 else f"{prefix}rw{i + 1}"
+        contribution = _random_walk(pm, pt, term, M, T, name=tag)
+        total = contribution if total is None else total + contribution
+    return total
 
 
 def _convolve(pt, infections, kernel, M, T):
@@ -586,7 +614,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                              * coef[:, None, :]).sum(axis=2)
 
         if config.rw is not None:
-            eta = eta + _random_walk(pm, pt, config.rw, M, T)
+            eta = eta + _walks(pm, pt, config.rw, M, T)
 
         if config.link not in R_LINKS:
             raise ValueError(
@@ -804,8 +832,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 )
                 oeta = oeta + (pt.as_tensor_variable(oX) * ocoef[None, None, :]).sum(axis=2)
             if o.rw is not None:
-                oeta = oeta + _random_walk(pm, pt, o.rw, M, T,
-                                           prefix=f"{o.name}|")
+                oeta = oeta + _walks(pm, pt, o.rw, M, T, prefix=f"{o.name}|")
             if o.offset is not None:
                 oeta = oeta + pt.as_tensor_variable(
                     np.asarray(o.offset, dtype=float)
