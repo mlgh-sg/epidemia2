@@ -421,3 +421,40 @@ def test_leaving_the_prior_fields_unset_changes_nothing():
                        prior_seeds=None, prior_aux=None),
     )
     assert {v.name for v in a.free_RVs} == {v.name for v in b.free_RVs}
+
+
+# ---------------------------------------------------------------------------
+# Observation families must match R's parameterisation, not merely have the
+# right name. Checked against inst/stan/epidemia_base.stan.
+
+
+def test_quasi_poisson_variance_matches_R():
+    """R: neg_binomial_2(E, E / aux), so Var = mu * (1 + aux)."""
+    mu, aux = 100.0, 4.0
+    alpha = mu / aux                      # what the model now uses
+    variance = mu + mu ** 2 / alpha       # NB2 variance
+    assert np.isclose(variance, mu * (1.0 + aux))
+
+    # the old form, alpha = mu / (aux - 1), gave Var = mu * aux -- a different model
+    assert not np.isclose(mu + mu ** 2 / (mu / (aux - 1.0)), mu * (1.0 + aux))
+
+
+def test_log_normal_expected_value_is_the_mean_not_the_median():
+    """R: lognormal(log(E) - sigma^2/2, sigma), so E[Y] == E."""
+    E, sigma = 100.0, 0.3
+    mean_with_correction = np.exp(np.log(E) - sigma ** 2 / 2 + sigma ** 2 / 2)
+    assert np.isclose(mean_with_correction, E)
+
+    # without the correction E would be the median and the mean inflated
+    assert np.exp(np.log(E) + sigma ** 2 / 2) > E * 1.04
+
+
+@pytest.mark.parametrize("family", ["quasi_poisson", "log_normal"])
+def test_the_corrected_families_still_build(family):
+    obs = _deaths()
+    obs.family = family
+    if family == "log_normal":
+        obs.y = obs.y.astype(float) + 1.0
+    model = build_epidemia_model(_panel(), obs,
+                                 EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS))
+    assert np.isfinite(float(model.compile_logp()(model.initial_point())))

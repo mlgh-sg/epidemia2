@@ -394,11 +394,11 @@ def _likelihood(pm, pt, obs: ObsModel, E, aux_name):
         if fam == "neg_binom":
             pm.NegativeBinomial(obs.name, mu=mu, alpha=aux, observed=y.astype(int))
         else:
-            # Quasi-Poisson has no exact likelihood; R models the variance-to-mean
-            # ratio through a negative binomial with alpha = mu / (d - 1), which
-            # gives Var = d * mu. Guard d > 1 so alpha stays positive.
-            d = pt.maximum(aux, 1.0 + 1e-6)
-            pm.NegativeBinomial(obs.name, mu=mu, alpha=mu / (d - 1.0),
+            # Quasi-Poisson has no exact likelihood. R writes it as
+            # neg_binomial_2(E, E / aux) -- see inst/stan/epidemia_base.stan --
+            # so alpha = mu / aux and Var = mu * (1 + aux); `aux` is the EXCESS
+            # of the variance-to-mean ratio over one, not the ratio itself.
+            pm.NegativeBinomial(obs.name, mu=mu, alpha=mu / aux,
                                 observed=y.astype(int))
         return
 
@@ -406,7 +406,11 @@ def _likelihood(pm, pt, obs: ObsModel, E, aux_name):
     if fam == "normal":
         pm.Normal(obs.name, mu=mu, sigma=sigma, observed=y.astype(float))
     else:  # log_normal
-        pm.LogNormal(obs.name, mu=pt.log(mu), sigma=sigma, observed=y.astype(float))
+        # R fits lognormal(log(E) - sigma^2 / 2, sigma), which makes E the MEAN
+        # of the observation. Dropping the correction would make E the median
+        # and bias the fitted expected series by exp(sigma^2 / 2).
+        pm.LogNormal(obs.name, mu=pt.log(mu) - sigma ** 2 / 2.0, sigma=sigma,
+                     observed=y.astype(float))
 
 
 def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
