@@ -382,8 +382,11 @@ def test_susceptibles_decline_and_stay_positive(panel, obs_models, config, idata
     assert np.all(np.diff(susc, axis=-1) <= 1e-9)         # never rebounds
     assert np.all(susc[..., -1] < susc[..., 0])           # depletion actually bites
     assert np.all(fc.infections >= 0.0)
-    # The seeded infections have already happened by the first modelled day.
-    expected0 = POPS[None, :] - config.seed_days * fc.infections[:, :, 0]
+    # The pool starts at the FULL population and the recursion removes each
+    # day's infections, seeding days included -- as R's Stan does. So after the
+    # first day it is the population less that day's (saturated) infections,
+    # not the population less seed_days * seed.
+    expected0 = POPS[None, :] - fc.infections[:, :, 0]
     np.testing.assert_allclose(susc[:, :, 0], expected0, rtol=1e-12)
 
 

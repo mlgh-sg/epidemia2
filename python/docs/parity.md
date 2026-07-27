@@ -107,25 +107,6 @@ window carry forward, and the random walk is **held at its final fitted step** �
 the forecast says "`R_t` stays where it ended" rather than inventing increments.
 `fc.predicted` holds draws from the observation family, not just the mean.
 
-## Numerical divergences from R, precisely
-
-These are not missing features -- the capability is there -- but the arithmetic
-differs from R's Stan in ways that matter for small populations.
-
-**The susceptibility adjustment treats the seeding window differently.** R runs
-the saturating step over *every* modelled day
-(`inst/stan/tparameters/gen_infections.stan`, inside `for (i in n0:n2)`), so the
-seeded infections are passed through `susc * (1 - exp(-i/pop))` as well, and the
-susceptible pool starts at the full population. Here the seeded days are held at
-`seed` exactly and the pool starts at `pops*S0 - seed_days*seed`. For a
-population in the millions with tens of seeds a day the two agree to many digits
-— `1 - exp(-30/8e6)` is `30/8e6` to within rounding — but they separate as the
-population shrinks. Closing this means running the scan over all `T` days with a
-seeding indicator rather than starting it after the seeding window.
-
-**`epiinf(rm=)` is applied only after the seeding window**, for the same reason:
-R applies the removal on every day from `n0`.
-
 ## The caveats that remain
 
 **The formula's fixed/random split is advisory.** `build_epidemia_model` shares

@@ -437,17 +437,16 @@ def _design_from_newdata(panel: PanelData, newdata, group, date):
 # --------------------------------------------------------------------------
 
 
-def _renewal(Rt_unadj, gen, seed, seed_days, pops=None, susc0=None):
+def _renewal(Rt_unadj, gen, seed, seed_days, pops=None, susc0=None, rm=None):
     """Renewal recursion over ``(draws, regions, days)``.
 
     A transcription of the two ``pytensor.scan`` branches of
     :func:`epidemia.core.build_epidemia_model`, kept separate from
     :func:`epidemia.predict.simulate` on purpose: that function follows R's
-    standalone Stan code, which adjusts the *seeding* days for susceptibility
-    too and starts the pool at ``pops``. ``build_epidemia_model`` instead holds
-    the seeded days at ``seed`` exactly and starts the pool at
-    ``susc0 - seed_days * seed``. Forecasts have to match the model that was
-    fitted, or the in-sample part of the forecast would not reproduce the fit.
+    standalone generated-quantities block, which is written against a different
+    indexing convention. This one must match ``build_epidemia_model`` exactly,
+    or the in-sample part of a forecast would not reproduce the fit -- which is
+    what the test of that name checks.
 
     Returns ``(infections, susceptible)``; ``susceptible`` is ``None`` when
     ``pops`` is ``None``.
@@ -472,18 +471,28 @@ def _renewal(Rt_unadj, gen, seed, seed_days, pops=None, susc0=None):
     if np.any(p <= 0):
         raise ValueError("populations must be positive for pop_adjust=True")
     s0 = p if susc0 is None else np.broadcast_to(susc0, (S, M)).reshape(-1)
-    state = np.asarray(s0, dtype=float) - v * sd   # seeds already happened
+    # Starts at the FULL pool: the seeded infections are saturated and removed by
+    # the recursion itself, exactly as core (and R's Stan) do.
+    state = np.asarray(s0, dtype=float)
     susc = np.empty((S * M, T))
-    susc[:, :min(v, T)] = state[:, None]
 
-    for t in range(v, T):
-        lo = max(0, t - L)
-        window = inf[:, lo:t][:, ::-1]
-        i_prime = R[:, t] * (window @ gen[: t - lo])
+    if rm is None:
+        rm_arr = np.zeros((M, T))
+    else:
+        rm_arr = np.broadcast_to(np.asarray(rm, dtype=float), (M, T))
+    rm_flat = np.repeat(rm_arr[None, :, :], S, axis=0).reshape(S * M, T)
+
+    for t in range(T):
+        if t < v:
+            pre = sd                                # the seeding window
+        else:
+            lo = max(0, t - L)
+            window = inf[:, lo:t][:, ::-1]
+            pre = R[:, t] * (window @ gen[: t - lo])
         # -expm1(-x) == 1 - exp(-x) but accurate for the tiny x of a big pop.
-        i_t = state * -np.expm1(-i_prime / p)
+        i_t = state * -np.expm1(-pre / p)
         inf[:, t] = i_t
-        state = state - i_t                        # i_t <= state, so state >= 0
+        state = (1.0 - rm_flat[:, t]) * (state - i_t)
         susc[:, t] = state
 
     return inf.reshape(S, M, T), susc.reshape(S, M, T)
@@ -496,8 +505,10 @@ def _draw_series(E, obs: ObsModel, aux, rng):
     auxiliary parameterisation for two families, so translate rather than pass
     ``aux`` through blindly:
 
-    * ``quasi_poisson``: ``core`` fits ``alpha = mu / (d - 1)``, i.e. ``aux`` is
-      the variance-to-mean ratio ``d``; ``posterior_predict`` takes ``mu / aux``.
+    * ``quasi_poisson``: ``core`` fits ``alpha = mu / aux`` (R's
+      ``neg_binomial_2(E, E / aux)``), so ``aux`` is the EXCESS of the
+      variance-to-mean ratio over one; ``posterior_predict`` takes ``mu / aux``
+      and so needs it unchanged.
     * ``log_normal``: ``core`` fits ``LogNormal(mu = log(E), sigma)``, whose mean
       is ``E * exp(sigma^2 / 2)``; ``posterior_predict`` takes a location whose
       exponential is the mean.
@@ -514,8 +525,7 @@ def _draw_series(E, obs: ObsModel, aux, rng):
     a = np.asarray(aux, dtype=float).reshape((-1, 1, 1))
 
     if fam == "quasi_poisson":
-        d = np.maximum(a, 1.0 + 1e-6)              # exactly core's guard
-        return posterior_predict(E, "quasi_poisson", aux=d - 1.0, rng=rng)
+        return posterior_predict(E, "quasi_poisson", aux=a, rng=rng)
     if fam == "log_normal":
         return posterior_predict(np.log(E) + a**2 / 2.0, "log_normal",
                                  aux=a, rng=rng)
@@ -695,9 +705,21 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
         pops = np.asarray(panel.pops, dtype=float)
         s0 = take("S0", required=False)
         susc0 = pops[None, :] if s0 is None else s0 * pops[None, :]
+        # Removal (vaccination) is part of the fitted recursion, so a forecast
+        # that ignored it would not reproduce the fit in-sample. Beyond the
+        # fitted window the last known rate carries forward, like the covariates.
+        rm = None
+        if getattr(config, "rm", None) is not None:
+            rm_fit = np.asarray(config.rm, dtype=float)
+            T_ext = Rt_unadj.shape[-1]
+            rm = np.empty((rm_fit.shape[0], T_ext))
+            n = min(rm_fit.shape[1], T_ext)
+            rm[:, :n] = rm_fit[:, :n]
+            if T_ext > n:
+                rm[:, n:] = rm_fit[:, [-1]]
         infections, susceptible = _renewal(
             Rt_unadj, config.gen, seed_draws, config.seed_days,
-            pops=pops[None, :], susc0=susc0,
+            pops=pops[None, :], susc0=susc0, rm=rm,
         )
         Rt = Rt_unadj * susceptible / pops[None, :, None]
     else:

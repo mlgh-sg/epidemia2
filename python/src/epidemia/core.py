@@ -635,20 +635,29 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                     lower=0.0, upper=1.0, dims="region",
                 )
                 susc0 = s0 * pops
-            # Seeded infections have already happened by the first modelled day.
-            S_init = susc0 - v * seed
+
+            # R runs the recursion over EVERY modelled day, seeding included:
+            # inst/stan/tparameters/gen_infections.stan applies
+            #     infections[i] = susc[i] * (1 - exp(-infections[i] / pops))
+            # inside `for (i in n0:n2)`, and starts susc at the FULL pool. So the
+            # seeded infections are saturated too and are subtracted by the
+            # recursion rather than up front. Starting after the seeding window
+            # and pre-subtracting `seed_days * seed` agrees to many digits for a
+            # population in the millions and separates as the population shrinks.
+            S_init = susc0
 
             # Removal by something other than infection -- vaccination, say.
-            # R applies it as S[t+1] = (1 - v[t]) * (S[t] - i[t]).
+            # R applies it as S[t+1] = (1 - v[t]) * (S[t] - i[t]), from the first
+            # modelled day, so the sequence spans all T days.
             if config.rm is None:
-                rm_seq = pt.zeros((T - v, M))
+                rm_seq = pt.zeros((T, M))
             else:
                 rm_arr = np.asarray(config.rm, dtype=float)
                 if rm_arr.shape != (M, T):
                     raise ValueError(
                         f"config.rm must have shape {(M, T)}; got {rm_arr.shape}"
                     )
-                rm_t = pt.as_tensor_variable(rm_arr[:, v:].T)
+                rm_t = pt.as_tensor_variable(rm_arr.T)
                 if config.prior_rm_noise is None:
                     rm_seq = rm_t
                 else:
@@ -658,48 +667,65 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                                      shape=M, positive=True)
                     rm_seq = pt.clip(rm_t * veps[None, :], 0.0, 1.0)
 
+            # 1 on the seeding days. The buffer starts empty, so the renewal term
+            # is 0 there anyway; the flag selects the seed instead of branching.
+            seed_flag = np.zeros(T, dtype=float)
+            seed_flag[:v] = 1.0
+            flag_seq = pt.as_tensor_variable(seed_flag)
+            # `seed` travels as a SEQUENCE rather than a closure variable: a
+            # random variable captured inside a scan leaks into the logp graph
+            # as an RV instead of its value variable ("Random variables detected
+            # in the logp graph").
+            seed_seq = pt.outer(pt.ones(T), seed)             # (T, M)
+            buf_start = pt.zeros((M, L))
+
             if latent:
-                def step(R_t, raw_t, v_t, buf, S):
-                    i_prime = R_t * pt.dot(buf, gen)
-                    # Saturating form, as in R's Stan: a large i_prime can never
-                    # infect more people than remain susceptible.
-                    E_t = S * (1.0 - pt.exp(-i_prime / pops))
+                # Only the post-seeding infections are free parameters in R too;
+                # the seeding days take the (saturated) seed.
+                raw_seq = pt.concatenate([pt.zeros((M, v)), raw], axis=1).T
+
+                def step(R_t, v_t, sflag, seed_t, raw_t, buf, S):
+                    pre = sflag * seed_t + (1.0 - sflag) * R_t * pt.dot(buf, gen)
+                    E_t = S * (1.0 - pt.exp(-pre / pops))
+                    i_t = sflag * E_t + (1.0 - sflag) * raw_t
                     return (
-                        pt.concatenate([raw_t[:, None], buf[:, :-1]], axis=1),
-                        (1.0 - v_t) * (S - raw_t),
+                        pt.concatenate([i_t[:, None], buf[:, :-1]], axis=1),
+                        (1.0 - v_t) * (S - i_t),
                         E_t,
+                        i_t,
                     )
 
-                seqs = [R_unadj[:, v:].T, raw.T, rm_seq]
+                seqs = [R_unadj.T, rm_seq, flag_seq, seed_seq, raw_seq]
             else:
-                def step(R_t, v_t, buf, S):
-                    i_prime = R_t * pt.dot(buf, gen)
-                    i_t = S * (1.0 - pt.exp(-i_prime / pops))
+                def step(R_t, v_t, sflag, seed_t, buf, S):
+                    pre = sflag * seed_t + (1.0 - sflag) * R_t * pt.dot(buf, gen)
+                    i_t = S * (1.0 - pt.exp(-pre / pops))
                     return (
                         pt.concatenate([i_t[:, None], buf[:, :-1]], axis=1),
                         (1.0 - v_t) * (S - i_t),
                         i_t,
+                        i_t,
                     )
 
-                seqs = [R_unadj[:, v:].T, rm_seq]
+                seqs = [R_unadj.T, rm_seq, flag_seq, seed_seq]
 
-            _, S_seq, E_seq = pytensor.scan(
+            _, S_seq, E_all, I_all = pytensor.scan(
                 fn=step, sequences=seqs,
-                outputs_info=[buf0, S_init, None], return_updates=False,
+                outputs_info=[buf_start, S_init, None, None],
+                return_updates=False,
             )
-            post = raw if latent else E_seq.T
-            infections = pt.concatenate([seeds, post], axis=1)
-            # R_t as actually realised: the unadjusted rate scaled by the
-            # susceptible fraction at the previous step.
-            S_full = pt.concatenate(
-                [pt.outer(S_init, pt.ones(v)), S_seq.T], axis=1
-            )
+            infections = I_all.T
+            # The latent density is over the post-seeding days only.
+            E_post = E_all.T[:, v:]
+            seeded = I_all.T[:, :v]
+            S_full = S_seq.T
             pm.Deterministic("susceptible", S_full,
                              dims=("region", "region_time"))
             R = pm.Deterministic(
                 "Rt", R_unadj * S_full / pops[:, None],
                 dims=("region", "region_time"),
             )
+
         else:
             if latent:
                 def step(R_t, raw_t, buf):
@@ -718,8 +744,10 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 fn=step, sequences=seqs,
                 outputs_info=[buf0, None], return_updates=False,
             )
-            post = raw if latent else E_seq.T
-            infections = pt.concatenate([seeds, post], axis=1)
+            E_post = E_seq.T
+            seeded = seeds
+            infections = pt.concatenate(
+                [seeded, raw if latent else E_post], axis=1)
             R = pm.Deterministic("Rt", R_unadj,
                                  dims=("region", "region_time"))
 
@@ -737,10 +765,10 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                     "inf_aux",
                     config.latent_aux_loc + config.latent_aux_scale * aux_raw,
                 )
-            mean = pt.maximum(E_seq.T, 1e-9)
+            mean = pt.maximum(E_post, 1e-9)
             sd = pt.sqrt(inf_aux * mean) if config.fixed_vtm else inf_aux * mean
             pm.Deterministic("E_infections",
-                             pt.concatenate([seeds, mean], axis=1),
+                             pt.concatenate([seeded, mean], axis=1),
                              dims=("region", "region_time"))
             pm.Potential(
                 "infections_lp",

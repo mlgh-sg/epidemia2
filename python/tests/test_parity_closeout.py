@@ -135,3 +135,57 @@ def test_group_subset_rejects_unknown_groups():
     ec = epidemia.europe_covid2()
     with pytest.raises(ValueError, match="unknown group"):
         prepare_panel(ec.data, responses=["deaths"], group_subset=["Atlantis"])
+
+
+# --- the susceptibility recursion matches R's, seeding window included -----
+
+def test_seeded_infections_are_saturated_like_R():
+    """R applies the saturating step on EVERY modelled day.
+
+    ``inst/stan/tparameters/gen_infections.stan`` runs
+    ``infections[i] = susc[i] * (1 - exp(-infections[i] / pops))`` inside
+    ``for (i in n0:n2)``, so the seeded days go through it too and come out
+    slightly below the raw seed -- and they decline as the pool depletes.
+    """
+    panel = _panel(pops=(1e4, 2e4, 3e4))    # small enough for saturation to bite
+    model = build_epidemia_model(
+        panel, _obs(),
+        EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS, pop_adjust=True))
+    S, I, seed = _eval(model, ["susceptible", "infections", "seed"])
+
+    assert np.all(I[:, 0] < seed), "seeded infections were not saturated"
+    # and they fall over the seeding window, because the pool is shrinking
+    assert np.all(np.diff(I[:, :SEED_DAYS], axis=1) < 0)
+
+
+def test_the_pool_starts_at_the_full_population():
+    """R sets susc[n0] = pops * S0 and lets the recursion remove the seeds."""
+    panel = _panel(pops=(1e4, 2e4, 3e4))
+    model = build_epidemia_model(
+        panel, _obs(),
+        EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS, pop_adjust=True))
+    S, I = _eval(model, ["susceptible", "infections"])
+
+    # after day 0 the pool is the population less that day's infections --
+    # not the population less seed_days * seed, which is what it used to be
+    np.testing.assert_allclose(S[:, 0], panel.pops - I[:, 0], rtol=1e-10)
+    assert np.all(np.diff(S, axis=1) <= 1e-9)
+    assert np.all(S > 0)
+
+
+def test_removal_applies_from_the_first_modelled_day():
+    """R applies vacc[i] from n0, not from the end of the seeding window."""
+    panel = _panel(pops=(1e4, 2e4, 3e4))
+    rm = np.zeros((M, T))
+    rm[:, :SEED_DAYS] = 0.05            # removal ONLY during seeding
+    base = build_epidemia_model(
+        panel, _obs(), EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS,
+                                      pop_adjust=True))
+    with_rm = build_epidemia_model(
+        panel, _obs(), EpiModelConfig(gen=_gen(), seed_days=SEED_DAYS,
+                                      pop_adjust=True, rm=rm))
+    (s0,) = _eval(base, ["susceptible"])
+    (s1,) = _eval(with_rm, ["susceptible"])
+
+    # if removal were applied only after seeding, these would be identical
+    assert np.all(s1[:, SEED_DAYS - 1] < s0[:, SEED_DAYS - 1])
