@@ -882,6 +882,61 @@ missing is halfway through an analysis.</p>
 <td style="text-align: center;">⚠️ <code>R_t</code> via <code>effect_table</code>; observations via <code>forecast</code></td>
 </tr>
 <tr>
+<td>Observation-level random walk</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>ObsModel(rw=)</code></td>
+</tr>
+<tr>
+<td>Vaccination removal (<code>epiinf(rm=)</code>)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>EpiModelConfig(rm=, prior_rm_noise=)</code></td>
+</tr>
+<tr>
+<td>Prior predictive (<code>prior_PD</code>)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>EpiModelConfig(prior_PD=True)</code></td>
+</tr>
+<tr>
+<td><code>group_subset</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>prepare_panel(group_subset=)</code></td>
+</tr>
+<tr>
+<td><code>posterior_linpred</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>epidemia.postprocess</code></td>
+</tr>
+<tr>
+<td><code>posterior_infectious</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>epidemia.postprocess</code></td>
+</tr>
+<tr>
+<td><code>prior_summary</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>epidemia.postprocess</code></td>
+</tr>
+<tr>
+<td><code>as.matrix</code> / <code>get_samps</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>extract_samples</code></td>
+</tr>
+<tr>
+<td>Link functions</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ 3 on <code>R_t</code>, 6 on observations</td>
+</tr>
+<tr>
+<td><code>center=</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+</tr>
+<tr>
+<td>Fully pooled (no region effects)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>region_effects=False</code></td>
+</tr>
+<tr>
 <td>nutpie sampler, JAX/GPU option</td>
 <td style="text-align: center;">❌</td>
 <td style="text-align: center;">✅</td>
