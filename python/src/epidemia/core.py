@@ -107,6 +107,10 @@ class ObsModel:
         intercept-only rate (R's ``deaths ~ 1``).
     offset : array (M, T) | None
         Optional known additive term on the linear predictor.
+    rw : RandomWalk | None
+        A random walk on THIS series' ascertainment rate, as R permits with an
+        ``rw()`` term in an ``epiobs`` formula. Independent of the walk on
+        ``R_t``; it gets its own scale, named ``<series>|rw_scale``.
     intercept : bool
         Include an intercept in the ascertainment regression. Set ``False`` with
         a full-rank ``X`` to get R's ``~ 0 + region``.
@@ -133,6 +137,7 @@ class ObsModel:
     X: np.ndarray | None = None
     offset: np.ndarray | None = None
     intercept: bool = True
+    rw: object = None
     center: bool = False
     prior_intercept: object = None
     prior: object = None
@@ -227,6 +232,17 @@ class EpiModelConfig:
         With ``True`` (R's default) the auxiliary parameter is a
         variance-to-mean ratio, so ``sd = sqrt(aux * mean)``. With ``False`` it
         is a coefficient of variation, so ``sd = aux * mean``.
+    rm : array (M, T) | None
+        Per-day proportion of the susceptible pool removed by something other
+        than infection -- vaccination, typically. R's ``epiinf(rm =)``, applied
+        as ``S[t+1] = (1 - v[t]) * (S[t] - i[t])``. Requires ``pop_adjust``.
+    prior_rm_noise : Prior | None
+        Optional multiplicative noise on that proportion, R's
+        ``epiinf(prior_rm_noise =)``. ``None`` applies ``rm`` exactly.
+    prior_PD : bool
+        Drop the likelihood and sample the joint prior -- R's
+        ``epim(prior_PD = TRUE)``, for prior predictive checks. The latent
+        series are still recorded.
     pop_adjust : bool
         Deplete the susceptible population as infections accumulate. Requires
         ``PanelData.pops``. Without it, infections grow without bound and long
@@ -240,6 +256,9 @@ class EpiModelConfig:
     link: str = "scaled_logit"
     center: bool = False
     region_effects: bool = True
+    rm: object = None
+    prior_rm_noise: object = None
+    prior_PD: bool = False
     prior_covariance: object = None
     prior_covariates: object = None
     prior_intercept: object = None
@@ -370,7 +389,7 @@ def _region_effects(pm, pt, config, M, K):
     return b0, b
 
 
-def _random_walk(pm, pt, rw: RandomWalk, M, T):
+def _random_walk(pm, pt, rw: RandomWalk, M, T, prefix=""):
     """The walk contribution to the linear predictor, shape ``(M, T)``.
 
     One shared walk, or one per region when ``by_region``. Non-centred: unit
@@ -384,10 +403,10 @@ def _random_walk(pm, pt, rw: RandomWalk, M, T):
     n_steps = int(index.max()) + 1
     n_procs = M if rw.by_region else 1
 
-    scale = pm.HalfNormal("rw_scale", rw.prior_scale, shape=n_procs)
-    noise = pm.Normal("rw_noise", 0.0, 1.0, shape=(n_procs, n_steps))
+    scale = pm.HalfNormal(f"{prefix}rw_scale", rw.prior_scale, shape=n_procs)
+    noise = pm.Normal(f"{prefix}rw_noise", 0.0, 1.0, shape=(n_procs, n_steps))
     walk = pt.cumsum(scale[:, None] * noise, axis=1)          # (n_procs, n_steps)
-    pm.Deterministic("rw", walk)
+    pm.Deterministic(f"{prefix}rw", walk)
 
     proc = np.arange(M) if rw.by_region else np.zeros(M, dtype=int)
     return walk[proc[:, None], index]                          # (M, T)
@@ -410,7 +429,7 @@ def _convolve(pt, infections, kernel, M, T):
     return pt.add(*terms) if len(terms) > 1 else terms[0]
 
 
-def _likelihood(pm, pt, obs: ObsModel, E, aux_name):
+def _likelihood(pm, pt, obs: ObsModel, E, aux_name, prior_PD=False):
     """Attach one series' likelihood on its own observed days."""
     from . import priors as _priors
 
@@ -433,6 +452,13 @@ def _likelihood(pm, pt, obs: ObsModel, E, aux_name):
             f"unknown family {fam!r} for series {obs.name!r}; "
             f"expected one of {sorted(_FAMILIES)}"
         )
+
+    if prior_PD:
+        # Keep the auxiliary parameter so it is still sampled from its prior;
+        # just never condition on data.
+        if fam != "poisson":
+            _aux()
+        return
 
     if fam == "poisson":
         pm.Poisson(obs.name, mu=mu, observed=y.astype(int))
@@ -509,6 +535,9 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 f"got {np.shape(o.y)} and {np.shape(o.mask)}"
             )
 
+    if config.rm is not None and not config.pop_adjust:
+        raise ValueError("config.rm needs pop_adjust=True; it removes people "
+                         "from the susceptible pool, which is only tracked then")
     if config.pop_adjust and data.pops is None:
         raise ValueError("pop_adjust=True requires PanelData.pops")
 
@@ -609,30 +638,50 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             # Seeded infections have already happened by the first modelled day.
             S_init = susc0 - v * seed
 
+            # Removal by something other than infection -- vaccination, say.
+            # R applies it as S[t+1] = (1 - v[t]) * (S[t] - i[t]).
+            if config.rm is None:
+                rm_seq = pt.zeros((T - v, M))
+            else:
+                rm_arr = np.asarray(config.rm, dtype=float)
+                if rm_arr.shape != (M, T):
+                    raise ValueError(
+                        f"config.rm must have shape {(M, T)}; got {rm_arr.shape}"
+                    )
+                rm_t = pt.as_tensor_variable(rm_arr[:, v:].T)
+                if config.prior_rm_noise is None:
+                    rm_seq = rm_t
+                else:
+                    from . import priors as _pr
+
+                    veps = _pr.build(config.prior_rm_noise, "veps",
+                                     shape=M, positive=True)
+                    rm_seq = pt.clip(rm_t * veps[None, :], 0.0, 1.0)
+
             if latent:
-                def step(R_t, raw_t, buf, S):
+                def step(R_t, raw_t, v_t, buf, S):
                     i_prime = R_t * pt.dot(buf, gen)
                     # Saturating form, as in R's Stan: a large i_prime can never
                     # infect more people than remain susceptible.
                     E_t = S * (1.0 - pt.exp(-i_prime / pops))
                     return (
                         pt.concatenate([raw_t[:, None], buf[:, :-1]], axis=1),
-                        S - raw_t,
+                        (1.0 - v_t) * (S - raw_t),
                         E_t,
                     )
 
-                seqs = [R_unadj[:, v:].T, raw.T]
+                seqs = [R_unadj[:, v:].T, raw.T, rm_seq]
             else:
-                def step(R_t, buf, S):
+                def step(R_t, v_t, buf, S):
                     i_prime = R_t * pt.dot(buf, gen)
                     i_t = S * (1.0 - pt.exp(-i_prime / pops))
                     return (
                         pt.concatenate([i_t[:, None], buf[:, :-1]], axis=1),
-                        S - i_t,
+                        (1.0 - v_t) * (S - i_t),
                         i_t,
                     )
 
-                seqs = [R_unadj[:, v:].T]
+                seqs = [R_unadj[:, v:].T, rm_seq]
 
             _, S_seq, E_seq = pytensor.scan(
                 fn=step, sequences=seqs,
@@ -726,6 +775,9 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                                    shape=oX.shape[2])
                 )
                 oeta = oeta + (pt.as_tensor_variable(oX) * ocoef[None, None, :]).sum(axis=2)
+            if o.rw is not None:
+                oeta = oeta + _random_walk(pm, pt, o.rw, M, T,
+                                           prefix=f"{o.name}|")
             if o.offset is not None:
                 oeta = oeta + pt.as_tensor_variable(
                     np.asarray(o.offset, dtype=float)
@@ -745,14 +797,17 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 f"E_{o.name}", rate * conv + 1e-6,
                 dims=("region", "region_time"),
             )
-            _likelihood(pm, pt, o, E, f"{o.name}|aux")
+            # prior_PD drops the likelihood but keeps every deterministic, so a
+            # prior predictive check sees the same latent series.
+            _likelihood(pm, pt, o, E, f"{o.name}|aux",
+                        prior_PD=config.prior_PD)
 
     return model
 
 
 def prepare_panel(df, npis=(), responses=("deaths",), group="country",
                   date="date", pop=None, seed_offset=30, threshold_on=None,
-                  threshold=10, fit_until=None, rw_by=None):
+                  threshold=10, fit_until=None, rw_by=None, group_subset=None):
     """Turn a long panel into :class:`PanelData` plus per-series arrays.
 
     The multi-series counterpart of
@@ -780,6 +835,9 @@ def prepare_panel(df, npis=(), responses=("deaths",), group="country",
         entry of ``responses``.
     fit_until : str | None
         Keep only days strictly before this date.
+    group_subset : sequence[str] | None
+        Model only these groups, as in R's ``epim(group_subset =)``. Applied
+        before the windowing, so each kept group still gets its own start date.
     rw_by : str | None
         Column giving the random-walk step for each day (e.g. an ISO week). When
         given, the returned :class:`PanelData` carries an ``rw_index`` attribute
@@ -794,6 +852,13 @@ def prepare_panel(df, npis=(), responses=("deaths",), group="country",
     import warnings
 
     import pandas as pd
+
+    if group_subset is not None:
+        wanted = list(group_subset)
+        missing = sorted(set(wanted) - set(df[group].unique()))
+        if missing:
+            raise ValueError(f"group_subset names unknown group(s): {missing}")
+        df = df[df[group].isin(wanted)]
 
     responses = list(responses)
     if not responses:

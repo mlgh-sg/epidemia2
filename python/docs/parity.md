@@ -32,6 +32,17 @@ missing is halfway through an analysis.
 | Stochastic latent infections | ✅ | ✅ `latent=True` |
 | Autoscaled priors, `hs`/`lasso` families | ✅ | ✅ `epidemia.priors` |
 | Counterfactuals | ✅ | ⚠️ `R_t` via `effect_table`; observations via `forecast` |
+| Observation-level random walk | ✅ | ✅ `ObsModel(rw=)` |
+| Vaccination removal (`epiinf(rm=)`) | ✅ | ✅ `EpiModelConfig(rm=, prior_rm_noise=)` |
+| Prior predictive (`prior_PD`) | ✅ | ✅ `EpiModelConfig(prior_PD=True)` |
+| `group_subset` | ✅ | ✅ `prepare_panel(group_subset=)` |
+| `posterior_linpred` | ✅ | ✅ `epidemia.postprocess` |
+| `posterior_infectious` | ✅ | ✅ `epidemia.postprocess` |
+| `prior_summary` | ✅ | ✅ `epidemia.postprocess` |
+| `as.matrix` / `get_samps` | ✅ | ✅ `extract_samples` |
+| Link functions | ✅ | ✅ 3 on `R_t`, 6 on observations |
+| `center=` | ✅ | ✅ |
+| Fully pooled (no region effects) | ✅ | ✅ `region_effects=False` |
 | nutpie sampler, JAX/GPU option | ❌ | ✅ |
 | `plotnine` plots | ❌ | ✅ |
 

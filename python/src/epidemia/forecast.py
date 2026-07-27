@@ -135,6 +135,86 @@ class Forecast:
         """Names of the observation series in this forecast."""
         return list(self.expected)
 
+    def score(self, obs_models, series=None, levels=(50, 95), groups=None):
+        """Score the forecast against the observations -- R's ``evaluate_forecast``.
+
+        :mod:`epidemia.scoring` is deliberately model-agnostic: it wants ``y`` as
+        ``(N,)`` and ``draws`` as ``(N, S)``. A :class:`Forecast` holds
+        ``(draws, region, time)`` arrays with padding, so composing the two by
+        hand means transposing, trimming and relabelling. This does that.
+
+        Days that the series never observed, padded days, and R's ``-1``
+        forecast placeholders are all dropped, as :mod:`epidemia.scoring` does.
+
+        Parameters
+        ----------
+        obs_models : ObsModel | list[ObsModel]
+            The series definitions the fit used; supplies the observed values.
+        series : str | None
+            Which series to score. Required when there is more than one.
+        levels : sequence[float]
+            Credible levels for the coverage table.
+        groups : sequence[str] | None
+            Restrict to these regions.
+
+        Returns
+        -------
+        epidemia.scoring.ForecastEvaluation
+        """
+        import numpy as _np
+
+        from .core import ObsModel as _ObsModel
+        from .scoring import evaluate_forecast as _evaluate
+
+        if isinstance(obs_models, _ObsModel):
+            obs_models = [obs_models]
+        names = [o.name for o in obs_models]
+
+        if series is None:
+            scorable = [n for n in names if n in self.predicted]
+            if len(scorable) != 1:
+                raise ValueError(
+                    f"this forecast has {len(scorable)} series ({', '.join(scorable)}); "
+                    "pass series= to say which to score"
+                )
+            series = scorable[0]
+        if series not in self.predicted:
+            raise ValueError(
+                f"no series named {series!r} in the forecast; "
+                f"have {sorted(self.predicted)}"
+            )
+        obs = next((o for o in obs_models if o.name == series), None)
+        if obs is None:
+            raise ValueError(f"no ObsModel named {series!r} in obs_models")
+
+        draws = self.predicted[series]                       # (S, M, T)
+        y_all = _np.asarray(obs.y, dtype=float)
+        mask_all = _np.asarray(obs.mask, dtype=bool)
+
+        ys, cols, regs, dates = [], [], [], []
+        for m, region in enumerate(self.regions):
+            if groups is not None and region not in groups:
+                continue
+            n = int(self.lengths[m])
+            # The fit's mask only covers the FITTED window; anything beyond it
+            # is out of sample and has no observation to score against.
+            n_obs = min(n, mask_all.shape[1])
+            keep = _np.where(mask_all[m, :n_obs])[0]
+            if not len(keep):
+                continue
+            ys.append(y_all[m, keep])
+            cols.append(draws[:, m, keep])
+            regs.extend([region] * len(keep))
+            dates.extend(_np.asarray(self.dates[m])[keep])
+
+        if not ys:
+            raise ValueError("no observed days to score")
+
+        y = _np.concatenate(ys)
+        d = _np.concatenate(cols, axis=1).T                  # (N, S)
+        return _evaluate(y, d, group=_np.asarray(regs),
+                         date=_np.asarray(dates), levels=levels)
+
     def to_frame(self, probs=(0.025, 0.25, 0.5, 0.75, 0.975)):
         """Summarise as a tidy long frame, one row per region-day-variable.
 
