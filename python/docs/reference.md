@@ -90,6 +90,16 @@ Forward simulation over posterior draws — nothing is refitted.
 
 ::: epidemia.predict.posterior_predict
 
+## Post-processing
+
+::: epidemia.postprocess.posterior_linpred
+
+::: epidemia.postprocess.posterior_infectious
+
+::: epidemia.postprocess.extract_samples
+
+::: epidemia.postprocess.prior_summary
+
 ## Scoring
 
 ::: epidemia.scoring.evaluate_forecast

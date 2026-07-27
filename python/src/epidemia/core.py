@@ -133,6 +133,7 @@ class ObsModel:
     X: np.ndarray | None = None
     offset: np.ndarray | None = None
     intercept: bool = True
+    center: bool = False
     prior_intercept: object = None
     prior: object = None
     prior_aux: object = None
@@ -237,6 +238,9 @@ class EpiModelConfig:
 
     gen: np.ndarray
     link: str = "scaled_logit"
+    center: bool = False
+    region_effects: bool = True
+    prior_covariance: object = None
     prior_covariates: object = None
     prior_intercept: object = None
     prior_seeds: object = None
@@ -315,12 +319,21 @@ def _region_effects(pm, pt, config, M, K):
         sd_shapes = np.concatenate(
             [[config.sd_intercept_shape], np.full(K, config.sd_slope_shape)]
         )
-        sd_dist = pm.Gamma.dist(alpha=sd_shapes, beta=1.0 / config.sd_scale,
-                                shape=K + 1)
-        chol, _, _ = pm.LKJCholeskyCov(
-            "Sigma_chol", n=K + 1, eta=config.lkj_eta,
-            sd_dist=sd_dist, compute_corr=True,
-        )
+        if config.prior_covariance is not None:
+            # R's decov is ONE Gamma scale split across the effects by a
+            # symmetric Dirichlet with an LKJ correlation -- not p independent
+            # Gammas, which is what the branch below does.
+            from . import priors as _pr
+
+            chol = _pr.build_covariance(config.prior_covariance, "Sigma_chol",
+                                        K + 1)
+        else:
+            sd_dist = pm.Gamma.dist(alpha=sd_shapes, beta=1.0 / config.sd_scale,
+                                    shape=K + 1)
+            chol, _, _ = pm.LKJCholeskyCov(
+                "Sigma_chol", n=K + 1, eta=config.lkj_eta,
+                sd_dist=sd_dist, compute_corr=True,
+            )
         z_full = pm.Normal("z_full", 0.0, 1.0, shape=(M, K + 1))
         b_full = pm.Deterministic("b_full", z_full @ chol.T)
         b0 = pm.Deterministic("b0", b_full[:, 0], dims="region")
@@ -515,8 +528,16 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 else pm.Normal("intercept", 0.0, 0.5)
             )
 
-        b0, b = _region_effects(pm, pt, config, M, K)
-        eta = eta + b0[:, None]
+        if config.center and K:
+            # Centre on the modelled days; padding would drag the mean.
+            X = X - X.reshape(-1, K).mean(axis=0)[None, None, :]
+
+        if config.region_effects:
+            b0, b = _region_effects(pm, pt, config, M, K)
+            eta = eta + b0[:, None]
+        else:
+            # R's "R(g, d) ~ 1 + x" -- no (... | g) term -- is fully pooled.
+            b0 = b = None
 
         if K:
             if config.prior_covariates is not None:
@@ -527,8 +548,13 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                                   beta=1.0 / config.beta_scale, dims="npi")
                 beta = pm.Deterministic("beta", config.beta_shift - g_beta,
                                         dims="npi")
-            coef = beta[None, :] + b                       # (M, K)
-            eta = eta + (pt.as_tensor_variable(X) * coef[:, None, :]).sum(axis=2)
+            if b is None:
+                eta = eta + (pt.as_tensor_variable(X)
+                             * beta[None, None, :]).sum(axis=2)
+            else:
+                coef = beta[None, :] + b                   # (M, K)
+                eta = eta + (pt.as_tensor_variable(X)
+                             * coef[:, None, :]).sum(axis=2)
 
         if config.rw is not None:
             eta = eta + _random_walk(pm, pt, config.rw, M, T)
@@ -687,6 +713,8 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 )
             if o.X is not None:
                 oX = np.asarray(o.X, dtype=float)
+                if o.center:
+                    oX = oX - oX.reshape(-1, oX.shape[2]).mean(0)[None, None, :]
                 if oX.shape[:2] != (M, T):
                     raise ValueError(
                         f"series {o.name!r}: X must be (M, T, Ks); got {oX.shape}"
