@@ -41,6 +41,8 @@ __all__ = [
     "EpiModelConfig",
     "build_epidemia_model",
     "fit_epidemia",
+    "R_LINKS",
+    "OBS_LINKS",
     "prepare_panel",
 ]
 
@@ -94,6 +96,9 @@ class ObsModel:
         that "i2o does not sum to one" for a ``scaled_logit`` link).
     family : {"poisson", "neg_binom", "quasi_poisson", "normal", "log_normal"}
         Observation family.
+    link : {"scaled_logit", "logit", "probit", "cauchit", "cloglog", "identity"}
+        Inverse link for the ascertainment regression, as in R's
+        ``epiobs(link=)``. ``link_K`` applies to ``scaled_logit`` only.
     link_K : float
         Upper bound of the ascertainment rate: ``rate = link_K * sigmoid(eta)``.
         For deaths this is the maximum IFR (R's ``scaled_logit(0.02)``).
@@ -123,6 +128,7 @@ class ObsModel:
     mask: np.ndarray
     i2o: np.ndarray
     family: str = "neg_binom"
+    link: str = "scaled_logit"
     link_K: float = 1.0
     X: np.ndarray | None = None
     offset: np.ndarray | None = None
@@ -177,6 +183,9 @@ class EpiModelConfig:
         unaffected. ``prior_covariates`` replaces the shifted-gamma built from
         ``beta_shape``/``beta_scale``/``beta_shift``; ``prior_aux`` replaces the
         latent-infection dispersion built from ``latent_aux_*``.
+    link : {"scaled_logit", "log", "identity"}
+        Inverse link for ``R_t``, as in R's ``epirt(link=)``. ``R_link_K`` is
+        the carrying capacity and applies to ``scaled_logit`` only.
     R_link_K : float
         Carrying capacity of the scaled-logit link on ``R_t``.
     intercept : bool
@@ -227,6 +236,7 @@ class EpiModelConfig:
     """
 
     gen: np.ndarray
+    link: str = "scaled_logit"
     prior_covariates: object = None
     prior_intercept: object = None
     prior_seeds: object = None
@@ -255,6 +265,32 @@ class EpiModelConfig:
     prior_susc_mean: float | None = None
     prior_susc_sd: float = 0.1
     _extra: dict = field(default_factory=dict, repr=False)
+
+
+#: Links for the R_t regression, as in R's ``epirt(link=)``.
+R_LINKS = ("log", "identity", "scaled_logit")
+#: Links for an ascertainment regression, as in R's ``epiobs(link=)``.
+OBS_LINKS = ("logit", "probit", "cauchit", "cloglog", "identity", "scaled_logit")
+
+
+def _apply_link(pt, link, eta, K):
+    """Inverse-link ``eta``. ``K`` is the cap for ``scaled_logit`` only."""
+    if link == "log":
+        return pt.exp(eta)
+    if link == "identity":
+        return eta
+    if link == "scaled_logit":
+        return K * pt.sigmoid(eta)
+    if link == "logit":
+        return pt.sigmoid(eta)
+    if link == "probit":
+        # Phi(eta); erfc form is the numerically stable one PyTensor provides.
+        return 0.5 * pt.erfc(-eta / pt.sqrt(2.0))
+    if link == "cauchit":
+        return 0.5 + pt.arctan(eta) / np.pi
+    if link == "cloglog":
+        return 1.0 - pt.exp(-pt.exp(eta))
+    raise ValueError(f"unknown link {link!r}")
 
 
 _COUNT_FAMILIES = {"poisson", "neg_binom", "quasi_poisson"}
@@ -497,8 +533,12 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
         if config.rw is not None:
             eta = eta + _random_walk(pm, pt, config.rw, M, T)
 
+        if config.link not in R_LINKS:
+            raise ValueError(
+                f"unknown link {config.link!r} for R_t; expected one of {R_LINKS}"
+            )
         R_unadj = pm.Deterministic(
-            "Rt_unadj", config.R_link_K * pt.sigmoid(eta),
+            "Rt_unadj", _apply_link(pt, config.link, eta, config.R_link_K),
             dims=("region", "region_time"),
         )
 
@@ -663,8 +703,13 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                     np.asarray(o.offset, dtype=float)
                 )
 
+            if o.link not in OBS_LINKS:
+                raise ValueError(
+                    f"series {o.name!r}: unknown link {o.link!r}; "
+                    f"expected one of {OBS_LINKS}"
+                )
             rate = pm.Deterministic(
-                f"{o.name}|rate", o.link_K * pt.sigmoid(oeta),
+                f"{o.name}|rate", _apply_link(pt, o.link, oeta, o.link_K),
                 dims=("region", "region_time"),
             )
             conv = _convolve(pt, infections, np.asarray(o.i2o, dtype=float), M, T)
@@ -756,6 +801,17 @@ def prepare_panel(df, npis=(), responses=("deaths",), group="country",
             f"no region ever exceeded a cumulative {thresh_col} of {threshold}"
         )
 
+    # One level ordering shared by every region, taken from the MODELLED windows.
+    # Factorising per region would restart each region's codes at 0, so a shared
+    # walk (RandomWalk with by_region=False) would align one region's first week
+    # with another's first week even when those are different calendar weeks.
+    # Taking the levels from the windows rather than the whole frame keeps the
+    # walk from carrying steps no region ever visits.
+    rw_levels = None
+    if rw_by:
+        vals = pd.concat([g[rw_by] for g in per_region.values()])
+        rw_levels = pd.Index(sorted(vals.dropna().unique()))
+
     regions = list(per_region)
     lengths = np.array([len(per_region[r]) for r in regions])
     M, T, K = len(regions), int(lengths.max()), len(npis)
@@ -784,7 +840,12 @@ def prepare_panel(df, npis=(), responses=("deaths",), group="country",
                 )
             pops[m] = float(finite.iloc[0])
         if rw_by:
-            codes = pd.factorize(g[rw_by], sort=True)[0]
+            codes = rw_levels.get_indexer(g[rw_by])
+            if (codes < 0).any():
+                raise ValueError(
+                    f"region {region!r} has missing {rw_by!r} values; the random "
+                    "walk index cannot be built"
+                )
             rw_index[m, :n] = codes
             rw_index[m, n:] = codes[-1] if n else 0
         for r in responses:

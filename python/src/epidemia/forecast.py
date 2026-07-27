@@ -33,6 +33,25 @@ frame with future rows whose NPI columns simply repeat the last observed value:
 
 Both kernels keep the package-wide lag-1-first convention (see
 :mod:`epidemia.renewal`).
+
+**Latent infections cannot be forecast.** With ``config.latent`` (R's
+``epiinf(latent = TRUE)``) the post-seeding infections are *free parameters* --
+:func:`epidemia.core.build_epidemia_model` declares them ``HalfFlat`` and the
+renewal equation only supplies their mean through a state-space potential. There
+is therefore no rule that continues them past the last fitted day, and running
+the deterministic recursion instead would quietly return a *different* model's
+forecast: plausible-looking, narrower, and not the posterior that was fitted. So
+:func:`forecast` refuses to extend a latent fit. The fitted window itself is
+still available (``newdata=None``), because there the infections are recorded in
+the posterior and are simply read back.
+
+Forecasts also score. :meth:`Forecast.score` lines the predictive draws up with
+the observed counts of the matching :class:`~epidemia.core.ObsModel`, drops the
+padding, the unmodelled days and the ``-1`` forecast placeholders, and hands the
+result to :func:`epidemia.scoring.evaluate_forecast`::
+
+    fc.score(obs_models).error       # group/date/series + CRPS, MAE, ...
+    fc.score(obs_models).coverage    # empirical coverage of each CI level
 """
 
 from __future__ import annotations
