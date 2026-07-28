@@ -720,6 +720,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../priors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Priors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../parity/" class="md-nav__link">
         
   
@@ -1140,7 +1167,7 @@ between-country SD $\sigma_\text{lockdown}$.</p>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>[epidemia] compiling the log-density (numba backend)...
 
-done in 21.0s
+done in 20.7s
 
 
 [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -1320,13 +1347,15 @@ done in 21.0s
     </table>
 </div>
 
-<div class="highlight"><pre><span></span><code>[epidemia] sampled in 62.6s
+<div class="highlight"><pre><span></span><code>[epidemia] sampled in 52.4s
 
 
 divergences: 8
 
 
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_5285/3251248008.py:2: UserWarning: 8 of 2000 post-warmup draws diverged. The posterior is likely biased -- treat the intervals with suspicion. Try a higher target_accept (e.g. 0.99), more tuning, or adaptation=&#39;low_rank&#39;.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: 8 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.050 for sd[0] exceeds 1.01, so the chains have not mixed.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 64 for sd[0] is 16 per chain, below the 100 per chain that keeps posterior summaries stable.
 </code></pre></div>
 <div>
 <style scoped>
@@ -1407,9 +1436,12 @@ drops its padded tail. Every plot is written to <code>figures/</code> by default
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_obs</span><span class="p">(</span><span class="n">idata_pp</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;pp-deaths-ppc&quot;</span><span class="p">,</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                   <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Posterior predictive: deaths&quot;</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>[epidemia] saved figures/pp-deaths-ppc.png
+<div class="highlight"><pre><span></span><code>/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_97016/4267129354.py:1: UserWarning: cannot draw the posterior predictive for &#39;deaths&#39;: the observation family is not recorded on this fit and no obs_model= was given. Falling back to banding the expected count, whose interval excludes observation noise and is therefore too narrow to compare against the plotted data. Pass obs_model=&lt;the ObsModel&gt; or predictive=False to silence.
+
+
+[epidemia] saved figures/pp-deaths-ppc.png
 </code></pre></div>
-<p><img alt="png" src="../partial-pooling_files/partial-pooling_8_1.png" /></p>
+<p><img alt="png" src="../partial-pooling_files/partial-pooling_8_2.png" /></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_rt</span><span class="p">(</span><span class="n">idata_pp</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;pp-rt&quot;</span><span class="p">,</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>                  <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Inferred $R_t$ (a step function of lockdown)&quot;</span><span class="p">)</span>
 </code></pre></div>
@@ -1464,7 +1496,7 @@ global $\beta$.</p>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>[epidemia] compiling the log-density (numba backend)...
 
-done in 20.3s
+done in 19.8s
 
 
 [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -1644,15 +1676,17 @@ done in 20.3s
     </table>
 </div>
 
-<div class="highlight"><pre><span></span><code>[epidemia] sampled in 82.9s
+<div class="highlight"><pre><span></span><code>[epidemia] sampled in 76.8s
 
 
 [epidemia] compiling the log-density (numba backend)...
 
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_5285/3963452909.py:13: UserWarning: 18 of 2000 post-warmup draws diverged. The posterior is likely biased -- treat the intervals with suspicion. Try a higher target_accept (e.g. 0.99), more tuning, or adaptation=&#39;low_rank&#39;.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: 18 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.020 for g_beta[lockdown] exceeds 1.01, so the chains have not mixed.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 213 for sd_intercept is 53 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
-done in 20.4s
+done in 20.1s
 
 
 [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -1752,7 +1786,7 @@ done in 20.4s
         Finished Chains:
         <span id="active-chains">4</span>
     </p>
-    <p>Sampling for 19 seconds</p>
+    <p>Sampling for 18 seconds</p>
     <p>
         Estimated Time to Completion:
         <span id="eta">now</span>
@@ -1832,10 +1866,12 @@ done in 20.4s
     </table>
 </div>
 
-<div class="highlight"><pre><span></span><code>[epidemia] sampled in 19.7s
+<div class="highlight"><pre><span></span><code>[epidemia] sampled in 18.5s
 
 
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_5285/3963452909.py:15: UserWarning: 34 of 2000 post-warmup draws diverged. The posterior is likely biased -- treat the intervals with suspicion. Try a higher target_accept (e.g. 0.99), more tuning, or adaptation=&#39;low_rank&#39;.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: 34 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.120 for z0[Denmark] exceeds 1.01, so the chains have not mixed.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 24 for z0[Denmark] is 6 per chain, below the 100 per chain that keeps posterior summaries stable.
 </code></pre></div>
 <h3 id="comparison">Comparison<a class="headerlink" href="#comparison" title="Permanent link">&para;</a></h3>
 <p>Plotting the country-specific lockdown effect under all three regimes shows

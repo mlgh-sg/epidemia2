@@ -16,7 +16,7 @@
         <link rel="prev" href="../partial-pooling/">
       
       
-        <link rel="next" href="../../parity/">
+        <link rel="next" href="../../priors/">
       
       
         
@@ -708,6 +708,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../priors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Priors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../parity/" class="md-nav__link">
         
   
@@ -976,8 +1003,8 @@ things together at once:</p>
 </code></pre></div>
 <h2 id="data">Data<a class="headerlink" href="#data" title="Permanent link">&para;</a></h2>
 <p><code>EuropeCovid2</code> carries daily deaths <em>and</em> daily cases for eleven countries,
-alongside the intervention indicators. We take three countries to keep the
-example quick, and add an ISO week column to index the random walk.</p>
+alongside the intervention indicators. We use all eleven countries, and add a
+month column to index the random walk.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">ec</span> <span class="o">=</span> <span class="n">epidemia</span><span class="o">.</span><span class="n">europe_covid2</span><span class="p">()</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">ec</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># A monthly walk index, not a weekly one. See &quot;Read the diagnostics&quot; below:</span>

@@ -770,6 +770,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../priors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Priors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../parity/" class="md-nav__link">
         
   
@@ -1462,7 +1489,7 @@ ridge. Check both.</p>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>[epidemia] compiling the log-density (numba backend)...
 
-done in 20.7s
+done in 20.8s
 
 
 [epidemia] sampling 4 chains x (2000 tune + 1000 draws)
@@ -1642,10 +1669,15 @@ done in 20.7s
     </table>
 </div>
 
-<div class="highlight"><pre><span></span><code>[epidemia] sampled in 2989.4s
+<div class="highlight"><pre><span></span><code>[epidemia] sampled in 3043.2s
 
 
 divergences: 0
+
+
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:621: UserWarning: 1273 iterations saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:621: UserWarning: R-hat of 1.070 for g_beta[schools_universities] exceeds 1.01, so the chains have not mixed.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:621: UserWarning: Bulk ESS of 50 for g_beta[schools_universities] is 12 per chain, below the 100 per chain that keeps posterior summaries stable.
 </code></pre></div>
 <div>
 <style scoped>
@@ -2082,12 +2114,14 @@ not be read alongside the others as if it were evidence.</p>
 <p><img alt="png" src="../europe-covid_files/europe-covid_30_1.png" /></p>
 <h2 id="forecasting-and-counterfactuals">Forecasting and counterfactuals<a class="headerlink" href="#forecasting-and-counterfactuals" title="Permanent link">&para;</a></h2>
 <p>Forecasting in <code>epidemia</code> means swapping in a new data frame — extending the
-dates, or altering covariates for a <em>counterfactual</em>. We reproduce this here by
-forward-simulating the renewal process from the posterior draws, reusing the
-package's NumPy renewal reference (<code>epi.renewal_infections</code>). The function
-below takes a per-country NPI design (of any length) and returns posterior
-deaths, so the same code serves both out-of-sample forecasts and
-counterfactuals.</p>
+dates, or altering covariates for a <em>counterfactual</em>.</p>
+<p>This notebook predates <code>epidemia.forecast()</code> and forward-simulates by hand
+below, which is worth keeping because it shows the mechanism. For new work use
+<strong><code>epidemia.forecast(idata, panel, obs_models, config, newdata=...)</code></strong>: it is
+one call, it propagates the random walk over the horizon instead of freezing
+it, and it draws the observation noise rather than returning expectations. The
+<a href="../flu/">Spanish flu tutorial</a> uses it. The hand-rolled version below returns
+<em>expected</em> deaths, so its intervals are narrower than a predictive interval.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">posterior_deaths</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">X_list</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">n_draws</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Posterior expected deaths per region for arbitrary NPI designs.</span>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
@@ -2163,7 +2197,7 @@ forecast beyond it. Here we show the United Kingdom.</p>
 <a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a><span class="n">save_plot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;uk-forecast&quot;</span><span class="p">)</span>
 <a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a><span class="n">p</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_93270/3853627252.py:1: UserWarning: 2 missing deaths value(s) inside the modelled window were left out of the likelihood (masked as unobserved, as R treats NA). The latent series are still estimated on those days.
+<div class="highlight"><pre><span></span><code>/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_1931/3853627252.py:1: UserWarning: 2 missing deaths value(s) inside the modelled window were left out of the likelihood (masked as unobserved, as R treats NA). The latent series are still estimated on those days.
 
 
 [epidemia] saved figures/uk-forecast.png

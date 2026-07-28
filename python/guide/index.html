@@ -673,6 +673,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../priors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Priors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../parity/" class="md-nav__link">
         
   
@@ -877,6 +904,27 @@
 
 
 <h1 id="user-guide">User guide<a class="headerlink" href="#user-guide" title="Permanent link">&para;</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Which builder to read about</p>
+<p>This page describes the <strong>single-population</strong> builder,
+<a class="autorefs autorefs-internal" title="EpiConfig
+
+
+  
+      dataclass
+  " href="../reference/#epidemia.model.EpiConfig"><code>EpiConfig</code></a> / <a class="autorefs autorefs-internal" title="build_model" href="../reference/#epidemia.model.build_model"><code>build_model</code></a>.
+It is the simplest entry point and still what the <code>europe-covid</code> and
+<code>partial-pooling</code> notebooks use, but it is <strong>superseded</strong>: it has a random
+walk and one population only.</p>
+<p>For anything with several regions or several observation series — which is
+ordinary usage in R — read
+<strong><a href="../reference/#the-model">The model</a></strong>: <code>EpiModelConfig</code>,
+<code>ObsModel</code>, <code>PanelData</code> and <code>build_epidemia_model</code>/<code>fit_epidemia</code>. The
+<a href="../tutorials/flu/">Spanish flu</a>, <a href="../tutorials/multiple-obs/">England</a> and
+<a href="../tutorials/multilevel-multi-obs/">multilevel + multiple observations</a>
+tutorials all use it, and the <a href="../parity/">parity table</a> maps every R feature
+onto it.</p>
+</div>
 <h2 id="the-model">The model<a class="headerlink" href="#the-model" title="Permanent link">&para;</a></h2>
 <p>Given an observed series <code>y</code> (with <code>nan</code> for unobserved/seeding days) and an
 <a class="autorefs autorefs-internal" title="EpiConfig
@@ -942,7 +990,7 @@ plotting.</p>
 </tr>
 <tr>
 <td><code>family</code></td>
-<td><code>"poisson"</code>, <code>"neg_binom"</code>, or <code>"normal"</code></td>
+<td><code>"poisson"</code> (this builder's default), <code>"neg_binom"</code>, or <code>"normal"</code>. Note <code>ObsModel</code> in the current builder defaults to <code>"neg_binom"</code>, matching R's <code>epiobs()</code>.</td>
 </tr>
 <tr>
 <td><code>rw_prior_scale</code></td>
@@ -965,12 +1013,14 @@ plotting.</p>
 <h2 id="fitting">Fitting<a class="headerlink" href="#fitting" title="Permanent link">&para;</a></h2>
 <p><a class="autorefs autorefs-internal" title="fit" href="../reference/#epidemia.infer.fit"><code>fit</code></a> builds the model and samples it with nutpie:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">idata</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;diag&quot;</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;numba&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                <span class="n">adaptation</span><span class="o">=</span><span class="s2">&quot;low_rank&quot;</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;numba&quot;</span><span class="p">)</span>
 </code></pre></div>
 <ul>
-<li><strong><code>adaptation</code></strong> — <code>"diag"</code> (Fisher-information diagonal; a strong default),
-  <code>"low_rank"</code>, or <code>"flow"</code> (normalizing-flow; needs <code>uv sync --extra flow</code>) for
-  harder posteriors.</li>
+<li><strong><code>adaptation</code></strong> — <code>"low_rank"</code> is the <strong>default</strong> here, deliberately unlike
+  nutpie's own <code>"diag"</code>: a diagonal metric cannot follow the ridge these
+  posteriors have and fails <em>silently</em>, mixing badly without diverging. See
+  <a href="../performance/">performance</a> for the measurements. <code>"diag"</code> and <code>"flow"</code>
+  (normalizing-flow; needs <code>uv sync --extra flow</code>) are also available.</li>
 <li><strong><code>backend</code></strong> — <code>"numba"</code> (low-overhead CPU default, incl. Apple Silicon) or
   <code>"jax"</code> (required for GPU on Linux, <code>uv sync --extra gpu</code>).</li>
 </ul>

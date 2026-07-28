@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://mlgh-sg.com/epidemia2/python/parity/">
       
       
-        <link rel="prev" href="../tutorials/multilevel-multi-obs/">
+        <link rel="prev" href="../priors/">
       
       
         <link rel="next" href="../performance/">
@@ -540,6 +540,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../priors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Priors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -1033,6 +1060,46 @@ missing is halfway through an analysis.</p>
 <td style="text-align: center;">✅ proper LKJ covariance</td>
 </tr>
 <tr>
+<td>Plot a forecast directly (<code>newdata</code>)</td>
+<td style="text-align: center;">✅ <code>plot_obs(newdata=)</code></td>
+<td style="text-align: center;">✅ <code>plot_obs(a_forecast)</code></td>
+</tr>
+<tr>
+<td>In-sample vs out-of-sample marking</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>n_fitted=</code></td>
+</tr>
+<tr>
+<td>Default credible levels</td>
+<td style="text-align: center;">30/60/90</td>
+<td style="text-align: center;">30/60/90</td>
+</tr>
+<tr>
+<td><code>date_breaks</code> / <code>date_format</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+</tr>
+<tr>
+<td><code>summary()</code> with diagnostics</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>epidemia.summary</code></td>
+</tr>
+<tr>
+<td>Parameter interval plot</td>
+<td style="text-align: center;">✅ <code>plot.epimodel</code></td>
+<td style="text-align: center;">✅ <code>plot_intervals</code></td>
+</tr>
+<tr>
+<td>Pairs plot</td>
+<td style="text-align: center;">✅ <code>pairs.epimodel</code></td>
+<td style="text-align: center;">✅ <code>pairs_plot</code></td>
+</tr>
+<tr>
+<td><code>par_types</code> parameter filtering</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>extract_samples(par_types=)</code></td>
+</tr>
+<tr>
 <td>Plot a vector of groups</td>
 <td style="text-align: center;">✅ <code>groups=</code></td>
 <td style="text-align: center;">✅ <code>groups=</code></td>
@@ -1123,10 +1190,11 @@ walk. Non-numeric covariates are dummy-coded with R's treatment contrasts.</p>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">fc</span> <span class="o">=</span> <span class="n">forecast</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">panel</span><span class="p">,</span> <span class="n">obs_models</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">newdata</span><span class="o">=</span><span class="n">longer_df</span><span class="p">)</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">fc</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>          <span class="c1"># tidy long frame: region, date, variable, quantiles</span>
 </code></pre></div>
-<p>Nothing is re-fitted: conditional on a posterior draw the latent series are
-deterministic, so this is forward simulation over draws. Covariates past the fit
-window carry forward, and the random walk is <strong>held at its final fitted step</strong> —
-the forecast says "<code>R_t</code> stays where it ended" rather than inventing increments.
+<p>Nothing is re-fitted: this is forward simulation over posterior draws.
+Covariates past the fit window carry forward, and the random walk <strong>keeps
+walking</strong> — new increments are drawn at its own fitted scale and cumulated, as
+R's <code>new_rw_stanmat</code> does, so forecast <code>R_t</code> fans out. Pass
+<code>rw_forecast="hold"</code> to freeze it at its last fitted step instead.
 <code>fc.predicted</code> holds draws from the observation family, not just the mean.</p>
 <h2 id="the-caveats-that-remain">The caveats that remain<a class="headerlink" href="#the-caveats-that-remain" title="Permanent link">&para;</a></h2>
 <p><strong>The formula's fixed/random split is advisory.</strong> <code>build_epidemia_model</code> shares
@@ -1135,10 +1203,10 @@ so a covariate appearing only inside <code>(... | group)</code> still gets a pop
 coefficient, and vice versa. The <em>pooling</em> structure — <code>|</code> versus <code>||</code>, whether
 there is an intercept — is exact; the column split is not. Nesting
 (<code>(1 | county/district)</code>) and interactions (<code>a:b</code>) are rejected rather than
-silently mis-parsed, and only one <code>rw()</code> term is allowed.</p>
-<p><strong>Forecasting does not support <code>latent=True</code>.</strong> With latent infections the
-post-seeding infections are free parameters, so there is no forward-simulable
-rule past the fitted window. Use the deterministic recursion to forecast.</p>
+silently mis-parsed. The formula wrapper accepts only one <code>rw()</code> term, though
+the builder itself takes a list — write <code>EpiModelConfig(rw=[...])</code> for several.
+<code>build_from_formula</code> also does not yet emit <code>region_effects</code>, so set it yourself
+for a fully pooled model.</p>
 <p><strong>Counterfactuals on observations</strong> are now possible by editing the covariates in
 <code>newdata</code> and calling <code>forecast</code>, but there is no dedicated helper as in R.</p>
 <h2 id="choosing-a-side">Choosing a side<a class="headerlink" href="#choosing-a-side" title="Permanent link">&para;</a></h2>
