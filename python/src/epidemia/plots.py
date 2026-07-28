@@ -325,7 +325,7 @@ def _region_frame(idata, var, data, levels, group=None, transform=None,
     return pd.concat(bands, ignore_index=True), pd.concat(meds, ignore_index=True), keep
 
 
-def _observed_frame(data, group=None, obs_model=None):
+def _observed_frame(data, group=None, obs_model=None, transform=None):
     """Long frame of the genuinely **observed** counts per region on real dates.
 
     Days ``prepare_panel`` masked out (a missing count) are dropped rather than
@@ -359,6 +359,11 @@ def _observed_frame(data, group=None, obs_model=None):
         n = int(data.lengths[m])
         obs = np.asarray(counts[m, :n], dtype=float)
         obs[~valid[m, :n]] = np.nan                  # missing is not a zero
+        if transform is not None:
+            # R applies cumulative/by_100k to the DATA as well as the draws
+            # (R/plots_epi.R:211-225). Transforming only the bands leaves the
+            # bars on a different scale from the ribbon drawn over them.
+            obs = transform(obs[None, :], data.regions.index(r))[0]
         df = pd.DataFrame({
             "x": pd.to_datetime(data.dates[m])[:n], "obs": obs, "region": r,
         })
@@ -403,10 +408,28 @@ def _ribbon_plot(band, med, palette, levels, ylab, xlab, hline=None, facet=0,
                             breaks=[str(lv) for lv in sorted(levels)])
     )
     if obs is not None:
+        has_period = "period" in getattr(obs, "columns", [])
         if obs_kind == "col":
-            p = p + geom_col(obs, aes("x", "obs"), fill="#b2182b", alpha=0.45, width=1.0)
+            if has_period:
+                p = (p
+                     + geom_col(obs, aes("x", "obs", fill="period"), alpha=0.55,
+                                width=1.0)
+                     + scale_fill_manual(
+                         values={"In-sample": "#b2182b",
+                                 "Out-of-sample": "#2166ac",
+                                 **{str(lv): c for lv, c in cols.items()}},
+                         name="Credible interval (%)",
+                         breaks=[str(lv) for lv in sorted(levels)]))
+            else:
+                p = p + geom_col(obs, aes("x", "obs"), fill="#b2182b",
+                                 alpha=0.45, width=1.0)
         else:
-            p = p + geom_point(obs, aes("x", "obs"), color="#b2182b", size=1.1, alpha=0.8)
+            if has_period:
+                p = p + geom_point(obs, aes("x", "obs", color="period"),
+                                   size=1.2, alpha=0.85)
+            else:
+                p = p + geom_point(obs, aes("x", "obs"), color="#b2182b",
+                                   size=1.1, alpha=0.8)
     if step:
         # R's plot_rt(step = TRUE): a covariate-driven R_t is piecewise constant,
         # so a step reads more honestly than an interpolating line.
@@ -555,13 +578,131 @@ def _draw_transform(cumulative=False, smooth=None, by_100k=False, pops=None):
     return apply
 
 
+
+
+def _date_axis(p, date_breaks=None, date_format=None):
+    """R's ``date_breaks`` / ``date_format``, applied to a date x axis."""
+    if date_breaks is None and date_format is None:
+        return p
+    from plotnine import scale_x_date
+
+    kw = {}
+    if date_breaks is not None:
+        kw["date_breaks"] = date_breaks
+    if date_format is not None:
+        kw["date_labels"] = date_format
+    return p + scale_x_date(**kw)
+
+
+def _is_forecast(obj):
+    """True for a :class:`~epidemia.forecast.Forecast` (duck-typed, no import)."""
+    return all(hasattr(obj, a) for a in
+               ("regions", "dates", "lengths", "Rt", "predicted", "expected"))
+
+
+_FORECAST_VARS = {"Rt": "Rt", "Rt_unadj": "Rt_unadj", "infections": "infections"}
+
+
+def _forecast_draws(fc, var, series=None, predictive=True):
+    """Draws of ``var`` from a Forecast, shaped ``(draws, region, time)``."""
+    if var in _FORECAST_VARS:
+        return np.asarray(getattr(fc, _FORECAST_VARS[var]))
+    name = series if series is not None else (
+        var[2:] if str(var).startswith("E_") else var)
+    source = fc.predicted if predictive else fc.expected
+    if name not in source:
+        raise ValueError(
+            f"this forecast has no series {name!r}; have {sorted(source)}"
+        )
+    return np.asarray(source[name])
+
+
+def _forecast_frame(fc, arr, levels, group=None, transform=None):
+    """Per-region interval + median frames from a Forecast, padding dropped."""
+    regions = [str(r) for r in fc.regions]
+    want = _as_groups(group, None)
+    keep = regions if want is None else want
+    unknown = set(keep) - set(regions)
+    if unknown:
+        raise ValueError(f"unknown region(s) {sorted(unknown)}; have {regions}")
+
+    bands, meds = [], []
+    for r in keep:
+        m = regions.index(r)
+        n = int(fc.lengths[m])
+        x = pd.to_datetime(fc.dates[m])[:n]
+        d = arr[:, m, :n]
+        if transform is not None:
+            d = transform(d, m)
+        bf = _interval_frame(d, x, levels)
+        bf["region"] = r
+        bands.append(bf)
+        mf = _median_frame(d, x)
+        mf["region"] = r
+        meds.append(mf)
+    return (pd.concat(bands, ignore_index=True),
+            pd.concat(meds, ignore_index=True), keep)
+
+
+def _forecast_observed(fc, obs_model, group=None, n_fitted=None,
+                       transform=None):
+    """Observed counts over a forecast window, labelled in- vs out-of-sample.
+
+    R's ``parse_new_data`` tags each plotted point "In-sample" or
+    "Out-of-sample" by joining against the fitted data and maps that to the bar
+    fill (R/plots_epi.R:677-721). Without it a forecast plot gives no visual cue
+    about which points the model actually saw.
+    """
+    if obs_model is None:
+        return None
+    counts = np.asarray(obs_model.y, dtype=float)
+    valid = np.asarray(obs_model.mask, dtype=bool)
+    fitted_to = counts.shape[1] if n_fitted is None else int(n_fitted)
+
+    regions = [str(r) for r in fc.regions]
+    want = _as_groups(group, None)
+    keep = regions if want is None else want
+    rows = []
+    for r in keep:
+        m = regions.index(r)
+        n = min(int(fc.lengths[m]), counts.shape[1])
+        obs = counts[m, :n].astype(float)
+        obs[~valid[m, :n]] = np.nan
+        if transform is not None:
+            obs = transform(obs[None, :], m)[0]
+        x = pd.to_datetime(fc.dates[m])[:n]
+        period = np.where(np.arange(n) < fitted_to, "In-sample", "Out-of-sample")
+        df = pd.DataFrame({"x": x, "obs": obs, "region": r, "period": period})
+        rows.append(df[np.isfinite(df["obs"])])
+    return pd.concat(rows, ignore_index=True) if rows else None
+
+
 def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                  save, default_name, title=None, obs=None, obs_kind="point",
                  dates=None, log=False, cumulative=False, smooth=None,
-                 by_100k=False, step=False, obs_model=None, draws=None):
+                 by_100k=False, step=False, obs_model=None, draws=None,
+                 n_fitted=None, date_breaks=None, date_format=None):
     """Dispatch: multi-region (facet on real dates) vs single-population."""
     transform = _draw_transform(cumulative, smooth, by_100k,
                                 getattr(data, "pops", None))
+    if _is_forecast(idata):
+        fc = idata
+        arr = draws if draws is not None else _forecast_draws(fc, var)
+        band, med, keep = _forecast_frame(fc, np.asarray(arr), levels, group,
+                                          transform=transform)
+        obs_df = None
+        if obs is True:
+            obs_df = _forecast_observed(fc, obs_model, group, n_fitted=n_fitted,
+                                        transform=transform)
+        band, med, obs_df = _window(band, med, obs_df, dates)
+        band, med = _drop_incomplete(band, med)
+        p = _ribbon_plot(band, med, palette, levels, ylab, xlab or "", hline,
+                         facet=len(keep) if len(keep) > 1 else 0, title=title,
+                         obs=obs_df, obs_kind=obs_kind, step=step)
+        p = _log_scale(p, log)
+        p = _date_axis(p, date_breaks, date_format)
+        return _maybe_save(p, save, default_name, n_panels=len(keep))
+
     if _is_multiregion(idata, var):
         if data is None:
             raise ValueError(
@@ -574,7 +715,8 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                                         transform=transform, draws=draws)
         obs_df = None
         if obs is True:  # sentinel: take the counts from the panel
-            obs_df = _observed_frame(data, group, obs_model=obs_model)
+            obs_df = _observed_frame(data, group, obs_model=obs_model,
+                                     transform=transform)
         elif obs is not None:
             raise ValueError(
                 "for a multi-region fit the observed counts come from `data` "
@@ -589,6 +731,7 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                          facet=len(keep) if len(keep) > 1 else 0, title=title,
                          obs=obs_df, obs_kind=obs_kind, step=step)
         p = _log_scale(p, log)
+        p = _date_axis(p, date_breaks, date_format)
         return _maybe_save(p, save, default_name, n_panels=len(keep))
 
     arr, _ = _draws(idata, var)
@@ -603,13 +746,17 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
     obs_df = None
     if obs is not None:
         o = np.asarray(obs, dtype=float)
-        obs_df = pd.DataFrame({"x": x, "obs": o})
+        if transform is not None:
+            # the data get the same cumulative/by_100k treatment as the bands
+            o = transform(o[None, :], 0)[0]
+        obs_df = pd.DataFrame({"x": x[: len(o)], "obs": o})
         obs_df = obs_df[np.isfinite(obs_df["obs"])]
     band, med, obs_df = _window(band, med, obs_df, dates)
     p = _ribbon_plot(band, med, palette, levels, ylab, xlab or "Day", hline,
                      facet=False, title=title, obs=obs_df, obs_kind=obs_kind,
                      step=step)
     p = _log_scale(p, log)
+    p = _date_axis(p, date_breaks, date_format)
     return _maybe_save(p, save, default_name)
 
 
@@ -618,9 +765,9 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
 # --------------------------------------------------------------------------
 
 
-def plot_rt(idata, data=None, group=None, groups=None, levels=(50, 95), x=None, xlab=None,
-            save=True, title=None, dates=None, log=False, smooth=None,
-            step=False):
+def plot_rt(idata, data=None, group=None, groups=None, levels=(30, 60, 90),
+            x=None, xlab=None, save=True, title=None, dates=None, log=False,
+            smooth=None, step=False, date_breaks=None, date_format=None):
     """Reproduction numbers: posterior median and credible bands.
 
     For a multilevel fit pass ``data`` (the ``prepare_panel`` result) to get one
@@ -628,23 +775,28 @@ def plot_rt(idata, data=None, group=None, groups=None, levels=(50, 95), x=None, 
     """
     return _series_plot(idata, "Rt", data, _as_groups(group, groups), levels, x, xlab, "$R_t$",
                         _GREENS, 1.0, save, "rt", title=title, dates=dates,
-                        log=log, smooth=smooth, step=step)
+                        log=log, smooth=smooth, step=step,
+                        date_breaks=date_breaks, date_format=date_format)
 
 
-def plot_infections(idata, data=None, group=None, groups=None, levels=(50, 95), x=None,
-                    xlab=None, save=True, title=None, dates=None, log=False,
-                    cumulative=False, smooth=None, by_100k=False):
+def plot_infections(idata, data=None, group=None, groups=None,
+                    levels=(30, 60, 90), x=None, xlab=None, save=True,
+                    title=None, dates=None, log=False, cumulative=False,
+                    smooth=None, by_100k=False, date_breaks=None,
+                    date_format=None):
     """Latent daily infections: posterior median and credible bands."""
     return _series_plot(idata, "infections", data, _as_groups(group, groups), levels, x, xlab,
                         "Infections", _BLUES, None, save, "infections",
                         title=title, dates=dates, log=log,
-                        cumulative=cumulative, smooth=smooth, by_100k=by_100k)
+                        cumulative=cumulative, smooth=smooth, by_100k=by_100k,
+                        date_breaks=date_breaks, date_format=date_format)
 
 
-def plot_obs(idata, observed=None, data=None, group=None, groups=None, levels=(50, 95), x=None,
+def plot_obs(idata, observed=None, data=None, group=None, groups=None, levels=(30, 60, 90), x=None,
              series=None, xlab=None, ylab="Daily deaths", save=True, title=None,
              dates=None, log=False, cumulative=False, smooth=None,
-             by_100k=False, bar=True, obs_model=None, predictive=True):
+             by_100k=False, bar=True, obs_model=None, predictive=True,
+             n_fitted=None, date_breaks=None, date_format=None):
     """Posterior predictive observations with the observed counts overlaid.
 
     Reads ``E_obs`` (single-population) or ``E_deaths`` (multilevel), whichever
@@ -662,8 +814,32 @@ def plot_obs(idata, observed=None, data=None, group=None, groups=None, levels=(5
         :func:`~epidemia.fit_epidemia` records on the fit; for a fit made before
         that, pass ``obs_model=`` and it is taken from there.
     """
-    var = _pick_obs_var(idata, series)
     group = _as_groups(group, groups)
+    if _is_forecast(idata):
+        # A Forecast already carries predictive draws per series, so nothing
+        # needs to be resolved out of a posterior or drawn through a family.
+        names = sorted(idata.predicted)
+        if series is None:
+            if len(names) != 1:
+                raise ValueError(
+                    f"this forecast has {len(names)} series ({', '.join(names)}); "
+                    "pass series= to say which to plot"
+                )
+            series = names[0]
+        elif series not in names:
+            raise ValueError(f"no series named {series!r}; have {names}")
+        draws = _forecast_draws(idata, series, series, predictive=predictive)
+        return _series_plot(idata, series, data, group, levels, x, xlab, ylab,
+                            _BLUES, None, save, "obs", title=title,
+                            obs=True if obs_model is not None else None,
+                            obs_kind="col" if bar else "point",
+                            dates=dates, log=log, cumulative=cumulative,
+                            smooth=smooth, by_100k=by_100k,
+                            obs_model=obs_model, draws=draws,
+                            n_fitted=n_fitted, date_breaks=date_breaks,
+                            date_format=date_format)
+
+    var = _pick_obs_var(idata, series)
     obs = observed
     if _is_multiregion(idata, var) and obs is None:
         obs = True  # taken from data.deaths inside _series_plot
@@ -692,7 +868,8 @@ def plot_obs(idata, observed=None, data=None, group=None, groups=None, levels=(5
                         _BLUES, None, save, "obs", title=title, obs=obs,
                         obs_kind=kind, dates=dates, log=log,
                         cumulative=cumulative, smooth=smooth, by_100k=by_100k,
-                        obs_model=obs_model, draws=draws)
+                        obs_model=obs_model, draws=draws, n_fitted=n_fitted,
+                        date_breaks=date_breaks, date_format=date_format)
 
 
 # --------------------------------------------------------------------------
@@ -928,10 +1105,28 @@ def _spaghetti_plot(paths, med, color, alpha, ylab, xlab, hline=None, facet=0,
                     alpha=alpha, size=0.35)
     )
     if obs is not None:
+        has_period = "period" in getattr(obs, "columns", [])
         if obs_kind == "col":
-            p = p + geom_col(obs, aes("x", "obs"), fill="#b2182b", alpha=0.45, width=1.0)
+            if has_period:
+                p = (p
+                     + geom_col(obs, aes("x", "obs", fill="period"), alpha=0.55,
+                                width=1.0)
+                     + scale_fill_manual(
+                         values={"In-sample": "#b2182b",
+                                 "Out-of-sample": "#2166ac",
+                                 **{str(lv): c for lv, c in cols.items()}},
+                         name="Credible interval (%)",
+                         breaks=[str(lv) for lv in sorted(levels)]))
+            else:
+                p = p + geom_col(obs, aes("x", "obs"), fill="#b2182b",
+                                 alpha=0.45, width=1.0)
         else:
-            p = p + geom_point(obs, aes("x", "obs"), color="#b2182b", size=1.1, alpha=0.8)
+            if has_period:
+                p = p + geom_point(obs, aes("x", "obs", color="period"),
+                                   size=1.2, alpha=0.85)
+            else:
+                p = p + geom_point(obs, aes("x", "obs"), color="#b2182b",
+                                   size=1.1, alpha=0.8)
     # The median goes on last so it stays readable through the bundle of paths.
     p = p + geom_line(med, aes("x", "median"), color="black", size=0.8) + labs(x=xlab, y=ylab)
     if hline is not None:
@@ -973,7 +1168,8 @@ def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab
                                               transform=transform)
         obs_df = None
         if obs is True:  # sentinel: take the counts from the panel
-            obs_df = _observed_frame(data, group, obs_model=obs_model)
+            obs_df = _observed_frame(data, group, obs_model=obs_model,
+                                     transform=transform)
         elif obs is not None:
             raise ValueError(
                 "for a multi-region fit the observed counts come from `data` "
@@ -1002,7 +1198,8 @@ def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab
 
 def spaghetti_rt(idata, data=None, group=None, groups=None, draws=50, alpha=0.3,
                  seed=0, x=None, xlab=None, save=True, title=None, region=None,
-                 dates=None, log=False, smooth=None, step=False):
+                 dates=None, log=False, smooth=None, step=False,
+                date_breaks=None, date_format=None):
     """Reproduction numbers: ``draws`` individual posterior paths, median on top.
 
     The counterpart of :func:`plot_rt` for looking at trajectories rather than
@@ -1074,7 +1271,7 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
 
 
 def plot_infectious(idata, config, data=None, group=None, groups=None,
-                    levels=(50, 95), x=None, xlab=None,
+                    levels=(30, 60, 90), x=None, xlab=None,
                     ylab="Infectiousness", save=True,
                     title=None, dates=None, log=False, smooth=None):
     """Total infectiousness over time -- R's ``plot_infectious``.
@@ -1093,7 +1290,7 @@ def plot_infectious(idata, config, data=None, group=None, groups=None,
 
 
 def plot_linpred(idata, panel, config, series=None, obs_models=None, data=None,
-                 group=None, groups=None, levels=(50, 95), x=None, xlab=None,
+                 group=None, groups=None, levels=(30, 60, 90), x=None, xlab=None,
                  ylab=None, save=True, title=None, dates=None, transform=False,
                  smooth=None):
     """The linear predictor over time -- R's ``plot_linpred``.
@@ -1235,3 +1432,104 @@ def plot_metrics(y, draws, group=None, date=None, metrics=None, by_unseen=None,
         n_panels = int(long["group"].nunique())
         p = _size_for_panels(p, n_panels)
     return _maybe_save(p, save, "metrics", n_panels=n_panels)
+
+
+# --------------------------------------------------------------------------
+# Parameter plots (R's plot.epimodel / pairs.epimodel)
+# --------------------------------------------------------------------------
+
+
+def plot_intervals(idata, pars=None, regex=None, series=None, par_types=None,
+                   levels=(50, 90), save=True, title=None):
+    """Credible intervals for individual parameters -- R's ``plot.epimodel``.
+
+    A forest plot with one row per parameter. Selection mirrors
+    :func:`epidemia.postprocess.extract_samples`, so ``par_types="fixed"`` gives
+    the fixed effects and ``par_types="seeds"`` the seeds, as R's
+    ``par_types`` does.
+    """
+    from .postprocess import extract_samples
+
+    draws = extract_samples(idata, pars=pars, regex=regex, series=series,
+                            par_types=par_types)
+    if not len(draws.columns):
+        raise ValueError("no parameters matched the selection")
+
+    inner, outer = sorted(levels)[:2] if len(levels) >= 2 else (levels[0], levels[0])
+    rows = []
+    for col in draws.columns:
+        v = draws[col].to_numpy(dtype=float)
+        rows.append({
+            "term": col,
+            "median": np.median(v),
+            "lo": np.percentile(v, (100 - outer) / 2),
+            "hi": np.percentile(v, 100 - (100 - outer) / 2),
+            "lo_in": np.percentile(v, (100 - inner) / 2),
+            "hi_in": np.percentile(v, 100 - (100 - inner) / 2),
+        })
+    df = pd.DataFrame(rows)
+    order = list(reversed(df["term"].tolist()))
+    df["term"] = pd.Categorical(df["term"], categories=order)
+
+    p = (
+        ggplot(df, aes("term", "median"))
+        + geom_hline(yintercept=0.0, linetype="dotted", color="#555555")
+        + geom_pointrange(aes(ymin="lo", ymax="hi"), size=0.25, color="#6baed6")
+        + geom_pointrange(aes(ymin="lo_in", ymax="hi_in"), size=0.45,
+                          color="#2171b5")
+        + coord_flip()
+        + labs(x="", y="Value", title=title)
+        + theme_epidemia()
+    )
+    n = max(1, int(np.ceil(len(df) / 6)))
+    p = p + theme(figure_size=(8.0, 1.2 + 0.32 * len(df)))
+    return _maybe_save(p, save, "intervals", n_panels=1)
+
+
+def pairs_plot(idata, pars=None, regex=None, series=None, par_types=None,
+               draws=500, seed=0, save=True, title=None):
+    """Pairwise scatter of a few parameters -- R's ``pairs.epimodel``.
+
+    Useful for spotting the ridges and funnels that
+    :func:`epidemia.sampler_diagnostics` reports as divergences: a banana
+    between a scale and its increments is exactly what a divergent transition
+    is complaining about.
+
+    Keep the selection small -- the panel count grows as the square.
+    """
+    from .postprocess import extract_samples
+
+    df = extract_samples(idata, pars=pars, regex=regex, series=series,
+                         par_types=par_types)
+    cols = list(df.columns)
+    if not 2 <= len(cols) <= 8:
+        raise ValueError(
+            f"pairs_plot wants between 2 and 8 parameters, got {len(cols)}; "
+            "narrow the selection with pars=, regex= or par_types="
+        )
+    rng = np.random.default_rng(seed)
+    if len(df) > draws:
+        df = df.iloc[np.sort(rng.choice(len(df), size=int(draws), replace=False))]
+
+    long = []
+    for i, a in enumerate(cols):
+        for j, b in enumerate(cols):
+            if i >= j:
+                continue
+            long.append(pd.DataFrame({
+                "x": df[b].to_numpy(dtype=float),
+                "y": df[a].to_numpy(dtype=float),
+                "panel": f"{a}  vs  {b}",
+            }))
+    frame = pd.concat(long, ignore_index=True)
+
+    p = (
+        ggplot(frame, aes("x", "y"))
+        + geom_point(size=0.5, alpha=0.35, color="#2171b5")
+        + facet_wrap("panel", scales="free")
+        + labs(x="", y="", title=title)
+        + theme_epidemia()
+    )
+    n_panels = frame["panel"].nunique()
+    p = _size_for_panels(p, n_panels)
+    return _maybe_save(p, save, "pairs", n_panels=n_panels)

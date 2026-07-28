@@ -64,7 +64,8 @@ uv run python notebooks/europe-covid.py
 ## Before you start
 
 Read [What this port does and does not do](parity.md) first if you are coming
-from the R package. The overlap is the partially pooled multi-region renewal
-model; several things the R tutorials use routinely — multiple observation
-series, a random walk on `R_t` across regions, population adjustment — are not
-here.
+from the R package. Everything the R tutorials use routinely — multiple
+observation series, per-region random walks on `R_t`, the population and
+susceptibility adjustment, forecasting and scoring — is available here; the
+parity table maps each R feature onto its Python spelling and records the few
+places the two genuinely differ.

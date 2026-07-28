@@ -72,6 +72,7 @@ nav:
       - Tracking SARS-CoV-2 in England: tutorials/multiple-obs.md
       - Partial pooling: tutorials/partial-pooling.md
       - Several observation series: tutorials/multilevel-multi-obs.md
+  - Priors: priors.md
   - Parity with R: parity.md
   - Performance: performance.md
   - API reference: reference.md

@@ -648,12 +648,21 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 beta = _priors.build(
                     _maybe_autoscale(config.prior_covariates, data.X,
                                      config.autoscale),
-                    "beta", shape=K)
+                    "beta", shape=K, allowed=_priors.OK_DISTS)
             else:
-                # the default is R's shifted_gamma: effects a priori non-positive
-                g_beta = pm.Gamma("g_beta", alpha=config.beta_shape,
-                                  beta=1.0 / config.beta_scale, dims="npi")
-                beta = pm.Deterministic("beta", config.beta_shift - g_beta,
+                # The default is R's shifted_gamma: effects a priori
+                # non-positive. It has to go through _maybe_autoscale like any
+                # other shifted_gamma -- R autoscales it in standata_reg, and
+                # leaving it out meant the IDENTICAL prior behaved differently
+                # depending on whether the user spelled it out or took the
+                # default.
+                default_beta = _priors.shifted_gamma(
+                    shape=config.beta_shape, scale=config.beta_scale,
+                    shift=config.beta_shift)
+                scaled = _maybe_autoscale(default_beta, data.X, config.autoscale)
+                g_beta = pm.Gamma("g_beta", alpha=scaled.shape,
+                                  beta=1.0 / scaled.scale, dims="npi")
+                beta = pm.Deterministic("beta", scaled.shift - g_beta,
                                         dims="npi")
             if b is None:
                 eta = eta + (pt.as_tensor_variable(X)
@@ -680,6 +689,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             # hexp() reproduces the pooled form below; any other family gives
             # each region an independent draw.
             seed = _priors.build(config.prior_seeds, "seed", shape=M,
+                                 allowed=_priors.OK_SEED_DISTS,
                                  positive=True)
         elif config.seed_pooling:
             tau = pm.Exponential("seed_tau", config.seed_aux_rate)
@@ -706,7 +716,19 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
         if config.pop_adjust:
             pops = pt.as_tensor_variable(np.asarray(data.pops, dtype=float))
             if config.prior_susc_mean is None:
-                susc0 = pops                                   # everyone susceptible
+                # pt.specify_shape keeps the scan's recurrent state shape
+                # consistent. Without it a one-region model fails to compile:
+                # `pops` carries a static shape (1,) while the scan's output is
+                # (?,), and pytensor rejects the mismatch -- so a pop-adjusted
+                # single-population model could not be built at all unless a
+                # susceptibility prior happened to be supplied.
+                # Indexing by a symbolic arange erases the STATIC length, which
+                # keeps the scan's recurrent state consistent. With M == 1 the
+                # constant `pops` has static shape (1,) while the scan's own
+                # output has shape (?,), and pytensor rejects the mismatch -- so
+                # a pop-adjusted single-population model could not be built at
+                # all unless a susceptibility prior happened to be supplied.
+                susc0 = pops[pt.arange(pops.shape[0])]
             else:
                 s0 = pm.TruncatedNormal(
                     "S0", mu=config.prior_susc_mean, sigma=config.prior_susc_sd,
@@ -765,13 +787,22 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 raw_seq = pt.concatenate([pt.zeros((M, v)), raw], axis=1).T
 
                 def step(R_t, v_t, sflag, seed_t, raw_t, buf, S):
+                    # R (gen_infections.stan:34-46) does two things this used to
+                    # get backwards. The state-space density's mean is the
+                    # UNADJUSTED renewal term (priors_inf.stan:10-13 reads
+                    # E_infections before saturation), and it is the RAW DRAW
+                    # that gets saturated to become the infection count. Doing it
+                    # the other way round left infections unsaturated -- so they
+                    # were not bounded by the susceptible pool, which then went
+                    # negative -- while the density's sd collapsed to the 1e-9
+                    # floor.
                     pre = sflag * seed_t + (1.0 - sflag) * R_t * pt.dot(buf, gen)
-                    E_t = S * (1.0 - pt.exp(-pre / pops))
-                    i_t = sflag * E_t + (1.0 - sflag) * raw_t
+                    unsat = sflag * seed_t + (1.0 - sflag) * raw_t
+                    i_t = S * (1.0 - pt.exp(-unsat / pops))
                     return (
                         pt.concatenate([i_t[:, None], buf[:, :-1]], axis=1),
                         (1.0 - v_t) * (S - i_t),
-                        E_t,
+                        pre,
                         i_t,
                     )
 

@@ -1,5 +1,21 @@
 # User guide
 
+!!! note "Which builder to read about"
+    This page describes the **single-population** builder,
+    [`EpiConfig`][epidemia.EpiConfig] / [`build_model`][epidemia.build_model].
+    It is the simplest entry point and still what the `europe-covid` and
+    `partial-pooling` notebooks use, but it is **superseded**: it has a random
+    walk and one population only.
+
+    For anything with several regions or several observation series — which is
+    ordinary usage in R — read
+    **[The model](reference.md#the-model)**: `EpiModelConfig`,
+    `ObsModel`, `PanelData` and `build_epidemia_model`/`fit_epidemia`. The
+    [Spanish flu](tutorials/flu.md), [England](tutorials/multiple-obs.md) and
+    [multilevel + multiple observations](tutorials/multilevel-multi-obs.md)
+    tutorials all use it, and the [parity table](parity.md) maps every R feature
+    onto it.
+
 ## The model
 
 Given an observed series `y` (with `nan` for unobserved/seeding days) and an
@@ -52,7 +68,7 @@ Every knob lives on [`EpiConfig`][epidemia.EpiConfig]:
 | `i2o` | infection-to-observation delay distribution |
 | `seed_days` | length of the seeding window |
 | `link` | `"log"` or `("scaled_logit", K)` |
-| `family` | `"poisson"`, `"neg_binom"`, or `"normal"` |
+| `family` | `"poisson"` (this builder's default), `"neg_binom"`, or `"normal"`. Note `ObsModel` in the current builder defaults to `"neg_binom"`, matching R's `epiobs()`. |
 | `rw_prior_scale` | scale of the `HalfNormal` prior on the RW step size |
 | `intercept_loc`, `intercept_scale` | `Normal` prior for the `R_t` intercept |
 | `seed_prior_mean` | mean of the `Exponential` prior on seeded infections |
@@ -64,12 +80,14 @@ Every knob lives on [`EpiConfig`][epidemia.EpiConfig]:
 
 ```python
 idata = epi.fit(y, config, draws=1000, tune=1000, chains=4, seed=0,
-                adaptation="diag", backend="numba")
+                adaptation="low_rank", backend="numba")
 ```
 
-- **`adaptation`** — `"diag"` (Fisher-information diagonal; a strong default),
-  `"low_rank"`, or `"flow"` (normalizing-flow; needs `uv sync --extra flow`) for
-  harder posteriors.
+- **`adaptation`** — `"low_rank"` is the **default** here, deliberately unlike
+  nutpie's own `"diag"`: a diagonal metric cannot follow the ridge these
+  posteriors have and fails *silently*, mixing badly without diverging. See
+  [performance](performance.md) for the measurements. `"diag"` and `"flow"`
+  (normalizing-flow; needs `uv sync --extra flow`) are also available.
 - **`backend`** — `"numba"` (low-overhead CPU default, incl. Apple Silicon) or
   `"jax"` (required for GPU on Linux, `uv sync --extra gpu`).
 

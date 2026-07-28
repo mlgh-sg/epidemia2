@@ -300,7 +300,9 @@ def test_build_matches_hand_written_call(europe):
 
     M, T, K = panel.X.shape
     assert (M, K) == (len(panel.regions), 2)
-    assert cfg == {"intercept": False, "correlated": False}
+    # a bar term is present, so group-level effects are on
+    assert cfg == {"intercept": False, "correlated": False,
+                   "region_effects": True}
     # the kwargs must drop straight into a config
     config = EpiModelConfig(gen=np.ones(3) / 3, **cfg)
     assert config.intercept is False and config.correlated is False
@@ -312,7 +314,8 @@ def test_build_correlated_flag(europe):
         europe, "R(country, date) ~ 1 + (1 + lockdown | country)",
         responses=["deaths"],
     )
-    assert cfg == {"intercept": True, "correlated": True}
+    assert cfg == {"intercept": True, "correlated": True,
+                   "region_effects": True}
 
 
 def test_build_shared_random_walk(europe):
@@ -392,7 +395,9 @@ def test_build_needs_group_and_date(europe):
         europe, "deaths ~ 1", responses=["deaths"], group="country", date="date",
     )
     assert panel.X.shape[2] == 0
-    assert cfg == {"intercept": True, "correlated": False}
+    # no bar term -> fully pooled, as R builds no Z matrix
+    assert cfg == {"intercept": True, "correlated": False,
+                   "region_effects": False}
 
 
 def test_build_rejects_unknown_column(europe):

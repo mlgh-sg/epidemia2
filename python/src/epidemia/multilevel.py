@@ -587,7 +587,26 @@ def fit_multilevel(data: MultilevelData, config: MultilevelConfig,
                      seed=seed, adaptation=adaptation, progress_bar=progress_bar,
                      target_accept=target_accept, **kwargs)
     _warn_on_divergences(idata)
+    _record_families(idata, {"deaths": getattr(config, "family", "poisson")})
     return idata
+
+
+
+def _record_families(idata, families):
+    """Record each series' observation family on the fit.
+
+    Plotting a *predictive* interval needs the family to draw through. Without
+    it plot_obs can only band the posterior mean -- an interval that excludes
+    observation noise and is far too narrow to compare against the data -- and
+    it warns rather than doing that silently. fit_epidemia records this; the
+    older builders did not, so their plots always took the fallback.
+    """
+    import json
+
+    try:
+        idata.attrs["epidemia_families"] = json.dumps(dict(families))
+    except Exception:  # pragma: no cover - attrs are best-effort metadata
+        pass
 
 
 def _warn_on_divergences(idata):

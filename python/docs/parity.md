@@ -51,6 +51,14 @@ missing is halfway through an analysis.
 | ADVI stops on ELBO convergence | ✅ `tol_rel_obj` | ✅ `fit_variational(early_stop=)` |
 | Default prior scale when unspecified | 0.25 | 0.25 |
 | `lkj()` as `prior_covariance` | ❌ rejected (no Stan support) | ✅ proper LKJ covariance |
+| Plot a forecast directly (`newdata`) | ✅ `plot_obs(newdata=)` | ✅ `plot_obs(a_forecast)` |
+| In-sample vs out-of-sample marking | ✅ | ✅ `n_fitted=` |
+| Default credible levels | 30/60/90 | 30/60/90 |
+| `date_breaks` / `date_format` | ✅ | ✅ |
+| `summary()` with diagnostics | ✅ | ✅ `epidemia.summary` |
+| Parameter interval plot | ✅ `plot.epimodel` | ✅ `plot_intervals` |
+| Pairs plot | ✅ `pairs.epimodel` | ✅ `pairs_plot` |
+| `par_types` parameter filtering | ✅ | ✅ `extract_samples(par_types=)` |
 | Plot a vector of groups | ✅ `groups=` | ✅ `groups=` |
 | `log=` axis tolerates zeros | ✅ pseudo-log | ✅ pseudo-log |
 | `smooth=` drops incomplete windows | ✅ | ✅ |
@@ -116,10 +124,11 @@ fc = forecast(idata, panel, obs_models, config, newdata=longer_df)
 fc.to_frame()          # tidy long frame: region, date, variable, quantiles
 ```
 
-Nothing is re-fitted: conditional on a posterior draw the latent series are
-deterministic, so this is forward simulation over draws. Covariates past the fit
-window carry forward, and the random walk is **held at its final fitted step** —
-the forecast says "`R_t` stays where it ended" rather than inventing increments.
+Nothing is re-fitted: this is forward simulation over posterior draws.
+Covariates past the fit window carry forward, and the random walk **keeps
+walking** — new increments are drawn at its own fitted scale and cumulated, as
+R's `new_rw_stanmat` does, so forecast `R_t` fans out. Pass
+`rw_forecast="hold"` to freeze it at its last fitted step instead.
 `fc.predicted` holds draws from the observation family, not just the mean.
 
 ## The caveats that remain
@@ -130,11 +139,10 @@ so a covariate appearing only inside `(... | group)` still gets a population
 coefficient, and vice versa. The *pooling* structure — `|` versus `||`, whether
 there is an intercept — is exact; the column split is not. Nesting
 (`(1 | county/district)`) and interactions (`a:b`) are rejected rather than
-silently mis-parsed, and only one `rw()` term is allowed.
-
-**Forecasting does not support `latent=True`.** With latent infections the
-post-seeding infections are free parameters, so there is no forward-simulable
-rule past the fitted window. Use the deterministic recursion to forecast.
+silently mis-parsed. The formula wrapper accepts only one `rw()` term, though
+the builder itself takes a list — write `EpiModelConfig(rw=[...])` for several.
+`build_from_formula` also does not yet emit `region_effects`, so set it yourself
+for a fully pooled model.
 
 **Counterfactuals on observations** are now possible by editing the covariates in
 `newdata` and calling `forecast`, but there is no dedicated helper as in R.

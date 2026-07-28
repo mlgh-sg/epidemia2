@@ -111,6 +111,8 @@ Check the sampler before reading anything off a fit. The mirror of R's
 
 ::: epidemia.postprocess.extract_samples
 
+::: epidemia.postprocess.summary
+
 ::: epidemia.postprocess.prior_summary
 
 ## Scoring
@@ -144,6 +146,10 @@ Check the sampler before reading anything off a fit. The mirror of R's
 ::: epidemia.plots.plot_coverage
 
 ::: epidemia.plots.plot_metrics
+
+::: epidemia.plots.plot_intervals
+
+::: epidemia.plots.pairs_plot
 
 ::: epidemia.plots.available_series
 

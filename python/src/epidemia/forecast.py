@@ -565,10 +565,16 @@ def _extend_rw_index(index, lengths, T_ext):
         out[m, :keep] = row[:keep]
         if T_ext <= n:
             continue
-        _, counts = np.unique(row, return_counts=True)
+        # -1 means "no walk term on this day" and must survive the copy above;
+        # the cadence is inferred from the real steps only.
+        real = row[row >= 0]
+        if real.size == 0:
+            out[m, n:] = -1
+            continue
+        _, counts = np.unique(real, return_counts=True)
         period = max(int(np.median(counts)) if counts.size else 1, 1)
-        last_step = int(row[-1]) if n else 0
-        spent = int(np.sum(row == last_step)) if n else 0
+        last_step = int(real[-1])
+        spent = int(np.sum(real == last_step))
         step, k = last_step, spent
         for t in range(n, T_ext):
             if k >= period:
@@ -598,6 +604,71 @@ def _extend_walk(walk, n_needed, scale, rng):
     steps = rng.normal(size=(S, P, extra)) * sig
     future = walk[:, :, -1:] + np.cumsum(steps, axis=2)
     return np.concatenate([walk, future], axis=2)
+
+
+
+def _walk_eta(rw, prefix, take, rng, M, T_fit, T_ext, lengths, rw_forecast):
+    """Contribution of every random walk on one predictor, over the extended window.
+
+    Handles what the single-walk version did not: a LIST of walks (``core._walks``
+    names them ``rw``, ``rw2``, ...), the ``-1`` sentinel for "no walk term on
+    this day", and the ``<series>|`` prefix observation walks carry. Dropping any
+    of those silently forecast a different model from the one that was fitted.
+    """
+    terms = [rw] if not isinstance(rw, (list, tuple)) else list(rw)
+    total = 0.0
+    for i, term in enumerate(terms):
+        tag = f"{prefix}rw" if i == 0 else f"{prefix}rw{i + 1}"
+        walk = take(tag, required=False)
+        if walk is None:
+            raise ValueError(
+                f"forecasting needs the walk {tag!r} in the posterior; have it "
+                "recorded by build_epidemia_model, or drop the rw term"
+            )
+        walk = np.asarray(walk)
+        if walk.ndim == 2:
+            walk = walk[:, None, :]
+        index = np.asarray(term.index, dtype=int)
+        if index.shape != (M, T_fit):
+            raise ValueError(
+                f"{tag}.index must be {(M, T_fit)}, got {index.shape}"
+            )
+        proc = np.arange(M) if term.by_region else np.zeros(M, dtype=int)
+        if term.by_region and walk.shape[1] != M:
+            raise ValueError(
+                f"{tag}.by_region=True needs {M} walks, posterior has "
+                f"{walk.shape[1]}"
+            )
+        if rw_forecast == "hold":
+            held = np.minimum(np.arange(T_ext)[None, :], (lengths - 1)[:, None])
+            idx_ext = index[np.arange(M)[:, None], held]
+        elif rw_forecast == "draw":
+            idx_ext = _extend_rw_index(index, lengths, T_ext)
+            need = int(idx_ext.max()) + 1
+            scale = take(f"{tag}_scale", required=False)
+            if need > walk.shape[2] and scale is None:
+                raise ValueError(
+                    f"rw_forecast='draw' needs {tag}_scale in the posterior to "
+                    "draw increments past the fitted window. Pass "
+                    "rw_forecast='hold' to freeze the walk instead."
+                )
+            if scale is not None:
+                walk = _extend_walk(walk, need, scale, rng)
+        else:
+            raise ValueError(
+                f"rw_forecast must be 'draw' or 'hold', got {rw_forecast!r}"
+            )
+        if idx_ext.max() >= walk.shape[2]:
+            raise ValueError(
+                f"{tag} index reaches step {idx_ext.max()} but the posterior "
+                f"walk has {walk.shape[2]} step(s)"
+            )
+        # A pinned zero level so index -1 contributes nothing, exactly as
+        # core._random_walk does when it builds the model.
+        pad = np.concatenate(
+            [np.zeros((walk.shape[0], walk.shape[1], 1)), walk], axis=2)
+        total = total + pad[:, proc[:, None], idx_ext + 1]
+    return total
 
 
 def _draw_series(E, obs: ObsModel, aux, rng):
@@ -730,6 +801,13 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
     M, T_fit, K = X_fit.shape
     lengths = np.asarray(panel.lengths, dtype=int)
 
+    # build_epidemia_model subtracts the FITTED design's column means when
+    # center=True (core.py), so the coefficients are on the centred scale. A
+    # forecast that skips this evaluates them against uncentred covariates and
+    # shifts the whole linear predictor by xbar . beta.
+    _xbar = (X_fit.reshape(-1, K).mean(axis=0)
+             if (getattr(config, "center", False) and K) else None)
+
     # ---- design over the extended window --------------------------------
     if newdata is None:
         X_ext = X_fit
@@ -740,6 +818,9 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
         X_ext, dates_ext, n_ext, T_ext = _design_from_newdata(
             panel, newdata, group, date
         )
+
+    if _xbar is not None:
+        X_ext = X_ext - _xbar[None, None, :]
 
     # ---- posterior draws -------------------------------------------------
     rng = seed if isinstance(seed, np.random.Generator) else np.random.default_rng(seed)
@@ -767,55 +848,19 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
         eta += np.asarray(b0_all, dtype=float)[idx][:, :, None]  # (S, M)
 
     if K:
-        beta = take("beta").reshape(S, 1, K)
-        b = take("b").reshape(S, M, K)
-        coef = beta + b                                          # (S, M, K)
-        eta += np.einsum("smk,mtk->smt", coef, X_ext)
+        coef = take("beta").reshape(S, 1, K)
+        # region_effects=False builds no per-region slope deviations, so `b` is
+        # absent -- a fully pooled fit with covariates could not be forecast at
+        # all while this was required.
+        b = take("b", required=False)
+        if b is not None:
+            coef = coef + np.asarray(b, dtype=float).reshape(S, M, K)
+        eta += np.einsum("smk,mtk->smt",
+                         np.broadcast_to(coef, (S, M, K)), X_ext)
 
     if config.rw is not None:
-        walk = take("rw")                                        # (S, P, n_steps)
-        if walk.ndim == 2:                                       # single process
-            walk = walk[:, None, :]
-        index = np.asarray(config.rw.index, dtype=int)
-        if index.shape != (M, T_fit):
-            raise ValueError(
-                f"config.rw.index must be {(M, T_fit)}, got {index.shape}"
-            )
-        proc = np.arange(M) if config.rw.by_region else np.zeros(M, dtype=int)
-        if config.rw.by_region and walk.shape[1] != M:
-            raise ValueError(
-                f"rw.by_region=True needs {M} walks, posterior has {walk.shape[1]}"
-            )
-        if rw_forecast == "hold":
-            # Freeze each region's walk at its last genuine fitted step.
-            held = np.minimum(np.arange(T_ext)[None, :], (lengths - 1)[:, None])
-            idx_ext = index[np.arange(M)[:, None], held]          # (M, T_ext)
-        elif rw_forecast == "draw":
-            idx_ext = _extend_rw_index(index, lengths, T_ext)
-            need = int(idx_ext.max()) + 1
-            scale = take("rw_scale", required=False)
-            if need > walk.shape[2] and scale is None:
-                # Without the walk's scale there is no honest way to draw new
-                # increments, and silently freezing would hand back a much
-                # narrower forecast than asked for.
-                raise ValueError(
-                    "rw_forecast='draw' needs the walk's scale ('rw_scale') in "
-                    "the posterior to draw increments past the fitted window, "
-                    "and this fit does not carry it. Pass rw_forecast='hold' to "
-                    "freeze the walk instead."
-                )
-            if scale is not None:
-                walk = _extend_walk(walk, need, scale, rng)
-        else:
-            raise ValueError(
-                f"rw_forecast must be 'draw' or 'hold', got {rw_forecast!r}"
-            )
-        if idx_ext.max() >= walk.shape[2]:
-            raise ValueError(
-                f"rw index reaches step {idx_ext.max()} but the posterior walk "
-                f"has {walk.shape[2]} step(s)"
-            )
-        eta += walk[:, proc[:, None], idx_ext]
+        eta += _walk_eta(config.rw, "", take, rng, M, T_fit, T_ext, lengths,
+                         rw_forecast)
 
     Rt_unadj = _apply_link(getattr(config, "link", "scaled_logit"), eta,
                            float(config.R_link_K))
@@ -890,6 +935,12 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
         if o.offset is not None:
             oeta += _carry_forward(np.asarray(o.offset, dtype=float),
                                    lengths, T_ext)[None]
+        if getattr(o, "rw", None) is not None:
+            # A series' own ascertainment walk. Dropping it forecast a model
+            # with a FLAT ascertainment rate, which is not the one that was
+            # fitted whenever epiobs carried an rw() term.
+            oeta += _walk_eta(o.rw, f"{o.name}|", take, rng, M, T_fit, T_ext,
+                              lengths, rw_forecast)
 
         rate = _apply_link(getattr(o, "link", "scaled_logit"), oeta,
                            float(o.link_K))

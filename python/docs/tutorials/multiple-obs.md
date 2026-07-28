@@ -467,7 +467,7 @@ print("config kwargs  :", sorted(cfg_kw))
     panel regions  : ['England']
     panel shape    : (1, 80, 0)
     series built   : ['cases']
-    config kwargs  : ['correlated', 'intercept', 'rw']
+    config kwargs  : ['correlated', 'intercept', 'region_effects', 'rw']
 
 
     /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/formula.py:586: UserWarning: 'England': only 0 day(s) before cumulative cases exceeded 1, fewer than seed_offset=20; starting at the first available day.
@@ -494,12 +494,11 @@ print(f"prior R_t: median {qs[1]:.2f}, 90% interval [{qs[0]:.2f}, {qs[2]:.2f}]")
 print(f"(the scaled_logit cap is {config.R_link_K}, so R_t cannot exceed it)")
 ```
 
-    prior R_t: median 0.84, 90% interval [0.20, 2.04]
+    prior R_t: median 0.85, 90% interval [0.21, 2.14]
     (the scaled_logit cap is 7.0, so R_t cannot exceed it)
 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.020 for cases|rw_noise[0, 36] exceeds 1.01, so the chains have not mixed.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 196 for positivity|aux is 98 per chain, below the 100 per chain that keeps posterior summaries stable.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.020 for cases|rw_noise[0, 17] exceeds 1.01, so the chains have not mixed.
 
 
 

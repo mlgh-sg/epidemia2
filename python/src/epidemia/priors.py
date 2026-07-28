@@ -42,6 +42,7 @@ import numpy as np
 
 __all__ = [
     "OK_AUX_DISTS",
+    "OK_SEED_DISTS",
     "OK_COV_DISTS",
     "OK_DISTS",
     "OK_INT_DISTS",
@@ -467,6 +468,10 @@ OK_DISTS = frozenset({"gamma", "normal", "t", "cauchy", "laplace", "hexp"})
 OK_INT_DISTS = frozenset({"normal", "t", "cauchy"})
 #: Families accepted for auxiliary parameters (R's ``ok_aux_dists``).
 OK_AUX_DISTS = frozenset({"normal", "t", "cauchy", "exponential"})
+
+#: What R's ``epiinf`` accepts for ``prior_seeds``: the auxiliary set plus the
+#: hierarchical ``hexp`` (R/epiinf.R:91, ``c(ok_aux_dists, "hexp")``).
+OK_SEED_DISTS = frozenset(OK_AUX_DISTS | {"hexp"})
 #: Families accepted as a covariance prior (R's ``ok_cov_dists``).
 OK_COV_DISTS = frozenset({"decov"})
 

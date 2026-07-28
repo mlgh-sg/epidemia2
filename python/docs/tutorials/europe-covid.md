@@ -444,7 +444,7 @@ az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    done in 20.7s
+    done in 20.8s
 
 
     [epidemia] sampling 4 chains x (2000 tune + 1000 draws)
@@ -633,10 +633,15 @@ az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed
 
 
 
-    [epidemia] sampled in 2989.4s
+    [epidemia] sampled in 3043.2s
 
 
     divergences: 0
+
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:621: UserWarning: 1273 iterations saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:621: UserWarning: R-hat of 1.070 for g_beta[schools_universities] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:621: UserWarning: Bulk ESS of 50 for g_beta[schools_universities] is 12 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 
@@ -1203,12 +1208,15 @@ epi.plots.plot_percent_effects(idata, config, data=fit, group="Italy", labels=la
 ## Forecasting and counterfactuals
 
 Forecasting in `epidemia` means swapping in a new data frame — extending the
-dates, or altering covariates for a *counterfactual*. We reproduce this here by
-forward-simulating the renewal process from the posterior draws, reusing the
-package's NumPy renewal reference (`epi.renewal_infections`). The function
-below takes a per-country NPI design (of any length) and returns posterior
-deaths, so the same code serves both out-of-sample forecasts and
-counterfactuals.
+dates, or altering covariates for a *counterfactual*.
+
+This notebook predates `epidemia.forecast()` and forward-simulates by hand
+below, which is worth keeping because it shows the mechanism. For new work use
+**`epidemia.forecast(idata, panel, obs_models, config, newdata=...)`**: it is
+one call, it propagates the random walk over the horizon instead of freezing
+it, and it draws the observation noise rather than returning expectations. The
+[Spanish flu tutorial](flu.md) uses it. The hand-rolled version below returns
+*expected* deaths, so its intervals are narrower than a predictive interval.
 
 
 ```python
@@ -1292,7 +1300,7 @@ save_plot(p, "uk-forecast")
 p
 ```
 
-    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_93270/3853627252.py:1: UserWarning: 2 missing deaths value(s) inside the modelled window were left out of the likelihood (masked as unobserved, as R treats NA). The latent series are still estimated on those days.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_1931/3853627252.py:1: UserWarning: 2 missing deaths value(s) inside the modelled window were left out of the likelihood (masked as unobserved, as R treats NA). The latent series are still estimated on those days.
 
 
     [epidemia] saved figures/uk-forecast.png

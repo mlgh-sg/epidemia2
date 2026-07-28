@@ -589,7 +589,15 @@ def build_from_formula(df, formula, responses, pop=None, seed_offset=30,
         fit_until=fit_until, rw_by=rw_by, **kw,
     )
 
-    config_kwargs = {"intercept": spec.intercept, "correlated": spec.correlated}
+    # A formula with no bar term has no group-level effects at all -- R builds
+    # no Z matrix for it (R/standata_reg.R:112). EpiModelConfig.region_effects
+    # defaults True, so leaving it unset gave a fully pooled formula
+    # per-region intercepts AND slopes it never asked for.
+    config_kwargs = {
+        "intercept": spec.intercept,
+        "correlated": spec.correlated,
+        "region_effects": bool(spec.random),
+    }
     if rw_term is not None:
         if rw_term.gr is not None and rw_term.gr != group:
             raise ValueError(

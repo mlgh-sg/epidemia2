@@ -37,8 +37,8 @@ from epidemia.core import (
 ## Data
 
 `EuropeCovid2` carries daily deaths *and* daily cases for eleven countries,
-alongside the intervention indicators. We take three countries to keep the
-example quick, and add an ISO week column to index the random walk.
+alongside the intervention indicators. We use all eleven countries, and add a
+month column to index the random walk.
 
 
 ```python

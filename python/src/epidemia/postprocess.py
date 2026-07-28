@@ -69,6 +69,11 @@ def posterior_linpred(idata, panel, config, series=None, obs_models=None,
         # unconditionally, or folding b in under `fixed`, makes these switches
         # decompose something other than the model.
         X = np.asarray(panel.X)
+        # build_epidemia_model subtracts the design's column means when
+        # center=True, so the coefficients are on the centred scale. Rebuilding
+        # from the RAW design offsets the whole predictor by mean(X) . beta.
+        if getattr(config, "center", False) and K:
+            X = X - X.reshape(-1, K).mean(axis=0)[None, None, :]
         if fixed:
             if "intercept" in post:
                 eta += _flat(post["intercept"])[:, None, None]
@@ -80,8 +85,10 @@ def posterior_linpred(idata, panel, config, series=None, obs_models=None,
                 eta += _flat(post["b0"])[:, :, None]
             if K and "b" in post:
                 eta += np.einsum("mtk,smk->smt", X, _flat(post["b"]))
-        if autocor and getattr(panel, "rw_index", None) is not None:
-            eta += _walk_contribution(post, panel, M, prefix="")
+        if autocor:
+            idxs = _rw_indices(getattr(config, "rw", None), panel)
+            if idxs:
+                eta += _walk_contribution(post, idxs, M, prefix="")
         link, cap = getattr(config, "link", "scaled_logit"), config.R_link_K
     else:
         from .core import ObsModel
@@ -106,39 +113,59 @@ def posterior_linpred(idata, panel, config, series=None, obs_models=None,
         if fixed and o.intercept and f"{series}|intercept" in post:
             eta += _flat(post[f"{series}|intercept"])[:, None, None]
         if fixed and o.X is not None and f"{series}|coef" in post:
+            oX = np.asarray(o.X, dtype=float)
+            if getattr(o, "center", False):
+                oX = oX - oX.reshape(-1, oX.shape[2]).mean(axis=0)[None, None, :]
             coef = _flat(post[f"{series}|coef"])            # (S, Ks)
-            eta += np.einsum("mtk,sk->smt", np.asarray(o.X, dtype=float), coef)
+            eta += np.einsum("mtk,sk->smt", oX, coef)
         if o.offset is not None:
             eta += np.asarray(o.offset, dtype=float)[None, :, :]
-        if autocor and o.rw is not None and getattr(panel, "rw_index", None) is not None:
-            eta += _walk_contribution(post, panel, M, prefix=f"{series}|")
+        if autocor and o.rw is not None:
+            idxs = _rw_indices(o.rw, panel)
+            if idxs:
+                eta += _walk_contribution(post, idxs, M, prefix=f"{series}|")
         link, cap = getattr(o, "link", "scaled_logit"), o.link_K
 
     return _apply_link(link, eta, cap) if transform else eta
 
 
-def _walk_contribution(post, panel, M, prefix=""):
+def _rw_indices(rw, panel):
+    """The per-term day->step index for one or more walks.
+
+    The index lives on the :class:`~epidemia.core.RandomWalk` itself, which is
+    where the model builder reads it (``core._random_walk``). Reading
+    ``panel.rw_index`` instead -- an attribute only ``prepare_panel(rw_by=)``
+    ever attaches -- silently dropped the walk for every model whose panel was
+    built by hand, which is what both shipped tutorials do.
+    """
+    if rw is not None:
+        terms = rw if isinstance(rw, (list, tuple)) else [rw]
+        idx = [np.asarray(t.index, dtype=int) for t in terms
+               if getattr(t, "index", None) is not None]
+        if idx:
+            return idx
+    fallback = getattr(panel, "rw_index", None)
+    return [np.asarray(fallback, dtype=int)] if fallback is not None else []
+
+
+def _walk_contribution(post, indices, M, prefix=""):
     """Sum every random walk on one predictor, R's ``pp_eta_ac`` for both sides.
 
     ``core._walks`` names the first walk ``<prefix>rw`` and later ones
-    ``<prefix>rw2``, ``rw3``, ... Reading only ``rw`` -- which this function
-    replaces -- silently dropped every additional term, and dropped observation
-    walks entirely because they carry a ``<series>|`` prefix.
+    ``<prefix>rw2``, ``rw3``, ... Each term carries its OWN day->step index, so
+    they are zipped rather than sharing one.
     """
-    idx = np.asarray(panel.rw_index)
     total = 0.0
-    # -1 means "no walk term on this day" (core pads a zero level for it)
-    i = 1
-    while True:
+    for i, idx in enumerate(indices, start=1):
         name = f"{prefix}rw" if i == 1 else f"{prefix}rw{i}"
         if name not in post:
             break
         walk = _flat(post[name])                            # (S, procs, steps)
+        # -1 means "no walk term on this day"; core pads a zero level for it.
         pad = np.concatenate(
             [np.zeros((walk.shape[0], walk.shape[1], 1)), walk], axis=2)
         proc = np.arange(M) if walk.shape[1] == M else np.zeros(M, int)
-        total = total + pad[:, proc[:, None], idx + 1]
-        i += 1
+        total = total + pad[:, proc[:, None], np.asarray(idx) + 1]
     return total
 
 
@@ -172,11 +199,44 @@ def posterior_infectious(idata, config, normalise=True):
     return out
 
 
-def extract_samples(idata, pars=None, regex=None, series=None, groups=None):
+#: Which variables belong to each of R's ``par_types``. R's as.matrix.epimodel
+#: restricts par_types to these names (R/plots.R:151-229); the patterns below map
+#: them onto the variable names build_epidemia_model records.
+PAR_TYPES = {
+    "fixed": ("intercept", "beta", "coef"),
+    "random": ("b0", "b", "Sigma", "sd", "z"),
+    "autocor": ("rw", "rw_scale", "rw_noise"),
+    "aux": ("aux", "inf_aux"),
+    "seeds": ("seed", "seed_raw", "seed_tau", "seeds_aux"),
+    "latent": ("infections_raw",),
+}
+
+
+def _matches_type(name, kind):
+    """True when a variable name belongs to ``kind``."""
+    base = str(name).split("|")[-1]
+    pats = PAR_TYPES[kind]
+    if kind == "autocor":
+        return base == "rw" or base.startswith("rw")
+    if kind == "aux":
+        return base.endswith("aux") or base.endswith("aux_raw")
+    if kind == "fixed":
+        return base in ("intercept", "beta", "coef")
+    if kind == "seeds":
+        return base.startswith("seed")
+    if kind == "random":
+        return base in ("b0", "b") or base.startswith(("Sigma", "sd_", "z_"))
+    return base in pats
+
+
+def extract_samples(idata, pars=None, regex=None, series=None, groups=None,
+                    par_types=None):
     """Draws as a flat ``(draws, parameters)`` frame -- R's ``as.matrix.epimodel``.
 
     Select by explicit names (``pars``), a regular expression (``regex``), an
-    observation series, or a list of regions.
+    observation series, a list of regions, or by ``par_types`` -- R's
+    ``c("fixed", "random", "autocor", "aux", "seeds", "latent")``, the keys of
+    :data:`PAR_TYPES`.
     """
     import pandas as pd
 
@@ -193,6 +253,16 @@ def extract_samples(idata, pars=None, regex=None, series=None, groups=None):
         keep = [n for n in names if str(n).startswith((f"{series}|", f"E_{series}"))]
     else:
         keep = names
+
+    if par_types is not None:
+        kinds = [par_types] if isinstance(par_types, str) else list(par_types)
+        unknown = set(kinds) - set(PAR_TYPES)
+        if unknown:
+            raise ValueError(
+                f"unknown par_types {sorted(unknown)}; choose from "
+                f"{sorted(PAR_TYPES)}"
+            )
+        keep = [n for n in keep if any(_matches_type(n, k) for k in kinds)]
 
     cols = {}
     for n in keep:
@@ -311,3 +381,57 @@ def prior_summary(panel, obs_models, config):
                 o.prior_aux,
                 f"{o.prior_aux_loc:.4g} + {o.prior_aux_scale:.4g} * HalfNormal(1)")))
     return PriorSummary(rows)
+
+
+def summary(idata, pars=None, regex=None, series=None, groups=None,
+            par_types=None, probs=(0.1, 0.5, 0.9), digits=2):
+    """Parameter summary with diagnostics -- R's ``summary.epimodel``.
+
+    Mean, SD, the requested quantiles, Monte-Carlo standard error, effective
+    sample size and R-hat, for whichever parameters the selectors keep. The
+    selection arguments are those of :func:`extract_samples`, so
+    ``par_types="fixed"`` gives just the fixed effects, as in R.
+
+    Parameters
+    ----------
+    idata : arviz.InferenceData
+    pars, regex, series, groups, par_types
+        Parameter selection; see :func:`extract_samples`.
+    probs : sequence[float]
+        Quantiles to report. R's default is ``(0.1, 0.5, 0.9)``.
+    digits : int
+        Round the result. ``None`` leaves it unrounded.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per parameter, indexed by name.
+    """
+    import warnings
+
+    import arviz as az
+    import pandas as pd
+
+    draws = extract_samples(idata, pars=pars, regex=regex, series=series,
+                            groups=groups, par_types=par_types)
+    if not len(draws.columns):
+        raise ValueError("no parameters matched the selection")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        diag = az.summary(idata, kind="diagnostics")
+
+    rows = {}
+    for col in draws.columns:
+        v = draws[col].to_numpy(dtype=float)
+        row = {"mean": v.mean(), "sd": v.std(ddof=1)}
+        for q in probs:
+            row[f"{100 * q:g}%"] = np.quantile(v, q)
+        for stat in ("mcse_mean", "ess_bulk", "ess_tail", "r_hat"):
+            row[stat] = (float(diag.loc[col, stat])
+                         if col in diag.index and stat in diag.columns
+                         else np.nan)
+        rows[col] = row
+
+    out = pd.DataFrame.from_dict(rows, orient="index")
+    return out if digits is None else out.round(digits)

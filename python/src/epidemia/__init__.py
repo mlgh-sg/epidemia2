@@ -41,6 +41,7 @@ from .core import (
 from .core import prepare_panel as prepare_panel_multi
 from .forecast import Forecast, forecast
 from .postprocess import (
+    summary,
     extract_samples,
     posterior_infectious,
     posterior_linpred,
@@ -71,9 +72,11 @@ from .multilevel import (
 from .diagnostics import SamplerDiagnostics, sampler_diagnostics
 from .plots import (
     available_series,
+    pairs_plot,
     plot_coverage,
     plot_infectious,
     plot_linpred,
+    plot_intervals,
     plot_metrics,
     plot_infections,
     plot_obs,
@@ -144,14 +147,17 @@ __all__ = [
     "simulate",
     "SamplerDiagnostics",
     "available_series",
+    "pairs_plot",
     "plot_coverage",
     "plot_infections",
     "plot_infectious",
     "plot_linpred",
+    "plot_intervals",
     "plot_metrics",
     "plot_obs",
     "plot_rt",
     "sampler_diagnostics",
+    "summary",
     "spaghetti_infections",
     "spaghetti_obs",
     "spaghetti_rt",
