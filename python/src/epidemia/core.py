@@ -264,6 +264,7 @@ class EpiModelConfig:
     prior_PD: bool = False
     prior_covariance: object = None
     prior_covariates: object = None
+    autoscale: bool = True
     prior_intercept: object = None
     prior_seeds: object = None
     prior_aux: object = None
@@ -518,6 +519,31 @@ def _likelihood(pm, pt, obs: ObsModel, E, aux_name, prior_PD=False):
                      observed=y.astype(float))
 
 
+
+def _maybe_autoscale(spec, X, enabled):
+    """Rescale a coefficient prior to its predictors' units, as R's standata_reg does.
+
+    R divides each coefficient's prior scale by that column's own scale -- the
+    range for a binary covariate, the standard deviation otherwise -- so the
+    prior is a statement about standardised covariates
+    (``R/standata_reg.R:40-53``). Whether it happens is a property of the prior:
+    epidemia's ``shifted_gamma`` defaults to ``autoscale = TRUE`` and the other
+    families default to ``FALSE``, which is the opposite of rstanarm.
+    """
+    from . import priors as _p
+
+    if spec is None or X is None:
+        return spec
+    want = getattr(spec, "autoscale", None)
+    if want is None:
+        want = getattr(spec, "autoscale_default", False)
+    if not (enabled and want):
+        return spec
+    flat = np.asarray(X, dtype=float).reshape(-1, np.shape(X)[-1])
+    scales = np.array([_p.predictor_scale(flat[:, k]) for k in range(flat.shape[1])])
+    return _p.autoscale(spec, scales)
+
+
 def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
     """Build the full renewal model as a :class:`pymc.Model`.
 
@@ -600,7 +626,10 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
 
         if K:
             if config.prior_covariates is not None:
-                beta = _priors.build(config.prior_covariates, "beta", shape=K)
+                beta = _priors.build(
+                    _maybe_autoscale(config.prior_covariates, data.X,
+                                     config.autoscale),
+                    "beta", shape=K)
             else:
                 # the default is R's shifted_gamma: effects a priori non-positive
                 g_beta = pm.Gamma("g_beta", alpha=config.beta_shape,
@@ -827,7 +856,9 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                         f"series {o.name!r}: X must be (M, T, Ks); got {oX.shape}"
                     )
                 ocoef = (
-                    _priors.build(o.prior, f"{o.name}|coef", shape=oX.shape[2])
+                    _priors.build(
+                        _maybe_autoscale(o.prior, oX, config.autoscale),
+                        f"{o.name}|coef", shape=oX.shape[2])
                     if o.prior is not None
                     else pm.Normal(f"{o.name}|coef", 0.0, o.prior_coef_scale,
                                    shape=oX.shape[2])

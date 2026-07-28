@@ -131,6 +131,9 @@ def _derived(free, config):
         "b": sd[1:] * free["z"],
         "beta": config.beta_shift - free["g_beta"],
         "rw": np.cumsum(free["rw_scale"][:, None] * free["rw_noise"], axis=1),
+        # a real fit records the walk's scale; the forecast needs it to draw
+        # increments past the fitted window
+        "rw_scale": free["rw_scale"],
         "seed": free["seed_tau"] * free["seed_raw"],
         "deaths|intercept": np.asarray(free["deaths|intercept"]),
         "deaths|aux": 10.0 + 5.0 * free["deaths|aux_raw"],
@@ -158,6 +161,7 @@ def _make_idata(frees, config, chains):
         "b": (("chain", "draw", "region", "npi"), block("b")),
         "beta": (("chain", "draw", "npi"), block("beta")),
         "rw": (("chain", "draw", "rw_dim_0", "rw_dim_1"), block("rw")),
+        "rw_scale": (("chain", "draw", "rw_dim_0"), block("rw_scale")),
         "seed": (("chain", "draw", "region"), block("seed")),
         "deaths|intercept": (("chain", "draw"), block("deaths|intercept")),
         "deaths|aux": (("chain", "draw"), block("deaths|aux")),
@@ -329,21 +333,50 @@ def test_missing_covariates_carry_the_last_observed_row_forward(
     np.testing.assert_allclose(filled.Rt_unadj, held.Rt_unadj, rtol=1e-12)
 
 
-def test_random_walk_is_held_at_its_final_fitted_step(
+def test_rw_forecast_hold_freezes_the_walk_at_its_final_fitted_step(
     panel, obs_models, config, idata
 ):
-    """With covariates held, R_t must simply stay where the fit left it.
-
-    The fitted walk has no increments past the last week, so any movement over
-    the horizon would mean the forecast invented one.
-    """
+    """rw_forecast="hold": with covariates held, R_t stays where the fit left it."""
     fc = forecast(idata, panel, obs_models, config,
-                  newdata=_newdata(panel, "hold"), seed=0)
+                  newdata=_newdata(panel, "hold"), seed=0, rw_forecast="hold")
     tail = fc.Rt_unadj[..., T:]
     last = np.broadcast_to(fc.Rt_unadj[..., T - 1, None], tail.shape)
     np.testing.assert_allclose(tail, last, rtol=1e-12)
     # Rt itself still moves: susceptibles keep being depleted.
     assert np.all(fc.Rt[..., -1] <= fc.Rt[..., T - 1] + 1e-12)
+
+
+def test_rw_forecast_draw_keeps_the_walk_walking(
+    panel, obs_models, config, idata
+):
+    """The default matches R: new increments are drawn past the fitted window.
+
+    R's new_rw_stanmat draws rnorm(n) * sigma per future period and cumulates
+    (R/pp_eta.R:118-140), so forecast R_t fans out rather than going flat.
+    """
+    nd = _newdata(panel, "hold")
+    drawn = forecast(idata, panel, obs_models, config, newdata=nd, seed=0)
+    held = forecast(idata, panel, obs_models, config, newdata=nd, seed=0,
+                    rw_forecast="hold")
+
+    # the median no longer flatlines at the last fitted value
+    tail = drawn.Rt_unadj[..., T:]
+    last = np.broadcast_to(drawn.Rt_unadj[..., T - 1, None], tail.shape)
+    assert not np.allclose(tail, last)
+
+    # and the forecast fans out: wider spread than the frozen walk, growing
+    def spread(fc, t):
+        return np.percentile(fc.Rt_unadj[..., t], 97.5) - \
+               np.percentile(fc.Rt_unadj[..., t], 2.5)
+
+    assert spread(drawn, -1) > spread(held, -1)
+    assert spread(drawn, -1) > spread(drawn, T)
+
+
+def test_rw_forecast_rejects_an_unknown_mode(panel, obs_models, config, idata):
+    with pytest.raises(ValueError, match="rw_forecast must be"):
+        forecast(idata, panel, obs_models, config,
+                 newdata=_newdata(panel, "hold"), seed=0, rw_forecast="freeze")
 
 
 def test_forecast_only_needs_the_regions_it_was_fitted_on(

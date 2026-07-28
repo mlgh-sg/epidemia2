@@ -123,3 +123,65 @@ def test_linpred_sums_all_rt_walks_and_observation_walks():
     # observation walks live under a "<series>|" prefix and were dropped entirely
     obs_walk = _walk_contribution(post, panel, M, prefix="deaths|")
     assert np.any(obs_walk != 0)
+
+
+# --- autoscale is actually applied by the model builder -------------------
+
+def test_model_builder_autoscales_a_shifted_gamma_covariate_prior():
+    """R divides the prior scale by each covariate's own scale; Python never did.
+
+    Checked through the built model rather than the helper, because the gap was
+    that nothing *called* the (correct) helper.
+    """
+    import epidemia.priors as pr
+    from epidemia.core import EpiModelConfig, build_epidemia_model
+
+    seen = []
+    real = pr.autoscale
+
+    def spy(spec, sd):
+        seen.append(np.atleast_1d(np.asarray(sd, dtype=float)).copy())
+        return real(spec, sd)
+
+    rng = np.random.default_rng(0)
+    X = rng.normal(0.0, 10.0, size=(M, T, 1))       # sd far from 1
+    panel = PanelData(X=X, lengths=np.full(M, T), regions=["A", "B"], npis=["x"],
+                      dates=[pd.date_range("2020-03-01", periods=T).values] * M,
+                      pops=np.array([1e6, 2e6]))
+    gen = np.ones(10) / 10
+    om = ObsModel("deaths", rng.poisson(10, (M, T)).astype(float),
+                  np.ones((M, T), bool), gen)
+    cfg = EpiModelConfig(gen=gen, prior_covariates=pr.shifted_gamma(1 / 6, 1.0, 0.0))
+
+    pr.autoscale = spy
+    try:
+        build_epidemia_model(panel, [om], cfg)
+    finally:
+        pr.autoscale = real
+
+    assert seen, "the builder never autoscaled the covariate prior"
+    assert seen[0][0] == pytest.approx(np.std(X.reshape(-1), ddof=1), rel=1e-6)
+
+
+def test_autoscale_can_be_switched_off_on_the_config():
+    import epidemia.priors as pr
+    from epidemia.core import EpiModelConfig, build_epidemia_model
+
+    called = []
+    real = pr.autoscale
+    pr.autoscale = lambda spec, sd: (called.append(1), real(spec, sd))[1]
+    try:
+        rng = np.random.default_rng(0)
+        panel = PanelData(X=rng.normal(size=(M, T, 1)), lengths=np.full(M, T),
+                          regions=["A", "B"], npis=["x"],
+                          dates=[pd.date_range("2020-03-01", periods=T).values] * M,
+                          pops=np.array([1e6, 2e6]))
+        gen = np.ones(10) / 10
+        om = ObsModel("deaths", rng.poisson(10, (M, T)).astype(float),
+                      np.ones((M, T), bool), gen)
+        build_epidemia_model(panel, [om], EpiModelConfig(
+            gen=gen, prior_covariates=pr.shifted_gamma(1 / 6, 1.0, 0.0),
+            autoscale=False))
+    finally:
+        pr.autoscale = real
+    assert not called

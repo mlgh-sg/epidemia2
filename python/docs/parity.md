@@ -30,8 +30,9 @@ missing is halfway through an analysis.
 | Non-centred parameterisation | ✅ | ✅ |
 | Covariates on `R_t` | ✅ formula | ✅ `parse_formula` / `build_from_formula` |
 | Forecasting from new data | ✅ one call | ✅ `forecast(...)` |
+| Random walk keeps walking over the horizon | ✅ | ✅ `forecast(rw_forecast="draw")`, default |
 | Stochastic latent infections | ✅ | ✅ `latent=True` |
-| Autoscaled priors, `hs`/`lasso` families | ✅ | ✅ `epidemia.priors` |
+| Autoscaled priors, `hs`/`lasso` families | ✅ | ✅ applied by the builder; `EpiModelConfig(autoscale=)` |
 | Counterfactuals | ✅ | ⚠️ `R_t` via `effect_table`; observations via `forecast` |
 | Observation-level random walk | ✅ | ✅ `ObsModel(rw=)` |
 | Vaccination removal (`epiinf(rm=)`) | ✅ | ✅ `EpiModelConfig(rm=, prior_rm_noise=)` |

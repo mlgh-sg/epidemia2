@@ -25,11 +25,11 @@ frame with future rows whose NPI columns simply repeat the last observed value:
 * **covariates are carried forward.** Any day of the extended window without a
   covariate value (missing column entries, or days past the end of ``newdata``)
   reuses the last row that had one.
-* **the random walk is held at its final fitted step.** The fitted walk has no
-  increments beyond the last week it saw; continuing it would mean *inventing*
-  new random increments, which is a different (and much wider) forecast. Holding
-  it makes the forecast explicitly "R_t stays where it ended", which is what
-  ``epidemia``'s vignettes plot.
+* **the random walk keeps walking.** Past the fitted window new increments are
+  drawn at the walk's own fitted scale and cumulated, so forecast ``R_t`` fans
+  out -- this is what R does (``new_rw_stanmat``, ``R/pp_eta.R:118-140``). Pass
+  ``rw_forecast="hold"`` to freeze the walk at its last fitted step instead,
+  which gives a narrower interval and a flat median ``R_t``.
 
 Both kernels keep the package-wide lag-1-first convention (see
 :mod:`epidemia.renewal`).
@@ -498,6 +498,58 @@ def _renewal(Rt_unadj, gen, seed, seed_days, pops=None, susc0=None, rm=None):
     return inf.reshape(S, M, T), susc.reshape(S, M, T)
 
 
+
+def _extend_rw_index(index, lengths, T_ext):
+    """Continue each region's walk index past its fitted window, same cadence.
+
+    The fitted index says which walk step each day belongs to. Beyond the fitted
+    window there are no more entries, so the cadence (days per step -- 7 for a
+    weekly walk) is inferred from the fitted rows and continued.
+    """
+    M, T_fit = index.shape
+    out = np.zeros((M, T_ext), dtype=int)
+    for m in range(M):
+        n = min(int(lengths[m]), T_fit)
+        row = index[m, :n]
+        keep = min(n, T_ext)
+        out[m, :keep] = row[:keep]
+        if T_ext <= n:
+            continue
+        _, counts = np.unique(row, return_counts=True)
+        period = max(int(np.median(counts)) if counts.size else 1, 1)
+        last_step = int(row[-1]) if n else 0
+        spent = int(np.sum(row == last_step)) if n else 0
+        step, k = last_step, spent
+        for t in range(n, T_ext):
+            if k >= period:
+                step += 1
+                k = 0
+            out[m, t] = step
+            k += 1
+    return out
+
+
+def _extend_walk(walk, n_needed, scale, rng):
+    """Append drawn increments so the walk covers ``n_needed`` steps.
+
+    R's ``new_rw_stanmat`` draws ``rnorm(n) * sigma`` for each period past the
+    fitted window and cumulates them (``R/pp_eta.R:118-140``), so a forecast
+    ``R_t`` fans out at the walk's own fitted scale. Holding the walk instead
+    gives a visibly narrower interval and a flat median.
+    """
+    S, P, have = walk.shape
+    if n_needed <= have:
+        return walk
+    extra = n_needed - have
+    sig = np.asarray(scale, dtype=float)
+    if sig.ndim == 1:                       # (S,) -> one scale shared by all walks
+        sig = sig[:, None]
+    sig = np.broadcast_to(sig.reshape(S, -1), (S, P))[:, :, None]
+    steps = rng.normal(size=(S, P, extra)) * sig
+    future = walk[:, :, -1:] + np.cumsum(steps, axis=2)
+    return np.concatenate([walk, future], axis=2)
+
+
 def _draw_series(E, obs: ObsModel, aux, rng):
     """Draw from one series' family, matching how ``core`` parameterises it.
 
@@ -539,7 +591,8 @@ def _draw_series(E, obs: ObsModel, aux, rng):
 
 def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
              newdata=None, draws=None, seed=None, series=None,
-             group="country", date="date", allow_latent=False):
+             group="country", date="date", allow_latent=False,
+             rw_forecast="draw"):
     """Forecast every latent and observed series from a fitted model.
 
     Rebuilds the model's design over a (possibly longer) window, reconstructs
@@ -594,9 +647,12 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
 
     Notes
     -----
-    The random walk is **held at each region's final fitted step** over the
-    forecast horizon (see the module docstring), so with covariates also carried
-    forward the forecast says "R_t stays where it ended".
+    ``rw_forecast`` controls what the random walk does past the fitted window.
+    ``"draw"`` (the default, and what R does) continues it by drawing new
+    increments at the walk's own fitted scale, so the forecast fans out.
+    ``"hold"`` freezes each region's walk at its last fitted step, giving the
+    narrower "R_t stays where it ended" forecast this function used to produce
+    unconditionally.
     """
     # The docs have always said a latent fit cannot be forecast; until now the
     # code did not enforce it and would quietly forward-simulate the
@@ -678,19 +734,39 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
             raise ValueError(
                 f"config.rw.index must be {(M, T_fit)}, got {index.shape}"
             )
-        # Hold each region's walk at its last *genuine* fitted step. Beyond the
-        # fit there are simply no increments to use.
-        held = np.minimum(np.arange(T_ext)[None, :], (lengths - 1)[:, None])
-        idx_ext = index[np.arange(M)[:, None], held]             # (M, T_ext)
-        if idx_ext.max() >= walk.shape[2]:
-            raise ValueError(
-                f"rw index reaches step {idx_ext.max()} but the posterior walk "
-                f"has {walk.shape[2]} step(s)"
-            )
         proc = np.arange(M) if config.rw.by_region else np.zeros(M, dtype=int)
         if config.rw.by_region and walk.shape[1] != M:
             raise ValueError(
                 f"rw.by_region=True needs {M} walks, posterior has {walk.shape[1]}"
+            )
+        if rw_forecast == "hold":
+            # Freeze each region's walk at its last genuine fitted step.
+            held = np.minimum(np.arange(T_ext)[None, :], (lengths - 1)[:, None])
+            idx_ext = index[np.arange(M)[:, None], held]          # (M, T_ext)
+        elif rw_forecast == "draw":
+            idx_ext = _extend_rw_index(index, lengths, T_ext)
+            need = int(idx_ext.max()) + 1
+            scale = take("rw_scale", required=False)
+            if need > walk.shape[2] and scale is None:
+                # Without the walk's scale there is no honest way to draw new
+                # increments, and silently freezing would hand back a much
+                # narrower forecast than asked for.
+                raise ValueError(
+                    "rw_forecast='draw' needs the walk's scale ('rw_scale') in "
+                    "the posterior to draw increments past the fitted window, "
+                    "and this fit does not carry it. Pass rw_forecast='hold' to "
+                    "freeze the walk instead."
+                )
+            if scale is not None:
+                walk = _extend_walk(walk, need, scale, rng)
+        else:
+            raise ValueError(
+                f"rw_forecast must be 'draw' or 'hold', got {rw_forecast!r}"
+            )
+        if idx_ext.max() >= walk.shape[2]:
+            raise ValueError(
+                f"rw index reaches step {idx_ext.max()} but the posterior walk "
+                f"has {walk.shape[2]} step(s)"
             )
         eta += walk[:, proc[:, None], idx_ext]
 

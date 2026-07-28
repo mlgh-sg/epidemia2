@@ -94,6 +94,10 @@ class Prior:
     #: True when the family already has support on (0, inf), so ``positive=True``
     #: is a no-op rather than a truncation.
     positive_support: ClassVar[bool] = False
+    #: R's per-family ``autoscale`` default. epidemia (unlike rstanarm) defaults
+    #: this to FALSE for normal/student_t/cauchy/exponential/laplace/lasso and
+    #: TRUE only for shifted_gamma -- see R/priors.R and R/additional_priors.R.
+    autoscale_default: ClassVar[bool] = False
 
     def params(self) -> dict[str, Any]:
         """Hyperparameters as a dict (the R list, minus ``dist``)."""
@@ -238,6 +242,8 @@ class ShiftedGammaPrior(Prior):
     shift: float = 0.0
     #: R's ``shifted_gamma()`` reports dist = "gamma".
     dist: ClassVar[str] = "gamma"
+    #: R's ``shifted_gamma(autoscale = TRUE)`` -- the one family that defaults on.
+    autoscale_default: ClassVar[bool] = True
 
     def __post_init__(self):
         _validate_positive(self.shape, "shape")
@@ -944,7 +950,12 @@ def product_normal(num_terms: int = 2, location: float = 0.0,
 #: is a scale *of the coefficient*, so dividing it by the predictor's scale keeps
 #: the prior invariant to the covariate's units. Mirrors R, where ``autoscale``
 #: is an argument of normal/student_t/cauchy/laplace/lasso.
-AUTOSCALE_DISTS = frozenset({"normal", "t", "cauchy", "laplace", "lasso"})
+# "gamma" (shifted_gamma) belongs here: R routes it through the same
+# `prior_scale <- prior$scale` branch as normal/t/cauchy (R/helpers.R:699-707)
+# and then divides that scale in standata_reg(). It is also the ONE family whose
+# autoscale defaults to TRUE, and the default R_t covariate prior in the
+# vignettes, so leaving it out silently changed every such model.
+AUTOSCALE_DISTS = frozenset({"normal", "t", "cauchy", "laplace", "lasso", "gamma"})
 
 #: R's ``min_prior_scale`` in standata_reg(): a floor, so a wildly-scaled
 #: predictor cannot collapse the prior to a point mass at zero.
@@ -1027,8 +1038,8 @@ def autoscale(spec: Prior | str, predictor_sd) -> Prior:
     spec is returned unchanged -- matching R, where those families either have no
     ``autoscale`` argument (``hs``, ``hs_plus``, ``product_normal``, ``decov``)
     or carry a ``scale`` that is not a coefficient scale and is never divided in
-    ``standata_reg()`` (``exponential``'s rate, ``shifted_gamma``'s gamma scale,
-    ``hexp``'s hierarchy, ``lkj``'s half-t scale).
+    ``standata_reg()`` (``exponential``'s rate, ``hexp``'s hierarchy, ``lkj``'s
+    half-t scale).
 
     The existing constructors deliberately gained no ``autoscale`` field:
     ``normal()`` and friends are frozen dataclasses whose :meth:`Prior.params`

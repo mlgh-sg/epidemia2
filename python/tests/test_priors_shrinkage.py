@@ -381,9 +381,8 @@ def test_autoscale_floors_the_scale():
     assert scaled.scale == MIN_PRIOR_SCALE
 
 
-@pytest.mark.parametrize("spec", [exponential(0.03), shifted_gamma(1 / 6, 1, 0.1),
-                                  hexp(), decov(), lkj(), hs(), hs_plus(),
-                                  product_normal()])
+@pytest.mark.parametrize("spec", [exponential(0.03), hexp(), decov(), lkj(),
+                                  hs(), hs_plus(), product_normal()])
 def test_autoscale_is_a_no_op_outside_the_documented_families(spec):
     """R has no autoscale for these, or never divides their scale."""
     assert spec.dist not in AUTOSCALE_DISTS
@@ -391,7 +390,31 @@ def test_autoscale_is_a_no_op_outside_the_documented_families(spec):
 
 
 def test_autoscale_families_match_what_r_autoscales():
-    assert AUTOSCALE_DISTS == {"normal", "t", "cauchy", "laplace", "lasso"}
+    assert AUTOSCALE_DISTS == {"normal", "t", "cauchy", "laplace", "lasso", "gamma"}
+
+
+def test_shifted_gamma_is_autoscaled_like_the_other_coefficient_priors():
+    """R routes gamma through the same prior_scale branch and then divides it.
+
+    handle_glm_prior sets `prior_scale <- prior$scale` for dist == "gamma"
+    (R/helpers.R:682, 706) and standata_reg divides that scale when
+    prior_autoscale is TRUE (R/standata_reg.R:40-53). shifted_gamma is also the
+    one family whose autoscale defaults to TRUE (R/additional_priors.R:26), and
+    it is the default R_t covariate prior in the vignettes.
+    """
+    sg = shifted_gamma(shape=1 / 6, scale=1.0, shift=0.1)
+    assert sg.autoscale_default is True
+    scaled = autoscale(sg, 4.0)
+    assert scaled.scale == pytest.approx(0.25)
+    # only the scale moves; shape and shift are not coefficient scales
+    assert scaled.shape == sg.shape
+    assert scaled.shift == sg.shift
+
+
+def test_other_families_default_to_no_autoscaling_as_in_epidemia_r():
+    """epidemia's R defaults these to FALSE -- the opposite of rstanarm."""
+    for spec in (normal(0, 0.5), student_t(3, 0, 1), cauchy(0, 1)):
+        assert spec.autoscale_default is False
 
 
 @pytest.mark.parametrize("bad", [0.0, -1.0, np.nan, np.inf,
