@@ -463,6 +463,14 @@ Check the sampler before reading anything off a fit. The mirror of R's
 
 ::: epidemia.plots.spaghetti_obs
 
+::: epidemia.plots.plot_infectious
+
+::: epidemia.plots.plot_linpred
+
+::: epidemia.plots.plot_coverage
+
+::: epidemia.plots.plot_metrics
+
 ::: epidemia.plots.available_series
 
 ## Renewal dynamics (NumPy reference)

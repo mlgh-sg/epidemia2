@@ -947,6 +947,36 @@ missing is halfway through an analysis.</p>
 <td style="text-align: center;">✅ <code>region_effects=False</code></td>
 </tr>
 <tr>
+<td><code>plot_coverage</code> / <code>plot_metrics</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>epidemia.plots</code></td>
+</tr>
+<tr>
+<td><code>plot_infectious</code> / <code>plot_linpred</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>epidemia.plots</code></td>
+</tr>
+<tr>
+<td>Forecasting a latent (<code>latent=True</code>) fit</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ drawn, not frozen</td>
+</tr>
+<tr>
+<td>ADVI stops on ELBO convergence</td>
+<td style="text-align: center;">✅ <code>tol_rel_obj</code></td>
+<td style="text-align: center;">✅ <code>fit_variational(early_stop=)</code></td>
+</tr>
+<tr>
+<td>Default prior scale when unspecified</td>
+<td style="text-align: center;">0.25</td>
+<td style="text-align: center;">0.25</td>
+</tr>
+<tr>
+<td><code>lkj()</code> as <code>prior_covariance</code></td>
+<td style="text-align: center;">❌ rejected (no Stan support)</td>
+<td style="text-align: center;">✅ proper LKJ covariance</td>
+</tr>
+<tr>
 <td>Sampler diagnostics retained on the fit</td>
 <td style="text-align: center;">✅ <code>sampler_diagnostics()</code></td>
 <td style="text-align: center;">✅ <code>sampler_diagnostics()</code></td>
