@@ -4249,14 +4249,24 @@ options(mc.cores = parallel::detectCores())
 
 We use `EuropeCovid2`, which holds daily deaths *and* daily cases for eleven
 European countries, together with the binary intervention series used by
-@Flaxman2020. To keep the example quick we restrict it to three countries.
+@Flaxman2020. To keep the example quick we restrict it to six countries.
+
+Six rather than three, because the number of groups is not just a matter of
+runtime here. A partially pooled slope asks the data to estimate a *variance*
+across groups, and with three groups that variance is barely identified: the
+global effect $\beta$ and the deviations $b^{(m)}$ can trade off against each
+other almost freely, which shows up as a ridge the sampler has to crawl along.
+Fitting the same model to three countries leaves divergent transitions and a
+tail effective sample size in the tens; at six they disappear, and the fit is
+no slower despite twice the data, because the sampler stops fighting the
+geometry.
 
 
 ``` r
 data("EuropeCovid2")
 data <- EuropeCovid2$data
 
-groups <- c("Austria", "Germany", "Italy")
+groups <- c("Austria", "Belgium", "Denmark", "Germany", "Italy", "Switzerland")
 data <- filter(data, country %in% groups)
 ```
 
@@ -4396,14 +4406,14 @@ fm <- epim(
 ```
 
 ```
-## Chain 1 finished in 80.6 seconds.
-## Chain 2 finished in 96.6 seconds.
-## Chain 3 finished in 96.9 seconds.
-## Chain 4 finished in 194.4 seconds.
+## Chain 2 finished in 148.4 seconds.
+## Chain 4 finished in 154.6 seconds.
+## Chain 3 finished in 157.3 seconds.
+## Chain 1 finished in 157.8 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 117.1 seconds.
-## Total execution time: 194.6 seconds.
+## Mean chain execution time: 154.5 seconds.
+## Total execution time: 157.8 seconds.
 ```
 
 `all_obs_types()` confirms both series are in the model, and each carries its
@@ -4474,10 +4484,13 @@ round(t(apply(total, 2, quantile, probs = c(0.05, 0.5, 0.95))), 2)
 ```
 
 ```
-##            5%   50%   95%
-## Austria -4.04 -3.62 -3.28
-## Germany -2.65 -2.52 -2.39
-## Italy   -2.52 -2.40 -2.29
+##                5%   50%   95%
+## Austria     -3.93 -3.53 -3.21
+## Belgium     -2.84 -2.66 -2.49
+## Denmark     -1.85 -1.67 -1.49
+## Germany     -2.63 -2.51 -2.38
+## Italy       -2.51 -2.40 -2.29
+## Switzerland -2.48 -2.36 -2.24
 ```
 
 The country-specific case ascertainment intercepts, by contrast, are ordinary
@@ -4489,8 +4502,10 @@ grep("^cases\\|", colnames(as.matrix(fm)), value = TRUE)
 ```
 
 ```
-## [1] "cases|countryAustria"        "cases|countryGermany"       
-## [3] "cases|countryItaly"          "cases|reciprocal dispersion"
+## [1] "cases|countryAustria"        "cases|countryBelgium"       
+## [3] "cases|countryDenmark"        "cases|countryGermany"       
+## [5] "cases|countryItaly"          "cases|countrySwitzerland"   
+## [7] "cases|reciprocal dispersion"
 ```
 
 ## Checking the ascertainment
@@ -4516,8 +4531,8 @@ round(iar_by_country, 3)
 ```
 
 ```
-## Austria Germany   Italy 
-##   0.241   0.246   0.051
+##     Austria     Belgium     Denmark     Germany       Italy Switzerland 
+##       0.253       0.066       0.183       0.259       0.055       0.191
 ```
 
 Now compare the implied totals. If the model were fitting infections directly,
@@ -4552,8 +4567,8 @@ round(ratio, 3)
 ```
 
 ```
-## Austria Germany   Italy 
-##   0.234   0.236   0.048
+##     Austria     Belgium     Denmark     Germany       Italy Switzerland 
+##       0.247       0.062       0.165       0.248       0.052       0.188
 ```
 
 The two agree: only a fraction of infections becomes a recorded case, and that
@@ -4616,7 +4631,7 @@ head(ev$error)
 ## 2 Austria 2020-02-24 0.0e+00          0e+00                0
 ## 3 Austria 2020-02-25 0.0e+00          0e+00                0
 ## 4 Austria 2020-02-26 0.0e+00          0e+00                0
-## 5 Austria 2020-02-27 0.0e+00          0e+00                0
+## 5 Austria 2020-02-27 2.5e-07          5e-04                0
 ## 6 Austria 2020-02-28 2.5e-07          5e-04                0
 ```
 
@@ -4636,8 +4651,8 @@ head(ev$error)
 <hr>
 
 As with the other tutorials, this example demonstrates the software rather than
-making a defensible epidemiological claim. Three countries is a thin basis for
-partial pooling; the infection-to-case distribution is invented; case
+making a defensible epidemiological claim. Six countries is still a thin basis
+for partial pooling; the infection-to-case distribution is invented; case
 ascertainment certainly varied over time as well as between countries, which an
 `rw()` term in the `cases` model would capture (see the
 [multiple observations](multiple-obs.html) tutorial); and no adjustment is made
