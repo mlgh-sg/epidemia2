@@ -86,9 +86,13 @@ Forward simulation over posterior draws — nothing is refitted.
 
 ::: epidemia.forecast.forecast
 
+::: epidemia.forecast.Forecast
+
 ::: epidemia.predict.simulate
 
 ::: epidemia.predict.posterior_predict
+
+::: epidemia.predict.expected_observations
 
 ## Diagnostics
 

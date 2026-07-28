@@ -349,12 +349,15 @@ epi.plots.plot_percent_effects(idata, config, data=fit, group="Italy", labels=la
 # ## Forecasting and counterfactuals
 #
 # Forecasting in `epidemia` means swapping in a new data frame — extending the
-# dates, or altering covariates for a *counterfactual*. We reproduce this here by
-# forward-simulating the renewal process from the posterior draws, reusing the
-# package's NumPy renewal reference (`epi.renewal_infections`). The function
-# below takes a per-country NPI design (of any length) and returns posterior
-# deaths, so the same code serves both out-of-sample forecasts and
-# counterfactuals.
+# dates, or altering covariates for a *counterfactual*.
+#
+# This notebook predates `epidemia.forecast()` and forward-simulates by hand
+# below, which is worth keeping because it shows the mechanism. For new work use
+# **`epidemia.forecast(idata, panel, obs_models, config, newdata=...)`**: it is
+# one call, it propagates the random walk over the horizon instead of freezing
+# it, and it draws the observation noise rather than returning expectations. The
+# [Spanish flu tutorial](flu.md) uses it. The hand-rolled version below returns
+# *expected* deaths, so its intervals are narrower than a predictive interval.
 
 
 # %%

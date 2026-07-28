@@ -9,6 +9,13 @@ all_obs_types(object)
 \arguments{
 \item{object}{An object of class \code{epimodel}.}
 }
+\value{
+A character vector of observation type names, in the order the models
+were passed to \code{\link{epim}}.
+}
 \description{
-Get a list of all observation types used in a model
+The response name of each \code{epiobs} model that was fitted -- for example
+\code{c("deaths", "cases")} for a joint fit. These are the values the
+\code{type} argument of \code{posterior_predict}, \code{plot_obs} and
+\code{evaluate_forecast} accepts.
 }

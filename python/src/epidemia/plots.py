@@ -267,6 +267,27 @@ def _median_frame(draws, x):
     return pd.DataFrame({"x": x, "median": np.median(draws, axis=0)})
 
 
+
+def _drop_incomplete(band, med):
+    """Drop rows the rolling mean left undefined (its incomplete windows)."""
+    if band is not None and len(band):
+        band = band[np.isfinite(band["lower"]) & np.isfinite(band["upper"])]
+    if med is not None and len(med):
+        med = med[np.isfinite(med["median"])]
+    return band, med
+
+
+def _as_groups(group, groups):
+    """Reconcile R's ``groups`` vector with the older singular ``group``."""
+    if groups is None:
+        return None if group is None else (
+            [str(g) for g in group] if isinstance(group, (list, tuple, set))
+            else [str(group)])
+    if isinstance(groups, (list, tuple, set, np.ndarray, pd.Series)):
+        return [str(g) for g in groups]
+    return [str(groups)]
+
+
 def _region_frame(idata, var, data, levels, group=None, transform=None,
                   draws=None):
     """Per-region interval + median frames on real dates, padded days dropped.
@@ -281,7 +302,8 @@ def _region_frame(idata, var, data, levels, group=None, transform=None,
     if dims[:1] != ("region",):
         raise ValueError(f"expected a region dim on {var!r}, got dims {dims}")
     regions = [str(r) for r in idata.posterior.coords["region"].values]
-    keep = regions if group is None else [str(group)]
+    want = _as_groups(group, None)
+    keep = regions if want is None else want
     unknown = set(keep) - set(regions)
     if unknown:
         raise ValueError(f"unknown region(s) {sorted(unknown)}; have {regions}")
@@ -325,7 +347,12 @@ def _observed_frame(data, group=None, obs_model=None):
             "observations can be overlaid"
         )
 
-    keep = data.regions if group is None else [str(group)]
+    want = _as_groups(group, None)
+    keep = data.regions if want is None else want
+    unknown = set(keep) - set(data.regions)
+    if unknown:
+        raise ValueError(
+            f"unknown region(s) {sorted(unknown)}; have {list(data.regions)}")
     rows = []
     for r in keep:
         m = data.regions.index(r)
@@ -417,13 +444,69 @@ def _window(band, med, obs_df, dates):
     return cut(band), cut(med), cut(obs_df)
 
 
+def _pseudo_log(x, sigma=1.0, base=10.0):
+    """R's ``scales::pseudo_log_trans``: ``asinh(x / 2s) / log(base)``.
+
+    Defined at (and near) zero, unlike a plain log. That matters here because
+    the series being drawn -- infections during the seeding period, deaths early
+    in an epidemic -- routinely contain zeros, and ``scale_y_log10`` drops those
+    rows silently rather than showing them.
+    """
+    x = np.asarray(x, dtype=float)
+    return np.arcsinh(x / (2.0 * sigma)) / np.log(base)
+
+
+def _pseudo_log_inv(y, sigma=1.0, base=10.0):
+    y = np.asarray(y, dtype=float)
+    return 2.0 * sigma * np.sinh(y * np.log(base))
+
+
 def _log_scale(p, log):
-    """Log-10 the y axis, as R's ``log = TRUE`` does."""
+    """Pseudo-log the y axis, matching R's ``trans = "pseudo_log"``.
+
+    R's base_plot sets ``trans = ifelse(log, "pseudo_log", "identity")``
+    (R/plots_epi.R:1018), NOT a log10 scale. The difference is not cosmetic: a
+    log10 axis is undefined at zero, so every zero-count day disappears from the
+    plot without comment.
+    """
     if not log:
         return p
-    from plotnine import scale_y_log10
+    from mizani.transforms import trans_new
+    from plotnine import scale_y_continuous
 
-    return p + scale_y_log10()
+    pseudo = trans_new("pseudo_log", _pseudo_log, _pseudo_log_inv)
+    return p + scale_y_continuous(trans=pseudo)
+
+
+
+def _check_smooth(smooth, n_days):
+    """Validate a smoothing window the way R's ``check_smooth`` does.
+
+    R warns and falls back to no smoothing when the window is not a positive
+    integer or is at least as long as the shortest group's series
+    (R/plots_epi.R:920-935). Silently returning a series of all-NaN -- which a
+    window wider than the data would do here -- is worse than not smoothing.
+    """
+    import warnings
+
+    try:
+        k = int(smooth)
+    except (TypeError, ValueError):
+        warnings.warn(f"smooth={smooth!r} is not an integer; not smoothing.",
+                      stacklevel=3)
+        return 1
+    if k != smooth:
+        warnings.warn(f"smooth={smooth!r} is not an integer; using {k}.",
+                      stacklevel=3)
+    if k < 1:
+        warnings.warn(f"smooth={k} must be positive; not smoothing.", stacklevel=3)
+        return 1
+    if k >= n_days:
+        warnings.warn(
+            f"smooth={k} is not shorter than the {n_days}-day series; "
+            "not smoothing.", stacklevel=3)
+        return 1
+    return k
 
 
 def _draw_transform(cumulative=False, smooth=None, by_100k=False, pops=None):
@@ -442,11 +525,24 @@ def _draw_transform(cumulative=False, smooth=None, by_100k=False, pops=None):
         if cumulative:
             out = np.cumsum(out, axis=-1)
         if smooth:
-            k = int(smooth)
+            k = _check_smooth(smooth, out.shape[-1])
             if k > 1:
+                # Centred rolling mean with the incomplete windows DROPPED, as
+                # R's smooth_obs does (zoo::rollmean(fill = NA) then
+                # complete.cases). A "same" convolution instead pads with
+                # implicit zeros and keeps the edges, which biases the first and
+                # last floor(k/2) days toward zero -- exactly the early-epidemic
+                # days people read most closely.
                 kernel = np.ones(k) / k
-                out = np.apply_along_axis(
-                    lambda v: np.convolve(v, kernel, mode="same"), -1, out)
+                rolled = np.apply_along_axis(
+                    lambda v: np.convolve(v, kernel, mode="valid"), -1, out)
+                pad_lo = (k - 1) // 2
+                pad_hi = (k - 1) - pad_lo
+                out = np.concatenate([
+                    np.full(out.shape[:-1] + (pad_lo,), np.nan),
+                    rolled,
+                    np.full(out.shape[:-1] + (pad_hi,), np.nan),
+                ], axis=-1)
         if by_100k:
             if pops is None:
                 raise ValueError(
@@ -488,6 +584,7 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                 "group='<region>' to plot a single region."
             )
         band, med, obs_df = _window(band, med, obs_df, dates)
+        band, med = _drop_incomplete(band, med)
         p = _ribbon_plot(band, med, palette, levels, ylab, xlab or "", hline,
                          facet=len(keep) if len(keep) > 1 else 0, title=title,
                          obs=obs_df, obs_kind=obs_kind, step=step)
@@ -502,6 +599,7 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
     if x is None:
         x = np.arange(arr.shape[-1])
     band, med = _interval_frame(arr, x, levels), _median_frame(arr, x)
+    band, med = _drop_incomplete(band, med)
     obs_df = None
     if obs is not None:
         o = np.asarray(obs, dtype=float)
@@ -520,7 +618,7 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
 # --------------------------------------------------------------------------
 
 
-def plot_rt(idata, data=None, group=None, levels=(50, 95), x=None, xlab=None,
+def plot_rt(idata, data=None, group=None, groups=None, levels=(50, 95), x=None, xlab=None,
             save=True, title=None, dates=None, log=False, smooth=None,
             step=False):
     """Reproduction numbers: posterior median and credible bands.
@@ -528,22 +626,22 @@ def plot_rt(idata, data=None, group=None, levels=(50, 95), x=None, xlab=None,
     For a multilevel fit pass ``data`` (the ``prepare_panel`` result) to get one
     panel per region on real dates; ``group="Italy"`` restricts to one region.
     """
-    return _series_plot(idata, "Rt", data, group, levels, x, xlab, "$R_t$",
+    return _series_plot(idata, "Rt", data, _as_groups(group, groups), levels, x, xlab, "$R_t$",
                         _GREENS, 1.0, save, "rt", title=title, dates=dates,
                         log=log, smooth=smooth, step=step)
 
 
-def plot_infections(idata, data=None, group=None, levels=(50, 95), x=None,
+def plot_infections(idata, data=None, group=None, groups=None, levels=(50, 95), x=None,
                     xlab=None, save=True, title=None, dates=None, log=False,
                     cumulative=False, smooth=None, by_100k=False):
     """Latent daily infections: posterior median and credible bands."""
-    return _series_plot(idata, "infections", data, group, levels, x, xlab,
+    return _series_plot(idata, "infections", data, _as_groups(group, groups), levels, x, xlab,
                         "Infections", _BLUES, None, save, "infections",
                         title=title, dates=dates, log=log,
                         cumulative=cumulative, smooth=smooth, by_100k=by_100k)
 
 
-def plot_obs(idata, observed=None, data=None, group=None, levels=(50, 95), x=None,
+def plot_obs(idata, observed=None, data=None, group=None, groups=None, levels=(50, 95), x=None,
              series=None, xlab=None, ylab="Daily deaths", save=True, title=None,
              dates=None, log=False, cumulative=False, smooth=None,
              by_100k=False, bar=True, obs_model=None, predictive=True):
@@ -565,12 +663,16 @@ def plot_obs(idata, observed=None, data=None, group=None, levels=(50, 95), x=Non
         that, pass ``obs_model=`` and it is taken from there.
     """
     var = _pick_obs_var(idata, series)
+    group = _as_groups(group, groups)
     obs = observed
     if _is_multiregion(idata, var) and obs is None:
         obs = True  # taken from data.deaths inside _series_plot
-    kind = "col" if _is_multiregion(idata, var) else "point"
-    if not bar and kind == "bar":
-        kind = "point"
+    # R picks the layer from the flag -- `layer_fun <- if (bar) geom_bar else
+    # geom_point` (R/plots_epi.R:244) -- rather than from the model shape. The
+    # old test here compared against "bar", a value `kind` never takes, so the
+    # branch was dead: bar=False still drew columns and a single-population fit
+    # could never draw them.
+    kind = "col" if bar else "point"
     draws = None
     if predictive:
         name = series if series is not None else var[2:]
@@ -780,7 +882,8 @@ def _path_frame(draws, x, idx):
     })
 
 
-def _region_path_frame(idata, var, data, idx, group=None, draws=None):
+def _region_path_frame(idata, var, data, idx, group=None, draws=None,
+                       transform=None):
     """Per-region path + median frames on real dates, padded days dropped.
 
     The same draw indices are used in every region: a draw is a joint sample over
@@ -789,13 +892,12 @@ def _region_path_frame(idata, var, data, idx, group=None, draws=None):
     """
     arr, dims = _draws(idata, var)  # (draws, region, time)
     if draws is not None:
-        arr = np.asarray(draws)
-    if draws is not None:
         arr = np.asarray(draws)     # predictive draws, same shape
     if dims[:1] != ("region",):
         raise ValueError(f"expected a region dim on {var!r}, got dims {dims}")
     regions = [str(r) for r in idata.posterior.coords["region"].values]
-    keep = regions if group is None else [str(group)]
+    want = _as_groups(group, None)
+    keep = regions if want is None else want
     unknown = set(keep) - set(regions)
     if unknown:
         raise ValueError(f"unknown region(s) {sorted(unknown)}; have {regions}")
@@ -806,6 +908,8 @@ def _region_path_frame(idata, var, data, idx, group=None, draws=None):
         n = int(data.lengths[data.regions.index(r)])
         x = pd.to_datetime(data.dates[data.regions.index(r)])[:n]
         d = arr[:, m, :n]
+        if transform is not None:
+            d = transform(d, data.regions.index(r))
         pf = _path_frame(d, x, idx)
         pf["region"] = r
         paths.append(pf)
@@ -843,9 +947,13 @@ def _spaghetti_plot(paths, med, color, alpha, ylab, xlab, hline=None, facet=0,
 
 def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab,
                       color, hline, save, default_name, title=None, obs=None,
-                      obs_kind="point", obs_model=None, draws_override=None):
+                      obs_kind="point", obs_model=None, draws_override=None,
+                      dates=None, log=False, smooth=None, cumulative=False,
+                      by_100k=False, step=False):
     """Dispatch: multi-region (facet on real dates) vs single-population."""
     _check_alpha(alpha)
+    transform = _draw_transform(cumulative, smooth, by_100k,
+                                getattr(data, "pops", None))
     arr, _ = _draws(idata, var)
     if draws_override is not None:
         arr = np.asarray(draws_override)
@@ -859,8 +967,10 @@ def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab
                 "back to its own dates. Pass data=<your prepare_panel result> "
                 "(and optionally group='Italy' for a single region)."
             )
-        paths, med, keep = _region_path_frame(idata, var, data, idx, group,
-                                              draws=draws_override)
+        paths, med, keep = _region_path_frame(idata, var, data, idx,
+                                              _as_groups(group, None),
+                                              draws=draws_override,
+                                              transform=transform)
         obs_df = None
         if obs is True:  # sentinel: take the counts from the panel
             obs_df = _observed_frame(data, group, obs_model=obs_model)
@@ -890,8 +1000,9 @@ def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab
     return _maybe_save(p, save, default_name)
 
 
-def spaghetti_rt(idata, data=None, group=None, draws=50, alpha=0.3, seed=0,
-                 x=None, xlab=None, save=True, title=None, region=None):
+def spaghetti_rt(idata, data=None, group=None, groups=None, draws=50, alpha=0.3,
+                 seed=0, x=None, xlab=None, save=True, title=None, region=None,
+                 dates=None, log=False, smooth=None, step=False):
     """Reproduction numbers: ``draws`` individual posterior paths, median on top.
 
     The counterpart of :func:`plot_rt` for looking at trajectories rather than
@@ -902,25 +1013,34 @@ def spaghetti_rt(idata, data=None, group=None, draws=50, alpha=0.3, seed=0,
 
     ``region`` is an alias for ``group``, kept for symmetry with R's ``groups``.
     """
-    return _spaghetti_series(idata, "Rt", data, group if group is not None else region,
+    return _spaghetti_series(idata, "Rt", data,
+                             _as_groups(group if group is not None else region,
+                                        groups),
                              draws, alpha, seed, x, xlab, "$R_t$", _RT_PATH_COLOR,
-                             1.0, save, "spaghetti-rt", title=title)
+                             1.0, save, "spaghetti-rt", title=title,
+                             dates=dates, log=log, smooth=smooth, step=step)
 
 
-def spaghetti_infections(idata, data=None, group=None, draws=50, alpha=0.3, seed=0,
-                         x=None, xlab=None, save=True, title=None, region=None):
+def spaghetti_infections(idata, data=None, group=None, groups=None, draws=50,
+                         alpha=0.3, seed=0, x=None, xlab=None, save=True,
+                         title=None, region=None, dates=None, log=False,
+                         smooth=None, cumulative=False, by_100k=False):
     """Latent daily infections: ``draws`` individual posterior paths, median on top."""
     return _spaghetti_series(idata, "infections", data,
-                             group if group is not None else region,
+                             _as_groups(group if group is not None else region,
+                                        groups),
                              draws, alpha, seed, x, xlab, "Infections",
                              _OBS_PATH_COLOR, None, save, "spaghetti-infections",
-                             title=title)
+                             title=title, dates=dates, log=log, smooth=smooth,
+                             cumulative=cumulative, by_100k=by_100k)
 
 
 def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0.3,
                   series=None,
                   seed=0, x=None, xlab=None, ylab="Daily deaths", save=True,
-                  title=None, region=None, obs_model=None, predictive=True):
+                  title=None, region=None, obs_model=None, predictive=True,
+                  groups=None, dates=None, log=False, smooth=None,
+                  cumulative=False, by_100k=False, bar=True):
     """Expected observations as individual paths, with the observed counts overlaid.
 
     Reads ``E_obs`` (single-population) or ``E_deaths`` (multilevel), whichever
@@ -930,11 +1050,11 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
     ``obs_model=`` (the :class:`~epidemia.core.ObsModel` for this series) there.
     """
     var = _pick_obs_var(idata, series)
-    grp = group if group is not None else region
+    grp = _as_groups(group if group is not None else region, groups)
     obs = observed
     if _is_multiregion(idata, var) and obs is None:
         obs = True  # taken from data.deaths inside _spaghetti_series
-    kind = "col" if _is_multiregion(idata, var) else "point"
+    kind = "col" if bar else "point"
     return _spaghetti_series(idata, var, data, grp, draws, alpha, seed, x, xlab, ylab,
                              _OBS_PATH_COLOR, None, save, "spaghetti-obs", title=title,
                              obs=obs, obs_kind=kind, obs_model=obs_model,
@@ -943,7 +1063,9 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
                                      idata, var,
                                      series if series is not None else var[2:],
                                      obs_model)
-                                 if predictive else None))
+                                 if predictive else None),
+                             dates=dates, log=log, smooth=smooth,
+                             cumulative=cumulative, by_100k=by_100k)
 
 
 # --------------------------------------------------------------------------
@@ -951,8 +1073,9 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
 # --------------------------------------------------------------------------
 
 
-def plot_infectious(idata, config, data=None, group=None, levels=(50, 95),
-                    x=None, xlab=None, ylab="Infectiousness", save=True,
+def plot_infectious(idata, config, data=None, group=None, groups=None,
+                    levels=(50, 95), x=None, xlab=None,
+                    ylab="Infectiousness", save=True,
                     title=None, dates=None, log=False, smooth=None):
     """Total infectiousness over time -- R's ``plot_infectious``.
 
@@ -964,14 +1087,14 @@ def plot_infectious(idata, config, data=None, group=None, levels=(50, 95),
     from .postprocess import posterior_infectious
 
     draws = posterior_infectious(idata, config)
-    return _series_plot(idata, "infections", data, group, levels, x, xlab, ylab,
+    return _series_plot(idata, "infections", data, _as_groups(group, groups), levels, x, xlab, ylab,
                         _BLUES, None, save, "infectious", title=title,
                         dates=dates, log=log, smooth=smooth, draws=draws)
 
 
 def plot_linpred(idata, panel, config, series=None, obs_models=None, data=None,
-                 group=None, levels=(50, 95), x=None, xlab=None, ylab=None,
-                 save=True, title=None, dates=None, transform=False,
+                 group=None, groups=None, levels=(50, 95), x=None, xlab=None,
+                 ylab=None, save=True, title=None, dates=None, transform=False,
                  smooth=None):
     """The linear predictor over time -- R's ``plot_linpred``.
 
@@ -989,7 +1112,8 @@ def plot_linpred(idata, panel, config, series=None, obs_models=None, data=None,
         ylab = f"{what} predictor" + (" (transformed)" if transform else "")
     template = "Rt_unadj" if "Rt_unadj" in idata.posterior else "Rt"
     return _series_plot(idata, template, data if data is not None else panel,
-                        group, levels, x, xlab, ylab, _GREENS, None, save,
+                        _as_groups(group, groups), levels, x, xlab, ylab,
+                        _GREENS, None, save,
                         "linpred", title=title, dates=dates, smooth=smooth,
                         draws=draws)
 

@@ -9,6 +9,10 @@ posterior_sample_size(object)
 \arguments{
 \item{object}{An object of class \code{epimodel}}
 }
+\value{
+A single integer: the number of posterior draws, pooled over chains.
+}
 \description{
-Get posterior sample size from a fitted model
+The total number of posterior draws retained across all chains, which is what
+\code{spaghetti_*} plots use to decide how many paths they may draw.
 }

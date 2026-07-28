@@ -6,15 +6,24 @@ delimited by `# %%`, so the file is a normal Python script **and** a notebook.
 
 | Notebook | R vignette | What it shows |
 |----------|------------|---------------|
+| [`flu.py`](flu.py) | *Spanish Flu* (`flu`) | One population, one series, a daily random walk. Deterministic vs latent (`latent=True`) infections, sampler diagnostics, and `epidemia.forecast()`. |
 | [`europe-covid.py`](europe-covid.py) | *Multilevel Modeling* (`europe-covid`) | Hierarchical, partially-pooled model of NPI effects on COVID-19 across 11 European countries; effect sizes, forecasting, counterfactuals. |
+| [`multiple-obs.py`](multiple-obs.py) | *Multiple Observations* (`multiple-obs`) | Daily cases and weekly ONS positivity fitted jointly to England: series on different days, day-of-week effects, the formula interface, and prior predictive checks. |
 | [`partial-pooling.py`](partial-pooling.py) | *Partial Pooling* (`partial-pooling`) | How the R `(expr \| factor)` / `(expr \|\| factor)` pooling maps to hierarchical priors here; a no-pooling vs. partial-pooling demonstration. |
+| [`multilevel-multi-obs.py`](multilevel-multi-obs.py) | *Multilevel + Multiple Observations* | Deaths and cases across 11 countries with correlated region effects, a monthly random walk and a susceptibility adjustment. |
 
 **Estimation uses MCMC.** The R `europe-covid` vignette fits with Variational
 Bayes for speed (and notes VB understates uncertainty); these notebooks fit the
 same models with full **NUTS / MCMC** via [nutpie](https://github.com/pymc-devs/nutpie),
-so the credible intervals are the genuine posterior ones. The hierarchical model
-lives in `epidemia.multilevel` (`build_multilevel_model` / `fit_multilevel`), and
-the `EuropeCovid2` data is available as `epidemia.europe_covid2()`.
+so the credible intervals are the genuine posterior ones.
+
+The current builder is `epidemia.core` (`build_epidemia_model` / `fit_epidemia`),
+which handles many regions and many observation series together; `flu.py`,
+`multiple-obs.py` and `multilevel-multi-obs.py` use it. The older
+`epidemia.multilevel` (`build_multilevel_model` / `fit_multilevel`) is what
+`europe-covid.py` and `partial-pooling.py` still use. Datasets are
+`epidemia.flu1918()`, `epidemia.europe_covid()`, `epidemia.europe_covid2()` and
+`epidemia.england_new_cases()`.
 
 ## Running
 

@@ -484,7 +484,8 @@ def _likelihood(pm, pt, obs: ObsModel, E, aux_name, prior_PD=False):
     def _aux():
         """The series' auxiliary parameter, from a Prior spec or the defaults."""
         if obs.prior_aux is not None:
-            return _priors.build(obs.prior_aux, aux_name, positive=True)
+            return _priors.build(obs.prior_aux, aux_name, positive=True,
+                                 allowed=_priors.OK_AUX_DISTS)
         raw = pm.HalfNormal(f"{aux_name}_raw", 1.0)
         return pm.Deterministic(
             aux_name, obs.prior_aux_loc + obs.prior_aux_scale * raw
@@ -625,7 +626,8 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
 
         if config.intercept:
             eta = eta + (
-                _priors.build(config.prior_intercept, "intercept")
+                _priors.build(config.prior_intercept, "intercept",
+                              allowed=_priors.OK_INT_DISTS)
                 if config.prior_intercept is not None
                 else pm.Normal("intercept", 0.0, 0.5)
             )
@@ -739,7 +741,9 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 else:
                     from . import priors as _pr
 
+                    # R allows only a normal here (R/epiinf.R:99-102).
                     veps = _pr.build(config.prior_rm_noise, "veps",
+                                     allowed=frozenset({"normal"}),
                                      shape=M, positive=True)
                     rm_seq = pt.clip(rm_t * veps[None, :], 0.0, 1.0)
 
@@ -834,7 +838,8 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             # (sd = aux * mean) -- R's two options.
             if config.prior_aux is not None:
                 inf_aux = _priors.build(config.prior_aux, "inf_aux",
-                                        positive=True)
+                                        positive=True,
+                                        allowed=_priors.OK_AUX_DISTS)
             else:
                 aux_raw = pm.HalfNormal("inf_aux_raw", 1.0)
                 inf_aux = pm.Deterministic(
@@ -859,7 +864,8 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             oeta = pt.zeros((M, T))
             if o.intercept:
                 oeta = oeta + (
-                    _priors.build(o.prior_intercept, f"{o.name}|intercept")
+                    _priors.build(o.prior_intercept, f"{o.name}|intercept",
+                                  allowed=_priors.OK_INT_DISTS)
                     if o.prior_intercept is not None
                     else pm.Normal(f"{o.name}|intercept", 0.0,
                                    o.prior_intercept_scale)

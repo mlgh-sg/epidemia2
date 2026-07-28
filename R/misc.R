@@ -166,7 +166,11 @@ check_hmc_diagnostics <- function(diagnostics) {
 
 #' Get posterior sample size from a fitted model
 #'
+#' The total number of posterior draws retained across all chains, which is what
+#' \code{spaghetti_*} plots use to decide how many paths they may draw.
+#'
 #' @param object An object of class \code{epimodel}
+#' @return A single integer: the number of posterior draws, pooled over chains.
 #' @export
 posterior_sample_size <- function(object) {
   UseMethod("posterior_sample_size", object)
@@ -180,7 +184,14 @@ posterior_sample_size.epimodel <- function(object) {
 
 #' Get a list of all observation types used in a model
 #'
+#' The response name of each \code{epiobs} model that was fitted -- for example
+#' \code{c("deaths", "cases")} for a joint fit. These are the values the
+#' \code{type} argument of \code{posterior_predict}, \code{plot_obs} and
+#' \code{evaluate_forecast} accepts.
+#'
 #' @param object An object of class \code{epimodel}.
+#' @return A character vector of observation type names, in the order the models
+#'   were passed to \code{\link{epim}}.
 #' @export
 all_obs_types <- function(object) {
   UseMethod("all_obs_types", object)

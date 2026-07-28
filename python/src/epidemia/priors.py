@@ -543,15 +543,20 @@ def resolve(spec: Prior | str | None, default: Prior | None = None, *,
 
 
 def build(spec: Prior | str, name: str, shape=None, positive: bool = False,
-          dims=None):
+          dims=None, allowed=None):
     """Create the PyMC random variable described by ``spec``.
 
     Must be called inside a ``pm.Model`` context. Thin wrapper around
     ``spec.build(...)`` that also accepts a family name; see
     :meth:`Prior.build` for the arguments.
+
+    ``allowed`` restricts the family, as R does at every one of its own prior
+    entry points (``epirt``, ``epiinf`` and ``handle_glm_prior``'s ``ok_dists``).
+    Leaving it ``None`` accepts anything, which is what the shrinkage families
+    and the covariance builders want.
     """
-    return resolve(spec, what=name).build(name, shape=shape, positive=positive,
-                                          dims=dims)
+    return resolve(spec, allowed=allowed, what=name).build(
+        name, shape=shape, positive=positive, dims=dims)
 
 
 def build_covariance(spec: Prior | str, name: str, n: int):

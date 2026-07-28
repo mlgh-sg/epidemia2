@@ -308,6 +308,68 @@ epidemia.plot_infections(idata, data=panel, levels=(50, 95), save=False)
 epidemia.plot_infectious(idata, config, data=panel, levels=(50, 95), save=False)
 
 # %% [markdown]
+# ## Writing the same model as a formula
+#
+# Everything above assembled design matrices by hand, which is explicit but a
+# long way from R, where the formula *is* the interface. `parse_formula` reads
+# R's syntax, and `build_from_formula` turns a long data frame plus a formula
+# straight into the panel and the config keywords — the closest thing here to
+# `epirt(formula = ...)`.
+
+# %%
+from epidemia.formula import build_from_formula, parse_formula
+
+spec = parse_formula("R(region, date) ~ 1 + rw(time = week)")
+print("group column   :", spec.group)
+print("date column    :", spec.date)
+print("intercept      :", spec.intercept)
+print("covariates     :", spec.covariates)
+print("random walk    :", spec.rw)
+
+# %% [markdown]
+# Fed a data frame, it returns the same objects built by hand earlier, so the
+# formula route and the explicit route are interchangeable.
+
+# %%
+demo = cases_df.assign(
+    region="England",
+    week=pd.to_datetime(cases_df["date"]).dt.strftime("%G-%V"),
+    pop=POP,
+)
+panel_f, series_f, cfg_kw = build_from_formula(
+    demo, "R(region, date) ~ 1 + rw(time = week)",
+    responses=["cases"], pop="pop", threshold=1, seed_offset=SEED_DAYS,
+)
+print("panel regions  :", panel_f.regions)
+print("panel shape    :", panel_f.X.shape)
+print("series built   :", sorted(series_f))
+print("config kwargs  :", sorted(cfg_kw))
+
+# %% [markdown]
+# ## Prior predictive checks
+#
+# Before looking at any posterior it is worth asking what the priors alone
+# imply. `prior_PD=True` drops every likelihood term, so sampling the model
+# returns draws from the prior predictive — R's `epim(prior_PD = TRUE)`. If the
+# prior already rules out plausible epidemics, no amount of data will rescue the
+# fit.
+
+# %%
+prior_cfg = EpiModelConfig(**{**config.__dict__, "prior_PD": True})
+idata_prior = fit_epidemia(panel, [obs_cases, obs_ons], prior_cfg,
+                           draws=500, tune=500, chains=2, seed=1,
+                           progress_bar=False)
+
+rt_prior = np.asarray(idata_prior.posterior["Rt"]).reshape(-1, T)
+qs = np.percentile(rt_prior, [5, 50, 95])
+print(f"prior R_t: median {qs[1]:.2f}, 90% interval [{qs[0]:.2f}, {qs[2]:.2f}]")
+print(f"(the scaled_logit cap is {config.R_link_K}, so R_t cannot exceed it)")
+
+# %%
+epidemia.plot_rt(idata_prior, data=panel, levels=(50, 95), save=False,
+                 title="Prior predictive $R_t$")
+
+# %% [markdown]
 # ## Caveats
 #
 # The vignette this follows is candid that the positivity model is a

@@ -140,7 +140,8 @@ class Forecast:
         """Names of the observation series in this forecast."""
         return list(self.expected)
 
-    def score(self, obs_models, series=None, levels=(50, 95), groups=None):
+    def score(self, obs_models, series=None, levels=(50, 95), groups=None,
+              metrics=None):
         """Score the forecast against the observations -- R's ``evaluate_forecast``.
 
         :mod:`epidemia.scoring` is deliberately model-agnostic: it wants ``y`` as
@@ -160,7 +161,11 @@ class Forecast:
         levels : sequence[float]
             Credible levels for the coverage table.
         groups : sequence[str] | None
-            Restrict to these regions.
+            Restrict to these regions. Unknown names are an error, as in R's
+            ``gr_subset``, rather than being silently skipped.
+        metrics : sequence[str] | str | None
+            Which error metrics to compute, as R's ``evaluate_forecast(metrics=)``.
+            ``None`` computes all of them.
 
         Returns
         -------
@@ -196,9 +201,21 @@ class Forecast:
         y_all = _np.asarray(obs.y, dtype=float)
         mask_all = _np.asarray(obs.mask, dtype=bool)
 
+        if groups is not None:
+            groups = [str(g) for g in _np.atleast_1d(_np.asarray(groups, dtype=object))]
+            unknown = set(groups) - set(map(str, self.regions))
+            if unknown:
+                # R's gr_subset errors on an unknown group. Skipping silently
+                # turns a typo into a quietly narrower score, and an all-bad
+                # list into the unrelated "no observed days to score".
+                raise ValueError(
+                    f"group(s) {sorted(unknown)} not found; have "
+                    f"{sorted(map(str, self.regions))}"
+                )
+
         ys, cols, regs, dates = [], [], [], []
         for m, region in enumerate(self.regions):
-            if groups is not None and region not in groups:
+            if groups is not None and str(region) not in groups:
                 continue
             n = int(self.lengths[m])
             # The fit's mask only covers the FITTED window; anything beyond it
@@ -218,7 +235,8 @@ class Forecast:
         y = _np.concatenate(ys)
         d = _np.concatenate(cols, axis=1).T                  # (N, S)
         return _evaluate(y, d, group=_np.asarray(regs),
-                         date=_np.asarray(dates), levels=levels)
+                         date=_np.asarray(dates), levels=levels,
+                         metrics=metrics)
 
     def to_frame(self, probs=(0.025, 0.25, 0.5, 0.75, 0.975)):
         """Summarise as a tidy long frame, one row per region-day-variable.

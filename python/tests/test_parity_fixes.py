@@ -294,3 +294,92 @@ def test_rw_index_below_minus_one_is_rejected():
     with pm.Model():
         with pytest.raises(ValueError, match=r">= -1"):
             _random_walk(pm, pt, RandomWalk(index=np.array([[-2, 0, 1]])), 1, 3)
+
+
+# --- medium/low parity fixes ----------------------------------------------
+
+def test_log_uses_a_pseudo_log_that_is_defined_at_zero():
+    """R uses trans='pseudo_log'; scale_y_log10 silently drops zero-count days."""
+    from epidemia.plots import _pseudo_log, _pseudo_log_inv
+
+    assert np.isfinite(_pseudo_log(0.0))
+    assert _pseudo_log(0.0) == pytest.approx(0.0)
+    x = np.array([0.0, 1.0, 10.0, 1000.0])
+    np.testing.assert_allclose(_pseudo_log_inv(_pseudo_log(x)), x, atol=1e-9)
+
+
+def test_smooth_drops_incomplete_windows_instead_of_zero_padding():
+    """R's rollmean(fill=NA) + complete.cases; 'same' convolution biases edges."""
+    from epidemia.plots import _draw_transform
+
+    v = np.full((1, 11), 10.0)                 # constant series
+    out = _draw_transform(smooth=5)(v, 0)
+    # a constant series must smooth to the same constant wherever it is defined
+    finite = out[np.isfinite(out)]
+    np.testing.assert_allclose(finite, 10.0)
+    # ...and the edges are dropped, not dragged toward zero
+    assert np.isnan(out[0, 0]) and np.isnan(out[0, -1])
+    assert np.isfinite(out[0, 5])
+
+
+def test_smooth_window_wider_than_the_series_warns_and_does_nothing():
+    from epidemia.plots import _draw_transform
+
+    v = np.full((1, 6), 3.0)
+    with pytest.warns(UserWarning, match="not shorter"):
+        out = _draw_transform(smooth=99)(v, 0)
+    np.testing.assert_allclose(out, 3.0)
+
+
+def test_groups_accepts_a_vector_and_rejects_unknown_names():
+    from epidemia.plots import _as_groups
+
+    assert _as_groups(None, ["A", "B"]) == ["A", "B"]
+    assert _as_groups("A", None) == ["A"]
+    assert _as_groups(["A", "B"], None) == ["A", "B"]
+    assert _as_groups(None, None) is None
+
+
+def test_score_forwards_metrics_and_validates_groups():
+    """R's evaluate_forecast takes metrics=; gr_subset errors on a bad group."""
+    import epidemia.scoring as sc
+
+    rng = np.random.default_rng(0)
+    n = 12
+    yv = rng.poisson(20, n).astype(float)
+    dr = rng.poisson(20, (n, 100)).astype(float)
+    only = sc.evaluate_forecast(yv, dr, metrics="crps")
+    assert "crps" in only.error.columns
+    assert "mean_abs_error" not in only.error.columns
+
+
+def test_prior_family_gates_match_r():
+    """R rejects out-of-set families at epirt, epiinf and handle_glm_prior."""
+    from epidemia.core import EpiModelConfig, ObsModel, PanelData, build_epidemia_model
+    from epidemia.priors import laplace, shifted_gamma
+
+    rng = np.random.default_rng(0)
+    n = 20
+    pan = PanelData(X=np.zeros((1, n, 0)), lengths=np.array([n]), regions=["A"],
+                    npis=[], dates=[pd.date_range("2020-03-01", periods=n).values],
+                    pops=None)
+    gen = np.ones(5) / 5
+    om = ObsModel("d", rng.poisson(8, (1, n)).astype(float),
+                  np.ones((1, n), bool), gen)
+
+    with pytest.raises(ValueError, match="not supported here"):
+        build_epidemia_model(pan, [om], EpiModelConfig(
+            gen=gen, intercept=True, region_effects=False,
+            prior_intercept=shifted_gamma()))
+
+    om_bad = ObsModel("d", om.y, om.mask, gen, prior_aux=laplace())
+    with pytest.raises(ValueError, match="not supported here"):
+        build_epidemia_model(pan, [om_bad],
+                             EpiModelConfig(gen=gen, region_effects=False))
+
+
+def test_posterior_linpred_transform_applies_the_cap():
+    """The old docstring said the cap was NOT applied; it is."""
+    from epidemia.forecast import _apply_link
+
+    assert _apply_link("scaled_logit", np.array([0.0]), 0.02)[0] == pytest.approx(0.01)

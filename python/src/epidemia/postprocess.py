@@ -44,14 +44,11 @@ def posterior_linpred(idata, panel, config, series=None, obs_models=None,
     series : str | None
         Observation series name, or ``None`` for the ``R_t`` predictor.
     transform : bool
-        Apply the inverse link.
-
-        .. warning::
-           For a ``scaled_logit`` link this returns ``logit^-1(eta)``, **not**
-           ``K * logit^-1(eta)`` -- the cap lives in ``link_K``. R behaves the
-           same way, and it is a reliable source of confusion: an infection
-           fatality ratio comes back as ~0.5 rather than ~0.01 until you
-           multiply by the cap.
+        Apply the inverse link. For a ``scaled_logit`` link that means
+        ``K * logit^-1(eta)`` -- the cap IS applied, so an infection fatality
+        ratio comes back on its natural scale (~0.01, not ~0.5) and must not be
+        multiplied by ``link_K`` again. R's ``transform_rt`` does the same
+        (``R/posterior_linpred.R:113-115``).
 
     Returns
     -------

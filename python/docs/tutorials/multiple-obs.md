@@ -417,6 +417,106 @@ epidemia.plot_infectious(idata, config, data=panel, levels=(50, 95), save=False)
 
 
 
+## Writing the same model as a formula
+
+Everything above assembled design matrices by hand, which is explicit but a
+long way from R, where the formula *is* the interface. `parse_formula` reads
+R's syntax, and `build_from_formula` turns a long data frame plus a formula
+straight into the panel and the config keywords — the closest thing here to
+`epirt(formula = ...)`.
+
+
+```python
+from epidemia.formula import build_from_formula, parse_formula
+
+spec = parse_formula("R(region, date) ~ 1 + rw(time = week)")
+print("group column   :", spec.group)
+print("date column    :", spec.date)
+print("intercept      :", spec.intercept)
+print("covariates     :", spec.covariates)
+print("random walk    :", spec.rw)
+```
+
+    group column   : region
+    date column    : date
+    intercept      : True
+    covariates     : []
+    random walk    : [RwTerm(time='week', gr=None, prior_scale=0.2)]
+
+
+Fed a data frame, it returns the same objects built by hand earlier, so the
+formula route and the explicit route are interchangeable.
+
+
+```python
+demo = cases_df.assign(
+    region="England",
+    week=pd.to_datetime(cases_df["date"]).dt.strftime("%G-%V"),
+    pop=POP,
+)
+panel_f, series_f, cfg_kw = build_from_formula(
+    demo, "R(region, date) ~ 1 + rw(time = week)",
+    responses=["cases"], pop="pop", threshold=1, seed_offset=SEED_DAYS,
+)
+print("panel regions  :", panel_f.regions)
+print("panel shape    :", panel_f.X.shape)
+print("series built   :", sorted(series_f))
+print("config kwargs  :", sorted(cfg_kw))
+```
+
+    panel regions  : ['England']
+    panel shape    : (1, 80, 0)
+    series built   : ['cases']
+    config kwargs  : ['correlated', 'intercept', 'rw']
+
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/formula.py:586: UserWarning: 'England': only 0 day(s) before cumulative cases exceeded 1, fewer than seed_offset=20; starting at the first available day.
+
+
+## Prior predictive checks
+
+Before looking at any posterior it is worth asking what the priors alone
+imply. `prior_PD=True` drops every likelihood term, so sampling the model
+returns draws from the prior predictive — R's `epim(prior_PD = TRUE)`. If the
+prior already rules out plausible epidemics, no amount of data will rescue the
+fit.
+
+
+```python
+prior_cfg = EpiModelConfig(**{**config.__dict__, "prior_PD": True})
+idata_prior = fit_epidemia(panel, [obs_cases, obs_ons], prior_cfg,
+                           draws=500, tune=500, chains=2, seed=1,
+                           progress_bar=False)
+
+rt_prior = np.asarray(idata_prior.posterior["Rt"]).reshape(-1, T)
+qs = np.percentile(rt_prior, [5, 50, 95])
+print(f"prior R_t: median {qs[1]:.2f}, 90% interval [{qs[0]:.2f}, {qs[2]:.2f}]")
+print(f"(the scaled_logit cap is {config.R_link_K}, so R_t cannot exceed it)")
+```
+
+    prior R_t: median 0.84, 90% interval [0.20, 2.04]
+    (the scaled_logit cap is 7.0, so R_t cannot exceed it)
+
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.020 for cases|rw_noise[0, 36] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 196 for positivity|aux is 98 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+
+```python
+epidemia.plot_rt(idata_prior, data=panel, levels=(50, 95), save=False,
+                 title="Prior predictive $R_t$")
+```
+
+
+
+
+    
+![png](multiple-obs_files/multiple-obs_35_0.png)
+    
+
+
+
 ## Caveats
 
 The vignette this follows is candid that the positivity model is a
