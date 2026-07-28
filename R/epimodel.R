@@ -58,6 +58,7 @@ epimodel <- function(object) {
 
   if (object$algorithm == "sampling") {
     check_rhats(stan_summary[, "Rhat"])
+    check_hmc_diagnostics(stanfit$diagnostics)
   }
 
   # correct names for output

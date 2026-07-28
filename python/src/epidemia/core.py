@@ -30,6 +30,8 @@ infections and an infection is never observed on the day it happens.
 
 from __future__ import annotations
 
+import json
+
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -1044,4 +1046,10 @@ def fit_epidemia(data: PanelData, obs_models, config: EpiModelConfig,
                      progress_bar=progress_bar, target_accept=target_accept,
                      **kwargs)
     _warn_on_divergences(idata)
+    # Record each series' observation family on the fit. Plotting a *predictive*
+    # interval needs the family to draw through, and without this the plots can
+    # only band the posterior mean -- an interval that excludes observation noise
+    # and so is far too narrow to compare against the data.
+    idata.attrs["epidemia_families"] = json.dumps(
+        {o.name: o.family for o in obs_models})
     return idata

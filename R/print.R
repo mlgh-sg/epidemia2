@@ -63,6 +63,29 @@ print.epimodel <- function(x, digits=1, ...) {
   cat("==========\n")
   .printfr(estimates_inf, digits)
 
+  print_diagnostic_footer(x)
+
    invisible(x)
+}
+
+# One line at the foot of print.epimodel when the sampler had trouble.
+#
+# Printing a model is the moment someone is about to read numbers off it, so a
+# sampling problem should be visible here rather than only on request. Stays
+# silent for a clean fit -- a footer that always appears stops being read.
+print_diagnostic_footer <- function(x) {
+  diag <- x$stanfit$diagnostics
+  if (is.null(diag)) return(invisible(NULL))
+  pc <- diag$per_chain
+  bad <- c(
+    if (sum(pc$divergent)) paste0(sum(pc$divergent), " divergent transitions"),
+    if (sum(pc$max_treedepth)) paste0(sum(pc$max_treedepth), " iterations at max treedepth"),
+    if (any(pc$ebfmi < 0.2, na.rm = TRUE)) "low E-BFMI"
+  )
+  if (length(bad)) {
+    cat("\nSampler warnings: ", paste(bad, collapse = ", "),
+        ". See sampler_diagnostics().\n", sep = "")
+  }
+  invisible(NULL)
 }
 

@@ -57,15 +57,17 @@ from epidemia.core import (
 # %%
 ec = epidemia.europe_covid2()
 df = ec.data.copy()
-df["week"] = pd.to_datetime(df["date"]).dt.strftime("%G-%V")
-df = df[df["country"].isin(["Austria", "Germany", "Italy"])]
+# A monthly walk index, not a weekly one. See "Read the diagnostics" below:
+# a walk free to move every week can absorb a one-off step covariate into its
+# own increments, leaving beta[lockdown] only weakly identified.
+df["month"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m")
 
 panel, series = prepare_panel(
     df,
     npis=["lockdown"],
     responses=["deaths", "cases"],
     pop="pop",
-    rw_by="week",
+    rw_by="month",
     fit_until="2020-05-05",
 )
 print(panel.regions, panel.X.shape, panel.pops.astype(int))
@@ -110,8 +112,8 @@ obs = [
 # lockdown slope through an LKJ-Cholesky prior — R's single-bar `(1 + lockdown |
 # country)`. Setting it `False` gives the independent double-bar form.
 #
-# `RandomWalk(by_region=True)` gives each country its own weekly walk with its own
-# scale; `by_region=False` would put them all on one shared walk.
+# `RandomWalk(by_region=True)` gives each country its own monthly walk with its
+# own scale; `by_region=False` would put them all on one shared walk.
 #
 # `pop_adjust=True` tracks the susceptible pool.
 
@@ -149,31 +151,44 @@ print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
 # %% [markdown]
 # ### Read the diagnostics before the estimates
 #
-# `beta[lockdown]` will look worse than everything else here, and that is the
-# model telling you something true rather than the sampler misbehaving.
+# Check the sampler before reading a single estimate. `sampler_diagnostics()`
+# is the mirror of R's function of the same name and reports the same
+# quantities: divergent transitions, iterations that saturated the maximum tree
+# depth, E-BFMI per chain, and the worst R-hat and effective sample size across
+# all parameters.
+
+# %%
+print(epidemia.sampler_diagnostics(idata))
+
+# %% [markdown]
+# The three sampler quantities answer different questions. **Divergent
+# transitions** mean the sampler could not follow the posterior's curvature;
+# they bias the result and drawing more samples does not help, so they have to
+# be fixed by raising `target_accept` or reparameterising. **Max treedepth** is
+# an efficiency problem rather than a correctness one. **E-BFMI** below about
+# 0.2 suggests the momentum resampling is not exploring the energy distribution.
 #
-# A **weekly random walk and a one-off step covariate compete for the same
-# signal**. Lockdown is a single permanent change in one direction; a walk that
-# is free to move every week can absorb exactly that change into its own
-# increments. The two are only weakly separable, so the posterior has a ridge
-# along which `beta[lockdown]` trades off against the walk, and the chains
-# explore it slowly — a low `ess_bulk` and an `r_hat` above 1.01 for that one
-# coefficient.
+# Two choices earlier in this notebook were made to keep these numbers clean,
+# and both are worth understanding because they are easy to get wrong.
 #
-# This is not a Python quirk; the same formula in R
-# (`~ lockdown + rw(time = week, gr = country)`) has the same identifiability
-# problem. Three honest responses:
+# **The walk is monthly, not weekly.** A random walk and a one-off step
+# covariate compete for the same signal: lockdown is a single permanent change
+# in one direction, and a walk free to move every week can absorb exactly that
+# change into its own increments. The two are then only weakly separable, the
+# posterior has a ridge along which `beta[lockdown]` trades off against the
+# walk, and the chains explore it slowly — a low `ess_bulk` and an `r_hat` above
+# 1.01 for that one coefficient. A monthly index cannot track a weekly step, so
+# the competition goes away. This is not a Python quirk; the same formula in R
+# (`~ lockdown + rw(time = week, gr = country)`) has the same problem.
 #
-# * **Report it.** Treat `beta[lockdown]` as poorly identified in this
-#   specification and do not quote its interval.
-# * **Drop one of the two.** If the question is "what did lockdown do", use the
-#   step function alone, as the [interventions tutorial](europe-covid.md) does.
-#   If the question is "how did transmission evolve", use the walk alone.
-# * **Make the walk coarser** — a monthly index, or a tighter `prior_scale` —
-#   so it cannot track a weekly step.
+# **All eleven countries, not a handful.** A partially pooled slope asks the
+# data to estimate a *variance* across groups, and a few groups barely identify
+# it. Cutting the panel down to three countries to save runtime reintroduces
+# divergences and a tail ESS in the tens.
 #
-# The other parameters, which are what this tutorial is really demonstrating,
-# are fine. Check rather than assume:
+# If you do hit this in your own model, the honest responses are to report the
+# parameter as poorly identified and not quote its interval, to drop one of the
+# two competing terms, or to make the walk coarser as done here.
 
 # %%
 bad = summ[(summ["r_hat"] > 1.01) | (summ["ess_bulk"] < 400)]

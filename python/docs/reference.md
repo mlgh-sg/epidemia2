@@ -90,6 +90,15 @@ Forward simulation over posterior draws — nothing is refitted.
 
 ::: epidemia.predict.posterior_predict
 
+## Diagnostics
+
+Check the sampler before reading anything off a fit. The mirror of R's
+`sampler_diagnostics()`, reporting the same quantities under the same names.
+
+::: epidemia.diagnostics.sampler_diagnostics
+
+::: epidemia.diagnostics.SamplerDiagnostics
+
 ## Post-processing
 
 ::: epidemia.postprocess.posterior_linpred

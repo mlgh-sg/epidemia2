@@ -59,7 +59,11 @@ def fit(y, config, draws=1000, tune=1000, chains=4, seed=0,
     """
     from .multilevel import _compile
 
+    from .multilevel import _warn_on_divergences
+
     model = build_model(np.asarray(y), config)
-    return _compile(model, backend=backend, draws=draws, tune=tune, chains=chains,
-                    seed=seed, adaptation=adaptation, progress_bar=progress_bar,
-                    **kwargs)
+    idata = _compile(model, backend=backend, draws=draws, tune=tune, chains=chains,
+                     seed=seed, adaptation=adaptation, progress_bar=progress_bar,
+                     **kwargs)
+    _warn_on_divergences(idata)
+    return idata

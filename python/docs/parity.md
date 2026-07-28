@@ -22,6 +22,7 @@ missing is halfway through an analysis.
 | Observation families | ✅ 5 | ✅ 5 |
 | Forecast scoring (CRPS, coverage) | ✅ | ✅ `epidemia.scoring` |
 | Posterior predictive sampling | ✅ | ✅ `epidemia.predict` |
+| Plots band the posterior **predictive** | ✅ | ✅ `plot_obs(predictive=True)`, default |
 | Spaghetti plots | ✅ | ✅ `spaghetti_rt` etc. |
 | Variational inference | ✅ | ✅ `fit_variational` |
 | Swappable prior families | ✅ | ✅ `epidemia.priors` |
@@ -37,12 +38,13 @@ missing is halfway through an analysis.
 | Prior predictive (`prior_PD`) | ✅ | ✅ `EpiModelConfig(prior_PD=True)` |
 | `group_subset` | ✅ | ✅ `prepare_panel(group_subset=)` |
 | `posterior_linpred` | ✅ | ✅ `epidemia.postprocess` |
-| `posterior_infectious` | ✅ | ✅ `epidemia.postprocess` |
+| `posterior_infectious` (incl. `/ max(gen)`) | ✅ | ✅ `epidemia.postprocess` |
 | `prior_summary` | ✅ | ✅ `epidemia.postprocess` |
 | `as.matrix` / `get_samps` | ✅ | ✅ `extract_samples` |
 | Link functions | ✅ | ✅ 3 on `R_t`, 6 on observations |
 | `center=` | ✅ | ✅ |
 | Fully pooled (no region effects) | ✅ | ✅ `region_effects=False` |
+| Sampler diagnostics retained on the fit | ✅ `sampler_diagnostics()` | ✅ `sampler_diagnostics()` |
 | nutpie sampler, JAX/GPU option | ❌ | ✅ |
 | `plotnine` plots | ❌ | ✅ |
 

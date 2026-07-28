@@ -167,6 +167,50 @@ def available_series(idata):
     )
 
 
+def _families(idata):
+    """Observation families recorded on the fit by ``fit_epidemia``."""
+    import json
+    raw = getattr(idata, "attrs", {}).get("epidemia_families")
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw) if isinstance(raw, str) else dict(raw)
+    except Exception:
+        return {}
+
+
+def _predictive_draws(idata, var, series, obs_model=None, seed=0):
+    """Posterior *predictive* draws for one series, or None if unavailable.
+
+    R's ``plot_obs`` bands ``posterior_predict()``, so its ribbons carry the
+    observation family's noise on top of parameter uncertainty. Banding the mean
+    instead -- which these plots used to do -- gives a credible interval on the
+    expected count, several times too narrow to compare against the data it is
+    drawn over.
+
+    Needs the family (from ``obs_model`` or recorded on the fit) and, for
+    families that have one, the ``<series>|aux`` draws.
+    """
+    from .predict import posterior_predict
+
+    family = getattr(obs_model, "family", None) or _families(idata).get(series)
+    if family is None:
+        return None
+    arr, dims = _draws(idata, var)                    # (S, ...) expected values
+    aux = None
+    for cand in (f"{series}|aux", "aux", f"{series}|reciprocal_dispersion"):
+        if cand in idata.posterior:
+            aux = _draws(idata, cand)[0]
+            break
+    if aux is not None:
+        aux = np.asarray(aux).reshape(aux.shape[0], *([1] * (arr.ndim - 1)))
+    rng = np.random.default_rng(seed)
+    try:
+        return posterior_predict(np.asarray(arr), family, aux=aux, rng=rng)
+    except Exception:
+        return None
+
+
 def _pick_obs_var(idata, series=None):
     """The expected-observation variable for ``series``.
 
@@ -223,7 +267,8 @@ def _median_frame(draws, x):
     return pd.DataFrame({"x": x, "median": np.median(draws, axis=0)})
 
 
-def _region_frame(idata, var, data, levels, group=None, transform=None):
+def _region_frame(idata, var, data, levels, group=None, transform=None,
+                  draws=None):
     """Per-region interval + median frames on real dates, padded days dropped.
 
     ``data`` is the :class:`~epidemia.multilevel.MultilevelData` that was fitted;
@@ -231,6 +276,8 @@ def _region_frame(idata, var, data, levels, group=None, transform=None):
     would be a *different date* in every region.
     """
     arr, dims = _draws(idata, var)  # (draws, region, time)
+    if draws is not None:
+        arr = np.asarray(draws)     # predictive draws, same shape
     if dims[:1] != ("region",):
         raise ValueError(f"expected a region dim on {var!r}, got dims {dims}")
     regions = [str(r) for r in idata.posterior.coords["region"].values]
@@ -415,7 +462,7 @@ def _draw_transform(cumulative=False, smooth=None, by_100k=False, pops=None):
 def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                  save, default_name, title=None, obs=None, obs_kind="point",
                  dates=None, log=False, cumulative=False, smooth=None,
-                 by_100k=False, step=False, obs_model=None):
+                 by_100k=False, step=False, obs_model=None, draws=None):
     """Dispatch: multi-region (facet on real dates) vs single-population."""
     transform = _draw_transform(cumulative, smooth, by_100k,
                                 getattr(data, "pops", None))
@@ -428,7 +475,7 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                 "(and optionally group='Italy' for a single region)."
             )
         band, med, keep = _region_frame(idata, var, data, levels, group,
-                                        transform=transform)
+                                        transform=transform, draws=draws)
         obs_df = None
         if obs is True:  # sentinel: take the counts from the panel
             obs_df = _observed_frame(data, group, obs_model=obs_model)
@@ -448,6 +495,8 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
         return _maybe_save(p, save, default_name, n_panels=len(keep))
 
     arr, _ = _draws(idata, var)
+    if draws is not None:
+        arr = np.asarray(draws)
     if transform is not None:
         arr = transform(arr, 0)
     if x is None:
@@ -497,12 +546,23 @@ def plot_infections(idata, data=None, group=None, levels=(50, 95), x=None,
 def plot_obs(idata, observed=None, data=None, group=None, levels=(50, 95), x=None,
              series=None, xlab=None, ylab="Daily deaths", save=True, title=None,
              dates=None, log=False, cumulative=False, smooth=None,
-             by_100k=False, bar=True, obs_model=None):
-    """Expected observations with the observed counts overlaid (a posterior check).
+             by_100k=False, bar=True, obs_model=None, predictive=True):
+    """Posterior predictive observations with the observed counts overlaid.
 
     Reads ``E_obs`` (single-population) or ``E_deaths`` (multilevel), whichever
     the fitted model defines. For a multilevel fit pass ``data``; the observed
     counts are then taken from ``data.deaths`` and ``observed`` is not needed.
+
+    Parameters
+    ----------
+    predictive : bool, default True
+        Band the posterior **predictive** -- draws pushed through the
+        observation family -- as R's ``plot_obs`` does. The alternative,
+        ``False``, bands the posterior of the *expected* count, which excludes
+        observation noise and is several times too narrow to compare against the
+        data plotted over it. Drawing needs the family, which
+        :func:`~epidemia.fit_epidemia` records on the fit; for a fit made before
+        that, pass ``obs_model=`` and it is taken from there.
     """
     var = _pick_obs_var(idata, series)
     obs = observed
@@ -511,11 +571,26 @@ def plot_obs(idata, observed=None, data=None, group=None, levels=(50, 95), x=Non
     kind = "col" if _is_multiregion(idata, var) else "point"
     if not bar and kind == "bar":
         kind = "point"
+    draws = None
+    if predictive:
+        name = series if series is not None else var[2:]
+        draws = _predictive_draws(idata, var, name, obs_model)
+        if draws is None:
+            import warnings
+            warnings.warn(
+                f"cannot draw the posterior predictive for {name!r}: the "
+                "observation family is not recorded on this fit and no "
+                "obs_model= was given. Falling back to banding the expected "
+                "count, whose interval excludes observation noise and is "
+                "therefore too narrow to compare against the plotted data. "
+                "Pass obs_model=<the ObsModel> or predictive=False to silence.",
+                stacklevel=2,
+            )
     return _series_plot(idata, var, data, group, levels, x, xlab, ylab,
                         _BLUES, None, save, "obs", title=title, obs=obs,
                         obs_kind=kind, dates=dates, log=log,
                         cumulative=cumulative, smooth=smooth, by_100k=by_100k,
-                        obs_model=obs_model)
+                        obs_model=obs_model, draws=draws)
 
 
 # --------------------------------------------------------------------------
@@ -705,7 +780,7 @@ def _path_frame(draws, x, idx):
     })
 
 
-def _region_path_frame(idata, var, data, idx, group=None):
+def _region_path_frame(idata, var, data, idx, group=None, draws=None):
     """Per-region path + median frames on real dates, padded days dropped.
 
     The same draw indices are used in every region: a draw is a joint sample over
@@ -713,6 +788,10 @@ def _region_path_frame(idata, var, data, idx, group=None):
     combination the posterior never produced.
     """
     arr, dims = _draws(idata, var)  # (draws, region, time)
+    if draws is not None:
+        arr = np.asarray(draws)
+    if draws is not None:
+        arr = np.asarray(draws)     # predictive draws, same shape
     if dims[:1] != ("region",):
         raise ValueError(f"expected a region dim on {var!r}, got dims {dims}")
     regions = [str(r) for r in idata.posterior.coords["region"].values]
@@ -764,10 +843,12 @@ def _spaghetti_plot(paths, med, color, alpha, ylab, xlab, hline=None, facet=0,
 
 def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab,
                       color, hline, save, default_name, title=None, obs=None,
-                      obs_kind="point", obs_model=None):
+                      obs_kind="point", obs_model=None, draws_override=None):
     """Dispatch: multi-region (facet on real dates) vs single-population."""
     _check_alpha(alpha)
     arr, _ = _draws(idata, var)
+    if draws_override is not None:
+        arr = np.asarray(draws_override)
     idx = _sample_draw_index(arr.shape[0], draws, seed)
 
     if _is_multiregion(idata, var):
@@ -778,7 +859,8 @@ def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab
                 "back to its own dates. Pass data=<your prepare_panel result> "
                 "(and optionally group='Italy' for a single region)."
             )
-        paths, med, keep = _region_path_frame(idata, var, data, idx, group)
+        paths, med, keep = _region_path_frame(idata, var, data, idx, group,
+                                              draws=draws_override)
         obs_df = None
         if obs is True:  # sentinel: take the counts from the panel
             obs_df = _observed_frame(data, group, obs_model=obs_model)
@@ -838,7 +920,7 @@ def spaghetti_infections(idata, data=None, group=None, draws=50, alpha=0.3, seed
 def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0.3,
                   series=None,
                   seed=0, x=None, xlab=None, ylab="Daily deaths", save=True,
-                  title=None, region=None, obs_model=None):
+                  title=None, region=None, obs_model=None, predictive=True):
     """Expected observations as individual paths, with the observed counts overlaid.
 
     Reads ``E_obs`` (single-population) or ``E_deaths`` (multilevel), whichever
@@ -855,4 +937,10 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
     kind = "col" if _is_multiregion(idata, var) else "point"
     return _spaghetti_series(idata, var, data, grp, draws, alpha, seed, x, xlab, ylab,
                              _OBS_PATH_COLOR, None, save, "spaghetti-obs", title=title,
-                             obs=obs, obs_kind=kind, obs_model=obs_model)
+                             obs=obs, obs_kind=kind, obs_model=obs_model,
+                             draws_override=(
+                                 _predictive_draws(
+                                     idata, var,
+                                     series if series is not None else var[2:],
+                                     obs_model)
+                                 if predictive else None))

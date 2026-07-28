@@ -67,15 +67,36 @@ def test_switching_a_component_off_removes_exactly_that_term():
     assert not np.allclose(full, no_random)
 
 
-def test_infectious_matches_a_hand_computed_convolution():
-    idata, panel, config = _fixture()
-    got = posterior_infectious(idata, config)
-
+def _hand_convolution(idata, config):
     inf = np.asarray(idata.posterior["infections"]).reshape(-1, M, T)
     want = np.zeros_like(inf)
     for k in (1, 2, 3):                     # gen is lag-1-first
         want[..., k:] += config.gen[k - 1] * inf[..., : T - k]
-    np.testing.assert_allclose(got, want)
+    return want
+
+
+def test_infectious_matches_a_hand_computed_convolution():
+    """R divides the convolution by max(gen) -- epidemia_pp_base.stan:47."""
+    idata, panel, config = _fixture()
+    want = _hand_convolution(idata, config) / np.max(config.gen)
+    np.testing.assert_allclose(posterior_infectious(idata, config), want)
+
+
+def test_infectious_can_return_the_raw_convolution():
+    idata, panel, config = _fixture()
+    np.testing.assert_allclose(
+        posterior_infectious(idata, config, normalise=False),
+        _hand_convolution(idata, config))
+
+
+def test_infectious_normalisation_is_not_a_no_op():
+    """max(gen) is well under 1 for a simplex kernel, so the factor is large."""
+    idata, panel, config = _fixture()
+    norm = posterior_infectious(idata, config)
+    raw = posterior_infectious(idata, config, normalise=False)
+    assert np.max(config.gen) < 1.0
+    np.testing.assert_allclose(norm * np.max(config.gen), raw)
+    assert norm.max() > raw.max()
 
 
 def test_extract_samples_selects_by_name_and_regex():

@@ -195,10 +195,38 @@ build_draws <- function(fit, sdat, rt, obs, data, monitor,
       draws      = named,       # posterior draws_array, human names
       raw_draws  = raw,         # posterior draws_array, Stan names
       orig_names = orig_names,
-      algorithm  = algorithm
+      algorithm  = algorithm,
+      diagnostics = collect_diagnostics(fit, algorithm)
     ),
     class = "epimodel_draws"
   )
+}
+
+# Per-chain HMC diagnostics, harvested while the CmdStanFit is still in scope.
+#
+# The fitted object keeps only the draws, so anything not copied out here is
+# lost the moment the CmdStanFit is garbage-collected or the model is saved --
+# which is why divergences used to be visible in the console and nowhere else.
+# Returns NULL for variational fits, which have no NUTS diagnostics at all.
+collect_diagnostics <- function(fit, algorithm) {
+  if (!identical(algorithm, "sampling")) return(NULL)
+  tryCatch({
+    ds <- fit$diagnostic_summary(quiet = TRUE)
+    nchains <- length(ds$num_divergent)
+    ndraws_per_chain <- tryCatch(fit$metadata()$iter_sampling, error = function(e) NA_integer_)
+    structure(
+      list(
+        per_chain = data.frame(
+          chain             = seq_len(nchains),
+          divergent         = as.integer(ds$num_divergent),
+          max_treedepth     = as.integer(ds$num_max_treedepth),
+          ebfmi             = round(as.numeric(ds$ebfmi), 3)
+        ),
+        iter_sampling = ndraws_per_chain
+      ),
+      class = "epidemia_diagnostics"
+    )
+  }, error = function(e) NULL)
 }
 
 # Replace the theta_L columns of a draws_array with the corresponding

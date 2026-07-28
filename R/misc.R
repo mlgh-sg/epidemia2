@@ -124,9 +124,43 @@ check_rhats <- function(rhats, threshold = 1.1, check_lp = FALSE) {
   if (!check_lp)
     rhats <- rhats[!names(rhats) %in% c("lp__", "log-posterior")]
   
-  if (any(rhats > threshold, na.rm = TRUE)) 
-    warning("Markov chains did not converge! Do not analyze results!", 
+  if (any(rhats > threshold, na.rm = TRUE))
+    warning("Markov chains did not converge! Do not analyze results!",
             call. = FALSE, noBreaks. = TRUE)
+}
+
+# Warn at fit time about HMC problems, the way CmdStan does on the console.
+#
+# CmdStan's own warnings are console output: they vanish when the output scrolls
+# or when a saved fit is reloaded. Re-raising them as R warnings means they
+# survive `suppressMessages()`-heavy scripts and knitr chunks that hide messages
+# but not warnings, and points at sampler_diagnostics() for the detail.
+check_hmc_diagnostics <- function(diagnostics) {
+  if (is.null(diagnostics)) return(invisible(NULL))
+  pc <- diagnostics$per_chain
+  ndiv <- sum(pc$divergent)
+  ntd  <- sum(pc$max_treedepth)
+
+  if (ndiv > 0) {
+    warning(ndiv, " divergent transition", if (ndiv == 1) "" else "s",
+            " after warmup. These bias the posterior and are not fixed by ",
+            "drawing more samples: raise adapt_delta or reparameterise. ",
+            "See sampler_diagnostics().",
+            call. = FALSE, noBreaks. = TRUE)
+  }
+  if (ntd > 0) {
+    warning(ntd, " iteration", if (ntd == 1) "" else "s",
+            " saturated the maximum tree depth. This costs efficiency rather ",
+            "than correctness: raise max_treedepth. See sampler_diagnostics().",
+            call. = FALSE, noBreaks. = TRUE)
+  }
+  if (any(pc$ebfmi < 0.2, na.rm = TRUE)) {
+    warning("E-BFMI of ", format(min(pc$ebfmi), digits = 2), " is below 0.2, ",
+            "suggesting the sampler is not exploring the energy distribution ",
+            "well. See sampler_diagnostics().",
+            call. = FALSE, noBreaks. = TRUE)
+  }
+  invisible(NULL)
 }
 
 

@@ -58,6 +58,7 @@ from .multilevel import (
     fit_multilevel,
     prepare_panel,
 )
+from .diagnostics import SamplerDiagnostics, sampler_diagnostics
 from .plots import (
     available_series,
     plot_infections,
@@ -123,10 +124,12 @@ __all__ = [
     "renewal_infections",
     "scoring",
     "simulate",
+    "SamplerDiagnostics",
     "available_series",
     "plot_infections",
     "plot_obs",
     "plot_rt",
+    "sampler_diagnostics",
     "spaghetti_infections",
     "spaghetti_obs",
     "spaghetti_rt",

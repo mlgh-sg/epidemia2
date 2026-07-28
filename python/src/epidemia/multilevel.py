@@ -591,16 +591,16 @@ def fit_multilevel(data: MultilevelData, config: MultilevelConfig,
 
 
 def _warn_on_divergences(idata):
-    """Warn if the sampler diverged -- silence here has cost people real results."""
+    """Surface sampler problems at fit time -- silence here has cost people real results.
+
+    Covers divergences, max-treedepth saturation, E-BFMI, R-hat and ESS, the
+    same set R warns about in ``check_hmc_diagnostics()``. Call
+    :func:`epidemia.sampler_diagnostics` on the returned fit for the detail.
+    """
+    from .diagnostics import sampler_diagnostics
     try:
-        n = int(idata.sample_stats["diverging"].sum())
-        total = int(idata.sample_stats["diverging"].size)
-    except (KeyError, AttributeError):
+        sampler_diagnostics(idata, warn=True)
+    except (ValueError, KeyError, AttributeError):
+        # No sample_stats: a variational fit, or something that is not a NUTS
+        # run. Nothing to check rather than something to complain about.
         return
-    if n:
-        warnings.warn(
-            f"{n} of {total} post-warmup draws diverged. The posterior is likely "
-            "biased -- treat the intervals with suspicion. Try a higher "
-            "target_accept (e.g. 0.99), more tuning, or adaptation='low_rank'.",
-            stacklevel=3,
-        )

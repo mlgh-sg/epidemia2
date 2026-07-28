@@ -44,21 +44,24 @@ example quick, and add an ISO week column to index the random walk.
 ```python
 ec = epidemia.europe_covid2()
 df = ec.data.copy()
-df["week"] = pd.to_datetime(df["date"]).dt.strftime("%G-%V")
-df = df[df["country"].isin(["Austria", "Germany", "Italy"])]
+# A monthly walk index, not a weekly one. See "Read the diagnostics" below:
+# a walk free to move every week can absorb a one-off step covariate into its
+# own increments, leaving beta[lockdown] only weakly identified.
+df["month"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m")
 
 panel, series = prepare_panel(
     df,
     npis=["lockdown"],
     responses=["deaths", "cases"],
     pop="pop",
-    rw_by="week",
+    rw_by="month",
     fit_until="2020-05-05",
 )
 print(panel.regions, panel.X.shape, panel.pops.astype(int))
 ```
 
-    ['Austria', 'Germany', 'Italy'] (3, 98, 1) [ 9006400 83783945 60461828]
+    ['Austria', 'Belgium', 'Denmark', 'France', 'Germany', 'Italy', 'Norway', 'Spain', 'Sweden', 'Switzerland', 'United_Kingdom'] (11, 98, 1) [ 9006400 11589616  5792203 65273512 83783945 60461828  5421242 46754783
+     10099270  8654618 67886004]
 
 
 `prepare_panel` windows every response onto one shared time axis: each region
@@ -101,8 +104,8 @@ obs = [
 lockdown slope through an LKJ-Cholesky prior — R's single-bar `(1 + lockdown |
 country)`. Setting it `False` gives the independent double-bar form.
 
-`RandomWalk(by_region=True)` gives each country its own weekly walk with its own
-scale; `by_region=False` would put them all on one shared walk.
+`RandomWalk(by_region=True)` gives each country its own monthly walk with its
+own scale; `by_region=False` would put them all on one shared walk.
 
 `pop_adjust=True` tracks the susceptible pool.
 
@@ -143,45 +146,98 @@ summ = az.summary(idata, var_names=["beta", "seed", "rw_scale",
 print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
 ```
 
-                           mean      sd  r_hat  ess_bulk
-    beta[lockdown]       -0.268   0.381   1.27      12.0
-    seed[Austria]       109.387  31.053   1.00    1614.0
-    seed[Germany]        56.393  16.499   1.00    2555.0
-    seed[Italy]          15.203   5.524   1.00    1547.0
-    rw_scale[0]           0.240   0.080   1.02     387.0
-    rw_scale[1]           0.340   0.058   1.01     962.0
-    rw_scale[2]           0.328   0.052   1.00    1674.0
-    Sigma_chol_stds[0]    0.453   0.279   1.01     194.0
-    Sigma_chol_stds[1]    0.616   0.361   1.06      64.0
+                             mean      sd  r_hat  ess_bulk
+    beta[lockdown]         -1.636   0.112    1.0    2692.0
+    seed[Austria]         132.152  35.831    1.0    5006.0
+    seed[Belgium]          65.062  17.238    1.0    4659.0
+    seed[Denmark]         132.728  37.166    1.0    4281.0
+    seed[France]           65.665  17.781    1.0    4093.0
+    seed[Germany]          81.048  20.701    1.0    4558.0
+    seed[Italy]            30.472   9.003    1.0    3498.0
+    seed[Norway]          179.280  48.325    1.0    3771.0
+    seed[Spain]            46.663  11.543    1.0    3964.0
+    seed[Sweden]          311.626  58.846    1.0    4147.0
+    seed[Switzerland]     111.302  27.414    1.0    2837.0
+    seed[United_Kingdom]  209.481  36.539    1.0    4386.0
+    rw_scale[0]             0.078   0.059    1.0    2808.0
+    rw_scale[1]             0.194   0.055    1.0    3573.0
+    rw_scale[2]             0.076   0.057    1.0    2429.0
+    rw_scale[3]             0.282   0.053    1.0    3444.0
+    rw_scale[4]             0.219   0.052    1.0    4379.0
+    rw_scale[5]             0.302   0.061    1.0    2148.0
+    rw_scale[6]             0.094   0.065    1.0    2009.0
+    rw_scale[7]             0.251   0.050    1.0    3156.0
+    rw_scale[8]             0.335   0.051    1.0    4638.0
+    rw_scale[9]             0.134   0.074    1.0    1098.0
+    rw_scale[10]            0.094   0.065    1.0    1264.0
+    Sigma_chol_stds[0]      0.423   0.134    1.0     631.0
+    Sigma_chol_stds[1]      0.422   0.104    1.0    1948.0
+
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: 292 iterations saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
 
 
 ### Read the diagnostics before the estimates
 
-`beta[lockdown]` will look worse than everything else here, and that is the
-model telling you something true rather than the sampler misbehaving.
+Check the sampler before reading a single estimate. `sampler_diagnostics()`
+is the mirror of R's function of the same name and reports the same
+quantities: divergent transitions, iterations that saturated the maximum tree
+depth, E-BFMI per chain, and the worst R-hat and effective sample size across
+all parameters.
 
-A **weekly random walk and a one-off step covariate compete for the same
-signal**. Lockdown is a single permanent change in one direction; a walk that
-is free to move every week can absorb exactly that change into its own
-increments. The two are only weakly separable, so the posterior has a ridge
-along which `beta[lockdown]` trades off against the walk, and the chains
-explore it slowly — a low `ess_bulk` and an `r_hat` above 1.01 for that one
-coefficient.
 
-This is not a Python quirk; the same formula in R
-(`~ lockdown + rw(time = week, gr = country)`) has the same identifiability
-problem. Three honest responses:
+```python
+print(epidemia.sampler_diagnostics(idata))
+```
 
-* **Report it.** Treat `beta[lockdown]` as poorly identified in this
-  specification and do not quote its interval.
-* **Drop one of the two.** If the question is "what did lockdown do", use the
-  step function alone, as the [interventions tutorial](europe-covid.md) does.
-  If the question is "how did transmission evolve", use the walk alone.
-* **Make the walk coarser** — a monthly index, or a tighter `prior_scale` —
-  so it cannot track a weekly step.
+    Sampler diagnostics
+    4 chains x 1000 post-warmup draws = 4000
+    
+     chain  divergent  max_treedepth  ebfmi
+         1          0             85  0.856
+         2          0             78  0.929
+         3          0             63  0.914
+         4          0             66  0.931
+    
+    Divergent transitions: 0 (0.0%)
+    Hit max treedepth:     292 (7.3%)
+    Lowest E-BFMI:         0.86
+    Worst R-hat:           1.010  (Sigma_chol[2])
+    Lowest bulk ESS:       451  (Sigma_chol_corr[0, 1])
+    Lowest tail ESS:       497
+    
+    Warnings:
+    * 292 iterations saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
 
-The other parameters, which are what this tutorial is really demonstrating,
-are fine. Check rather than assume:
+
+The three sampler quantities answer different questions. **Divergent
+transitions** mean the sampler could not follow the posterior's curvature;
+they bias the result and drawing more samples does not help, so they have to
+be fixed by raising `target_accept` or reparameterising. **Max treedepth** is
+an efficiency problem rather than a correctness one. **E-BFMI** below about
+0.2 suggests the momentum resampling is not exploring the energy distribution.
+
+Two choices earlier in this notebook were made to keep these numbers clean,
+and both are worth understanding because they are easy to get wrong.
+
+**The walk is monthly, not weekly.** A random walk and a one-off step
+covariate compete for the same signal: lockdown is a single permanent change
+in one direction, and a walk free to move every week can absorb exactly that
+change into its own increments. The two are then only weakly separable, the
+posterior has a ridge along which `beta[lockdown]` trades off against the
+walk, and the chains explore it slowly — a low `ess_bulk` and an `r_hat` above
+1.01 for that one coefficient. A monthly index cannot track a weekly step, so
+the competition goes away. This is not a Python quirk; the same formula in R
+(`~ lockdown + rw(time = week, gr = country)`) has the same problem.
+
+**All eleven countries, not a handful.** A partially pooled slope asks the
+data to estimate a *variance* across groups, and a few groups barely identify
+it. Cutting the panel down to three countries to save runtime reintroduces
+divergences and a tail ESS in the tens.
+
+If you do hit this in your own model, the honest responses are to report the
+parameter as poorly identified and not quote its interval, to drop one of the
+two competing terms, or to make the walk coarser as done here.
 
 
 ```python
@@ -193,12 +249,7 @@ else:
     print(f"all clear: max r_hat = {summ['r_hat'].max():.3f}")
 ```
 
-    weakly identified or poorly mixed:
-                         mean  ess_bulk  r_hat
-    beta[lockdown]     -0.268      12.0   1.27
-    rw_scale[0]         0.240     387.0   1.02
-    Sigma_chol_stds[0]  0.453     194.0   1.01
-    Sigma_chol_stds[1]  0.616      64.0   1.06
+    all clear: max r_hat = 1.000
 
 
 ## Both series are explained
@@ -240,13 +291,13 @@ for name in ("deaths", "cases"):
 
 
     
-![png](multilevel-multi-obs_files/multilevel-multi-obs_13_0.png)
+![png](multilevel-multi-obs_files/multilevel-multi-obs_15_0.png)
     
 
 
 
     
-![png](multilevel-multi-obs_files/multilevel-multi-obs_13_1.png)
+![png](multilevel-multi-obs_files/multilevel-multi-obs_15_1.png)
     
 
 
@@ -269,9 +320,17 @@ for m, region in enumerate(panel.regions):
           f"at the end;  Rt {Rt[m, n-1]:.2f} vs unadjusted {Rt_un[m, n-1]:.2f}")
 ```
 
-    Austria    susceptible 0.933 at the end;  Rt 0.77 vs unadjusted 0.82
-    Germany    susceptible 0.941 at the end;  Rt 0.55 vs unadjusted 0.59
-    Italy      susceptible 0.927 at the end;  Rt 0.72 vs unadjusted 0.78
+    Austria    susceptible 0.926 at the end;  Rt 0.80 vs unadjusted 0.87
+    Belgium    susceptible 0.882 at the end;  Rt 0.73 vs unadjusted 0.83
+    Denmark    susceptible 0.915 at the end;  Rt 0.98 vs unadjusted 1.07
+    France     susceptible 0.915 at the end;  Rt 0.64 vs unadjusted 0.70
+    Germany    susceptible 0.921 at the end;  Rt 0.72 vs unadjusted 0.78
+    Italy      susceptible 0.906 at the end;  Rt 0.81 vs unadjusted 0.90
+    Norway     susceptible 0.919 at the end;  Rt 0.82 vs unadjusted 0.90
+    Spain      susceptible 0.894 at the end;  Rt 0.63 vs unadjusted 0.70
+    Sweden     susceptible 0.907 at the end;  Rt 0.90 vs unadjusted 0.99
+    Switzerland susceptible 0.905 at the end;  Rt 0.65 vs unadjusted 0.72
+    United_Kingdom susceptible 0.897 at the end;  Rt 0.97 vs unadjusted 1.09
 
 
 ## Per-region reproduction numbers
@@ -298,7 +357,7 @@ p.show()
 
 
     
-![png](multilevel-multi-obs_files/multilevel-multi-obs_17_0.png)
+![png](multilevel-multi-obs_files/multilevel-multi-obs_19_0.png)
     
 
 
@@ -337,14 +396,14 @@ print(result.coverage.groupby("level")["in_ci"].mean().round(3))
 ```
 
       group       date          crps  mean_abs_error  median_abs_error
-    0   all 2020-02-23  0.000000e+00         0.00000               0.0
-    1   all 2020-02-24  0.000000e+00         0.00000               0.0
-    2   all 2020-02-25  0.000000e+00         0.00000               0.0
-    3   all 2020-02-26  5.625000e-07         0.00075               0.0
-    4   all 2020-02-27  3.062500e-06         0.00175               0.0
+    0   all 2020-02-23  0.000000e+00          0.0000               0.0
+    1   all 2020-02-24  0.000000e+00          0.0000               0.0
+    2   all 2020-02-25  0.000000e+00          0.0000               0.0
+    3   all 2020-02-26  1.000000e-06          0.0010               0.0
+    4   all 2020-02-27  2.500000e-07          0.0005               0.0
     level
-    50.0    0.569
-    95.0    0.931
+    50.0    0.583
+    95.0    0.917
     Name: in_ci, dtype: float64
 
 

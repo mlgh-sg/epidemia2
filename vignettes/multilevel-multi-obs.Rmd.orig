@@ -74,24 +74,24 @@ options(mc.cores = parallel::detectCores())
 
 We use `EuropeCovid2`, which holds daily deaths *and* daily cases for eleven
 European countries, together with the binary intervention series used by
-@Flaxman2020. To keep the example quick we restrict it to six countries.
+@Flaxman2020. We use all eleven.
 
-Six rather than three, because the number of groups is not just a matter of
-runtime here. A partially pooled slope asks the data to estimate a *variance*
-across groups, and with three groups that variance is barely identified: the
-global effect $\beta$ and the deviations $b^{(m)}$ can trade off against each
-other almost freely, which shows up as a ridge the sampler has to crawl along.
-Fitting the same model to three countries leaves divergent transitions and a
-tail effective sample size in the tens; at six they disappear, and the fit is
-no slower despite twice the data, because the sampler stops fighting the
-geometry.
+That is worth a word, because it is tempting to cut the panel down to make the
+example run faster. Doing so costs more than it saves. A partially pooled slope
+asks the data to estimate a *variance* across groups, and a handful of groups
+barely identifies it: the global effect $\beta$ and the deviations $b^{(m)}$ can
+trade off against each other almost freely, which shows up as a ridge the
+sampler has to crawl along. Fitting this model to three countries leaves
+divergent transitions and a tail effective sample size in the tens. The
+[sampler diagnostics](#checking-the-sampler) below show what the full panel
+looks like instead.
 
 ```{r mlmo-data}
 data("EuropeCovid2")
 data <- EuropeCovid2$data
 
-groups <- c("Austria", "Belgium", "Denmark", "Germany", "Italy", "Switzerland")
-data <- filter(data, country %in% groups)
+groups <- sort(unique(as.character(data$country)))
+groups
 ```
 
 As in the multilevel tutorial, seeding is assumed to begin thirty days before
@@ -222,13 +222,39 @@ own parameters.
 all_obs_types(fm)
 ```
 
+## Checking the Sampler {#checking-the-sampler}
+<hr>
+
+Before reading anything off a fit, check that the sampler actually explored the
+posterior. CmdStan prints its warnings to the console while it runs, but those
+warnings are not part of the draws — scroll past them, or reload a saved model
+in a new session, and they are gone. `sampler_diagnostics()` keeps them with the
+fit.
+
+```{r mlmo-diagnostics}
+sampler_diagnostics(fm)
+```
+
+The three quantities answer different questions. **Divergent transitions** mean
+the sampler could not follow the posterior's curvature; they bias the result and
+drawing more samples does not help, so they have to be fixed by raising
+`adapt_delta` or reparameterising. **Max treedepth** is an efficiency problem
+rather than a correctness one — the sampler was still making progress when it
+ran out of steps. **E-BFMI** below about 0.2 suggests the momentum resampling is
+not exploring the energy distribution well.
+
+This is also where the choice to keep all eleven countries pays off. The same
+model on three countries returns ten divergent transitions, eighteen iterations
+at maximum treedepth, and a tail effective sample size of 59 — versus none, none,
+and a tail ESS in the hundreds here.
+
 ## Checking Both Series
 <hr>
 
 A joint model must explain *every* series it is fitted to. `plot_obs()` takes a
 `type` argument to select one.
 
-```{r mlmo-ppc, echo = FALSE, warning = FALSE, message = FALSE, out.width = "100%", fig.width = 9, fig.height = 6, fig.cap = "Posterior predictive checks for both data streams. **Top**: daily deaths. **Bottom**: daily cases. Observed counts are the red bars; the posterior median is black, with 50\\% and 95\\% credible intervals in shades of blue."}
+```{r mlmo-ppc, echo = FALSE, warning = FALSE, message = FALSE, out.width = "100%", fig.width = 9, fig.height = 10, fig.cap = "Posterior predictive checks for both data streams. **Top**: daily deaths. **Bottom**: daily cases. Observed counts are the red bars; the posterior median is black, with 50\\% and 95\\% credible intervals in shades of blue."}
 p_deaths <- plot_obs(fm, type = "deaths", levels = c(50, 95)) +
   bord + font + leg + marg + ggtitle("Deaths")
 p_cases <- plot_obs(fm, type = "cases", levels = c(50, 95)) +
@@ -239,7 +265,7 @@ grid.arrange(p_deaths, p_cases, nrow = 2)
 Reproduction numbers are shown per country. Because the effects are partially
 pooled, each country's curve is informed by the others.
 
-```{r mlmo-rt-plot, echo = FALSE, warning = FALSE, message = FALSE, out.width = "100%", fig.width = 9, fig.height = 5, fig.cap = "Inferred reproduction numbers in each country, plotted as a step function because the only covariate is a binary policy indicator."}
+```{r mlmo-rt-plot, echo = FALSE, warning = FALSE, message = FALSE, out.width = "100%", fig.width = 9, fig.height = 7, fig.cap = "Inferred reproduction numbers in each country, plotted as a step function because the only covariate is a binary policy indicator."}
 plot_rt(fm, step = TRUE, levels = c(50, 95)) + bord + font + leg + marg
 ```
 
@@ -315,7 +341,7 @@ projected forward.
 newdata <- data
 ```
 
-```{r mlmo-forecast, echo = FALSE, warning = FALSE, message = FALSE, out.width = "100%", fig.width = 9, fig.height = 6, fig.cap = "Out-of-sample forecasts for both series. The model was fitted only up to the 5th of May; everything to the right of that date is a forecast, and the observed values there were not used in fitting."}
+```{r mlmo-forecast, echo = FALSE, warning = FALSE, message = FALSE, out.width = "100%", fig.width = 9, fig.height = 10, fig.cap = "Out-of-sample forecasts for both series. The model was fitted only up to the 5th of May; everything to the right of that date is a forecast, and the observed values there were not used in fitting."}
 f_deaths <- plot_obs(fm, type = "deaths", newdata = newdata, levels = c(50, 95)) +
   bord + font + leg + marg + ggtitle("Deaths")
 f_cases <- plot_obs(fm, type = "cases", newdata = newdata, levels = c(50, 95)) +
@@ -341,7 +367,7 @@ plot_coverage(fm, newdata = newdata, type = "deaths", levels = c(50, 95)) +
 <hr>
 
 As with the other tutorials, this example demonstrates the software rather than
-making a defensible epidemiological claim. Six countries is still a thin basis
+making a defensible epidemiological claim. Eleven countries is a modest basis
 for partial pooling; the infection-to-case distribution is invented; case
 ascertainment certainly varied over time as well as between countries, which an
 `rw()` term in the `cases` model would capture (see the

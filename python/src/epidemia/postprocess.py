@@ -76,11 +76,8 @@ def posterior_linpred(idata, panel, config, series=None, obs_models=None,
                 coef = coef + _flat(post["b"])              # (S, M, K)
             eta += np.einsum("mtk,smk->smt", np.asarray(panel.X),
                              np.broadcast_to(coef, (coef.shape[0], M, K)))
-        if autocor and "rw" in post and getattr(panel, "rw_index", None) is not None:
-            walk = _flat(post["rw"])                        # (S, procs, steps)
-            idx = np.asarray(panel.rw_index)
-            proc = np.arange(M) if walk.shape[1] == M else np.zeros(M, int)
-            eta += walk[:, proc[:, None], idx]
+        if autocor and getattr(panel, "rw_index", None) is not None:
+            eta += _walk_contribution(post, panel, M, prefix="")
         link, cap = getattr(config, "link", "scaled_logit"), config.R_link_K
     else:
         from .core import ObsModel
@@ -109,16 +106,50 @@ def posterior_linpred(idata, panel, config, series=None, obs_models=None,
             eta += np.einsum("mtk,sk->smt", np.asarray(o.X, dtype=float), coef)
         if o.offset is not None:
             eta += np.asarray(o.offset, dtype=float)[None, :, :]
+        if autocor and o.rw is not None and getattr(panel, "rw_index", None) is not None:
+            eta += _walk_contribution(post, panel, M, prefix=f"{series}|")
         link, cap = getattr(o, "link", "scaled_logit"), o.link_K
 
     return _apply_link(link, eta, cap) if transform else eta
 
 
-def posterior_infectious(idata, config):
-    """Total infectiousness, ``sum_s i_{t-s} gen_s`` -- R's ``posterior_infectious``.
+def _walk_contribution(post, panel, M, prefix=""):
+    """Sum every random walk on one predictor, R's ``pp_eta_ac`` for both sides.
 
-    A plain convolution of the posterior infections with the generation kernel,
-    so it needs no refit. Returns ``(draws, regions, time)``.
+    ``core._walks`` names the first walk ``<prefix>rw`` and later ones
+    ``<prefix>rw2``, ``rw3``, ... Reading only ``rw`` -- which this function
+    replaces -- silently dropped every additional term, and dropped observation
+    walks entirely because they carry a ``<series>|`` prefix.
+    """
+    idx = np.asarray(panel.rw_index)
+    total = 0.0
+    i = 1
+    while True:
+        name = f"{prefix}rw" if i == 1 else f"{prefix}rw{i}"
+        if name not in post:
+            break
+        walk = _flat(post[name])                            # (S, procs, steps)
+        proc = np.arange(M) if walk.shape[1] == M else np.zeros(M, int)
+        total = total + walk[:, proc[:, None], idx]
+        i += 1
+    return total
+
+
+def posterior_infectious(idata, config, normalise=True):
+    """Total infectiousness -- R's ``posterior_infectious``.
+
+    R computes ``(sum_s i_{t-s} gen_s) / max(gen)`` (``epidemia_pp_base.stan``
+    divides the convolution by the modal mass of the generation kernel), so the
+    series is on the scale of "infections weighted by how infectious they still
+    are" rather than raw convolution units. Since ``gen`` is a simplex, ``max(gen)``
+    is well under 1 -- typically ~0.14 for a serial interval -- so omitting the
+    division inflates every value by ~7x. Returns ``(draws, regions, time)``.
+
+    Parameters
+    ----------
+    normalise : bool, default True
+        Divide by ``max(gen)``, matching R. Pass ``False`` for the raw
+        convolution ``sum_s i_{t-s} gen_s``.
     """
     inf = _flat(idata.posterior["infections"])
     gen = np.asarray(config.gen, dtype=float)
@@ -127,6 +158,10 @@ def posterior_infectious(idata, config):
     # lag-1-first, as everywhere else: gen[0] weights yesterday
     for k in range(1, min(len(gen) + 1, T)):
         out[..., k:] += gen[k - 1] * inf[..., : T - k]
+    if normalise:
+        gmax = float(np.max(gen))
+        if gmax > 0:
+            out = out / gmax
     return out
 
 
