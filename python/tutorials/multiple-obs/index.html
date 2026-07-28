@@ -635,6 +635,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#writing-the-same-model-as-a-formula" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Writing the same model as a formula
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prior-predictive-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prior predictive checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#caveats" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -939,6 +961,28 @@
     <span class="md-ellipsis">
       
         Infections and susceptibility
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#writing-the-same-model-as-a-formula" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Writing the same model as a formula
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prior-predictive-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prior predictive checks
       
     </span>
   </a>
@@ -1262,6 +1306,78 @@ reproduction number diverge as the epidemic depletes susceptibles.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">epidemia</span><span class="o">.</span><span class="n">plot_infectious</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">panel</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">95</span><span class="p">),</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div>
 <p><img alt="png" src="../multiple-obs_files/multiple-obs_28_0.png" /></p>
+<h2 id="writing-the-same-model-as-a-formula">Writing the same model as a formula<a class="headerlink" href="#writing-the-same-model-as-a-formula" title="Permanent link">&para;</a></h2>
+<p>Everything above assembled design matrices by hand, which is explicit but a
+long way from R, where the formula <em>is</em> the interface. <code>parse_formula</code> reads
+R's syntax, and <code>build_from_formula</code> turns a long data frame plus a formula
+straight into the panel and the config keywords — the closest thing here to
+<code>epirt(formula = ...)</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">epidemia.formula</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_from_formula</span><span class="p">,</span> <span class="n">parse_formula</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="n">spec</span> <span class="o">=</span> <span class="n">parse_formula</span><span class="p">(</span><span class="s2">&quot;R(region, date) ~ 1 + rw(time = week)&quot;</span><span class="p">)</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;group column   :&quot;</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">group</span><span class="p">)</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;date column    :&quot;</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;intercept      :&quot;</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">intercept</span><span class="p">)</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;covariates     :&quot;</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">covariates</span><span class="p">)</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;random walk    :&quot;</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">rw</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>group column   : region
+date column    : date
+intercept      : True
+covariates     : []
+random walk    : [RwTerm(time=&#39;week&#39;, gr=None, prior_scale=0.2)]
+</code></pre></div>
+<p>Fed a data frame, it returns the same objects built by hand earlier, so the
+formula route and the explicit route are interchangeable.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">demo</span> <span class="o">=</span> <span class="n">cases_df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>    <span class="n">region</span><span class="o">=</span><span class="s2">&quot;England&quot;</span><span class="p">,</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>    <span class="n">week</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">cases_df</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%G</span><span class="s2">-%V&quot;</span><span class="p">),</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>    <span class="n">pop</span><span class="o">=</span><span class="n">POP</span><span class="p">,</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="p">)</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="n">panel_f</span><span class="p">,</span> <span class="n">series_f</span><span class="p">,</span> <span class="n">cfg_kw</span> <span class="o">=</span> <span class="n">build_from_formula</span><span class="p">(</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>    <span class="n">demo</span><span class="p">,</span> <span class="s2">&quot;R(region, date) ~ 1 + rw(time = week)&quot;</span><span class="p">,</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>    <span class="n">responses</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cases&quot;</span><span class="p">],</span> <span class="n">pop</span><span class="o">=</span><span class="s2">&quot;pop&quot;</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed_offset</span><span class="o">=</span><span class="n">SEED_DAYS</span><span class="p">,</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="p">)</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;panel regions  :&quot;</span><span class="p">,</span> <span class="n">panel_f</span><span class="o">.</span><span class="n">regions</span><span class="p">)</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;panel shape    :&quot;</span><span class="p">,</span> <span class="n">panel_f</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;series built   :&quot;</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">series_f</span><span class="p">))</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;config kwargs  :&quot;</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">cfg_kw</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>panel regions  : [&#39;England&#39;]
+panel shape    : (1, 80, 0)
+series built   : [&#39;cases&#39;]
+config kwargs  : [&#39;correlated&#39;, &#39;intercept&#39;, &#39;rw&#39;]
+
+
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/formula.py:586: UserWarning: &#39;England&#39;: only 0 day(s) before cumulative cases exceeded 1, fewer than seed_offset=20; starting at the first available day.
+</code></pre></div>
+<h2 id="prior-predictive-checks">Prior predictive checks<a class="headerlink" href="#prior-predictive-checks" title="Permanent link">&para;</a></h2>
+<p>Before looking at any posterior it is worth asking what the priors alone
+imply. <code>prior_PD=True</code> drops every likelihood term, so sampling the model
+returns draws from the prior predictive — R's <code>epim(prior_PD = TRUE)</code>. If the
+prior already rules out plausible epidemics, no amount of data will rescue the
+fit.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">prior_cfg</span> <span class="o">=</span> <span class="n">EpiModelConfig</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">,</span> <span class="s2">&quot;prior_PD&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">idata_prior</span> <span class="o">=</span> <span class="n">fit_epidemia</span><span class="p">(</span><span class="n">panel</span><span class="p">,</span> <span class="p">[</span><span class="n">obs_cases</span><span class="p">,</span> <span class="n">obs_ons</span><span class="p">],</span> <span class="n">prior_cfg</span><span class="p">,</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>                           <span class="n">draws</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>                           <span class="n">progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="n">rt_prior</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">idata_prior</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="s2">&quot;Rt&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="n">qs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rt_prior</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">95</span><span class="p">])</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;prior R_t: median </span><span class="si">{</span><span class="n">qs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, 90% interval [</span><span class="si">{</span><span class="n">qs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">qs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(the scaled_logit cap is </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">R_link_K</span><span class="si">}</span><span class="s2">, so R_t cannot exceed it)&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>prior R_t: median 0.84, 90% interval [0.20, 2.04]
+(the scaled_logit cap is 7.0, so R_t cannot exceed it)
+
+
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.020 for cases|rw_noise[0, 36] exceeds 1.01, so the chains have not mixed.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 196 for positivity|aux is 98 per chain, below the 100 per chain that keeps posterior summaries stable.
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">epidemia</span><span class="o">.</span><span class="n">plot_rt</span><span class="p">(</span><span class="n">idata_prior</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">panel</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">95</span><span class="p">),</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>                 <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Prior predictive $R_t$&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><img alt="png" src="../multiple-obs_files/multiple-obs_35_0.png" /></p>
 <h2 id="caveats">Caveats<a class="headerlink" href="#caveats" title="Permanent link">&para;</a></h2>
 <p>The vignette this follows is candid that the positivity model is a
 simplification: it assumes a test is definitively negative for three days and
