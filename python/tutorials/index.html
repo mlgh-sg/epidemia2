@@ -16,7 +16,7 @@
         <link rel="prev" href="../guide/">
       
       
-        <link rel="next" href="europe-covid/">
+        <link rel="next" href="flu/">
       
       
         
@@ -478,6 +478,34 @@
   
   
     <li class="md-nav__item">
+      <a href="flu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spanish flu in Baltimore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="europe-covid/" class="md-nav__link">
         
   
@@ -486,6 +514,34 @@
     
   
     Assessing the effects of interventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="multiple-obs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracking SARS-CoV-2 in England
   
 
     
@@ -723,7 +779,7 @@
 
 
 <h1 id="tutorials">Tutorials<a class="headerlink" href="#tutorials" title="Permanent link">&para;</a></h1>
-<p>Two worked examples, both ported from the R package's vignettes so you can read
+<p>Five worked examples, all ported from the R package's vignettes so you can read
 them side by side. They are <strong>jupytext</strong> notebooks stored as plain <code>.py</code> files in
 percent format, which means each one is simultaneously a runnable script and a
 notebook — open it in Jupyter or VS Code, or run it with <code>python</code>.</p>
@@ -737,9 +793,19 @@ notebook — open it in Jupyter or VS Code, or run it with <code>python</code>.<
 </thead>
 <tbody>
 <tr>
+<td><a href="flu/">Spanish flu in Baltimore</a></td>
+<td><a href="https://mlgh-sg.com/epidemia2/articles/flu.html">Spanish Flu</a></td>
+<td>The smallest interesting model: one population, one series, a daily random walk on <code>R_t</code>. Compares the deterministic renewal recursion against the latent (<code>latent=True</code>) one, and forecasts from it.</td>
+</tr>
+<tr>
 <td><a href="europe-covid/">Assessing the effects of interventions</a></td>
 <td><a href="https://mlgh-sg.com/epidemia2/articles/europe-covid.html">Multilevel Modeling</a></td>
 <td>A partially pooled model of five NPIs across 11 European countries, fitted to daily deaths. Effect sizes, per-region reproduction numbers, counterfactuals.</td>
+</tr>
+<tr>
+<td><a href="multiple-obs/">Tracking SARS-CoV-2 in England</a></td>
+<td><a href="https://mlgh-sg.com/epidemia2/articles/multiple-obs.html">Multiple Observations</a></td>
+<td>Daily case counts and weekly ONS positivity fitted jointly to one region. Series observed on different days, day-of-week reporting effects, and an <code>i2o</code> that deliberately does not sum to one.</td>
 </tr>
 <tr>
 <td><a href="partial-pooling/">Partial pooling</a></td>
@@ -757,7 +823,7 @@ notebook — open it in Jupyter or VS Code, or run it with <code>python</code>.<
 notebook once and commits the rendered markdown and figures, exactly as the R
 side's <code>vignettes/precompute.R</code> bakes the vignettes. Nothing is fitted when the
 documentation is built. Re-bake after changing the modelling code:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>--group<span class="w"> </span>dev<span class="w"> </span>python<span class="w"> </span>scripts/precompute.py<span class="w">            </span><span class="c1"># all three</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>--group<span class="w"> </span>dev<span class="w"> </span>python<span class="w"> </span>scripts/precompute.py<span class="w">            </span><span class="c1"># all five</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>run<span class="w"> </span>--group<span class="w"> </span>dev<span class="w"> </span>python<span class="w"> </span>scripts/precompute.py<span class="w"> </span>europe-covid
 </code></pre></div>
 <p>The notebook sources live in
