@@ -81,6 +81,15 @@ def _validate_positive(value: Any, what: str) -> float:
     return value
 
 
+
+#: What R resolves a ``scale = NULL`` prior to. R's constructors take
+#: ``scale = NULL`` and ``set_prior_scale()`` (R/misc.R:48-56) substitutes
+#: ``default_scale``, which standata_reg passes as 0.25 for coefficients,
+#: intercepts and auxiliary parameters alike (R/standata_reg.R:18, 32, 80).
+#: Python has no NULL to resolve, so the same number is the constructor default:
+#: a bare ``normal()`` must mean N(0, 0.25) in both languages, not N(0, 1).
+DEFAULT_PRIOR_SCALE = 0.25
+
 class Prior:
     """Base class for prior specifications.
 
@@ -145,7 +154,7 @@ class NormalPrior(Prior):
     """Normal prior. See :func:`normal`."""
 
     location: float = 0.0
-    scale: float = 1.0
+    scale: float = DEFAULT_PRIOR_SCALE
     dist: ClassVar[str] = "normal"
 
     def __post_init__(self):
@@ -163,7 +172,7 @@ class StudentTPrior(Prior):
 
     df: float = 1.0
     location: float = 0.0
-    scale: float = 1.0
+    scale: float = DEFAULT_PRIOR_SCALE
     #: R stores the Student-t family as "t" (rstanarm's naming); we keep that.
     dist: ClassVar[str] = "t"
 
@@ -182,7 +191,7 @@ class CauchyPrior(Prior):
     """Cauchy prior. See :func:`cauchy`."""
 
     location: float = 0.0
-    scale: float = 1.0
+    scale: float = DEFAULT_PRIOR_SCALE
     dist: ClassVar[str] = "cauchy"
 
     def __post_init__(self):
@@ -221,7 +230,7 @@ class LaplacePrior(Prior):
     """Laplace (double-exponential) prior. See :func:`laplace`."""
 
     location: float = 0.0
-    scale: float = 1.0
+    scale: float = DEFAULT_PRIOR_SCALE
     dist: ClassVar[str] = "laplace"
 
     def __post_init__(self):
@@ -374,18 +383,18 @@ class LKJPrior(_CovariancePrior):
 # ---------------------------------------------------------------------------
 
 
-def normal(location: float = 0.0, scale: float = 1.0) -> NormalPrior:
+def normal(location: float = 0.0, scale: float = DEFAULT_PRIOR_SCALE) -> NormalPrior:
     """Normal prior with mean ``location`` and standard deviation ``scale``."""
     return NormalPrior(location=location, scale=scale)
 
 
 def student_t(df: float = 1.0, location: float = 0.0,
-              scale: float = 1.0) -> StudentTPrior:
+              scale: float = DEFAULT_PRIOR_SCALE) -> StudentTPrior:
     """Student-t prior with ``df`` degrees of freedom."""
     return StudentTPrior(df=df, location=location, scale=scale)
 
 
-def cauchy(location: float = 0.0, scale: float = 1.0) -> CauchyPrior:
+def cauchy(location: float = 0.0, scale: float = DEFAULT_PRIOR_SCALE) -> CauchyPrior:
     """Cauchy prior.
 
     R implements ``cauchy()`` as ``student_t(df = 1)`` and so reports
@@ -401,7 +410,7 @@ def exponential(rate: float = 1.0) -> ExponentialPrior:
     return ExponentialPrior(rate=rate)
 
 
-def laplace(location: float = 0.0, scale: float = 1.0) -> LaplacePrior:
+def laplace(location: float = 0.0, scale: float = DEFAULT_PRIOR_SCALE) -> LaplacePrior:
     """Laplace (double-exponential) prior."""
     return LaplacePrior(location=location, scale=scale)
 
@@ -815,7 +824,7 @@ class LassoPrior(_ShrinkagePrior):
 
     df: float = 1.0
     location: float = 0.0
-    scale: float = 2.5
+    scale: float = DEFAULT_PRIOR_SCALE
     dist: ClassVar[str] = "lasso"
 
     def __post_init__(self):
@@ -919,7 +928,7 @@ def hs_plus(df1: float = 1.0, df2: float = 1.0, global_df: float = 1.0,
 
 
 def lasso(df: float = 1.0, location: float = 0.0,
-          scale: float = 2.5) -> LassoPrior:
+          scale: float = DEFAULT_PRIOR_SCALE) -> LassoPrior:
     """Bayesian lasso prior: Laplace with an estimated global scale.
 
     The double-exponential's scale is ``scale`` times a shared
@@ -960,6 +969,7 @@ AUTOSCALE_DISTS = frozenset({"normal", "t", "cauchy", "laplace", "lasso", "gamma
 #: R's ``min_prior_scale`` in standata_reg(): a floor, so a wildly-scaled
 #: predictor cannot collapse the prior to a point mass at zero.
 MIN_PRIOR_SCALE = 1e-12
+
 
 
 def predictor_scale(x) -> Any:

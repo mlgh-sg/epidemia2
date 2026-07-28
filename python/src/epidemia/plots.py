@@ -944,3 +944,170 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
                                      series if series is not None else var[2:],
                                      obs_model)
                                  if predictive else None))
+
+
+# --------------------------------------------------------------------------
+# Latent series that are computed rather than stored
+# --------------------------------------------------------------------------
+
+
+def plot_infectious(idata, config, data=None, group=None, levels=(50, 95),
+                    x=None, xlab=None, ylab="Infectiousness", save=True,
+                    title=None, dates=None, log=False, smooth=None):
+    """Total infectiousness over time -- R's ``plot_infectious``.
+
+    Bands :func:`~epidemia.postprocess.posterior_infectious`, which is the
+    generation-weighted sum of past infections divided by ``max(gen)``, exactly
+    as R's ``epidemia_pp_base.stan`` computes it. Unlike ``infections`` this is
+    not stored in the trace, so it is recomputed from the posterior here.
+    """
+    from .postprocess import posterior_infectious
+
+    draws = posterior_infectious(idata, config)
+    return _series_plot(idata, "infections", data, group, levels, x, xlab, ylab,
+                        _BLUES, None, save, "infectious", title=title,
+                        dates=dates, log=log, smooth=smooth, draws=draws)
+
+
+def plot_linpred(idata, panel, config, series=None, obs_models=None, data=None,
+                 group=None, levels=(50, 95), x=None, xlab=None, ylab=None,
+                 save=True, title=None, dates=None, transform=False,
+                 smooth=None):
+    """The linear predictor over time -- R's ``plot_linpred``.
+
+    Bands :func:`~epidemia.postprocess.posterior_linpred`. ``series=None`` gives
+    the ``R_t`` predictor; naming a series gives that observation model's
+    ascertainment predictor. ``transform=True`` applies the inverse link, as in
+    R.
+    """
+    from .postprocess import posterior_linpred
+
+    draws = posterior_linpred(idata, panel, config, series=series,
+                              obs_models=obs_models, transform=transform)
+    if ylab is None:
+        what = "R_t" if series is None else series
+        ylab = f"{what} predictor" + (" (transformed)" if transform else "")
+    template = "Rt_unadj" if "Rt_unadj" in idata.posterior else "Rt"
+    return _series_plot(idata, template, data if data is not None else panel,
+                        group, levels, x, xlab, ylab, _GREENS, None, save,
+                        "linpred", title=title, dates=dates, smooth=smooth,
+                        draws=draws)
+
+
+# --------------------------------------------------------------------------
+# Forecast scoring plots
+# --------------------------------------------------------------------------
+
+
+def plot_coverage(y, draws, group=None, date=None, levels=(50, 95),
+                  period=None, by_group=False, by_unseen=None, save=True,
+                  title=None):
+    """Empirical coverage of the credible intervals -- R's ``plot_coverage``.
+
+    A bar chart of the share of observations that fell inside each interval. A
+    well-calibrated 95% interval covers ~95%; bars far below that mean the
+    forecast is overconfident.
+
+    Parameters
+    ----------
+    y, draws, group, date, levels
+        As :func:`epidemia.scoring.posterior_coverage`: ``draws`` has one row
+        per observation.
+    period : str, optional
+        Bucket the dates before averaging, e.g. ``"W"`` or ``"M"`` (any pandas
+        offset alias). R takes a ``cut()`` spec; the intent is the same.
+    by_group : bool
+        One panel per group.
+    by_unseen : bool array, optional
+        Mark which observations were NOT used in fitting, and facet on it. R
+        infers this by joining against the fit window; here it is supplied
+        directly, because the scoring functions take arrays rather than a model.
+    """
+    from .scoring import posterior_coverage
+
+    cov = posterior_coverage(y, draws, group=group, date=date, levels=levels)
+    cols = ["tag"]
+    if period is not None:
+        cov = cov.copy()
+        cov["period"] = pd.to_datetime(cov["date"]).dt.to_period(period).astype(str)
+        cols.append("period")
+    if by_group:
+        cols.append("group")
+    if by_unseen is not None:
+        cov = cov.copy()
+        flag = np.asarray(by_unseen, dtype=bool)
+        n_obs = len(np.asarray(y).reshape(-1))
+        if flag.size != n_obs:
+            raise ValueError(
+                f"by_unseen must have one entry per observation ({n_obs}), "
+                f"got {flag.size}"
+            )
+        # posterior_coverage stacks one row per (observation, level)
+        cov["unseen"] = np.where(np.tile(flag, len(levels)), "Unseen", "Seen")
+        cols.append("unseen")
+
+    df = cov.groupby(cols, as_index=False)["in_ci"].mean().rename(
+        columns={"in_ci": "value"})
+
+    xvar = "period" if period is not None else "tag"
+    p = (
+        ggplot(df, aes(xvar, "value", fill="tag"))
+        + geom_col(position="dodge")
+        + geom_hline(yintercept=[lv / 100 for lv in levels],
+                     linetype="dotted", color="#555555")
+        + labs(x="Credible interval" if period is None else "Period",
+               y="Mean coverage", fill="", title=title)
+        + theme_epidemia()
+    )
+    facets = [c for c in ("group", "unseen") if c in cols]
+    n_panels = 1
+    if facets:
+        p = p + facet_wrap("~" + " + ".join(facets))
+        n_panels = int(df.groupby(facets).ngroups)
+    p = _size_for_panels(p, n_panels)
+    return _maybe_save(p, save, "coverage", n_panels=n_panels)
+
+
+def plot_metrics(y, draws, group=None, date=None, metrics=None, by_unseen=None,
+                 save=True, title=None):
+    """CRPS and absolute error over time -- R's ``plot_metrics``.
+
+    One line per metric, faceted by group. ``by_unseen`` colours the in-sample
+    and out-of-sample parts differently, as R does.
+    """
+    from .scoring import posterior_metrics
+
+    df = posterior_metrics(y, draws, group=group, date=date, metrics=metrics)
+    value_cols = [c for c in ("crps", "mean_abs_error", "median_abs_error")
+                  if c in df.columns]
+    long = df.melt(id_vars=[c for c in ("group", "date") if c in df.columns],
+                   value_vars=value_cols, var_name="metric", value_name="value")
+
+    color = None
+    if by_unseen is not None:
+        flag = np.asarray(by_unseen, dtype=bool)
+        if flag.size != len(df):
+            raise ValueError(
+                f"by_unseen must have one entry per observation ({len(df)}), "
+                f"got {flag.size}"
+            )
+        seen = pd.Series(np.where(flag, "Unseen", "Seen"), index=df.index)
+        long = long.merge(
+            pd.DataFrame({"group": df.get("group"), "date": df.get("date"),
+                          "unseen": seen}),
+            on=[c for c in ("group", "date") if c in df.columns], how="left")
+        color = "unseen"
+
+    mapping = aes("date", "value", linetype="metric",
+                  **({"color": color} if color else {}))
+    p = ggplot(long, mapping) + geom_line(alpha=0.8, size=0.8)
+    if color:
+        p = p + scale_color_manual(values=["#2171b5", "#b5451f"])
+    p = p + labs(x="Date", y="Value", linetype="Metric",
+                 color="" if color else None, title=title) + theme_epidemia()
+    n_panels = 1
+    if "group" in long.columns and long["group"].nunique() > 1:
+        p = p + facet_wrap("~group", scales="free_y")
+        n_panels = int(long["group"].nunique())
+        p = _size_for_panels(p, n_panels)
+    return _maybe_save(p, save, "metrics", n_panels=n_panels)

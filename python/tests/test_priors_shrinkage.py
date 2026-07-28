@@ -61,7 +61,8 @@ def test_defaults_match_the_r_constructors():
     assert hs_plus().params() == {"df1": 1.0, "df2": 1.0, "global_df": 1.0,
                                   "global_scale": 0.01, "slab_df": 4.0,
                                   "slab_scale": 2.5}
-    assert lasso().params() == {"df": 1.0, "location": 0.0, "scale": 2.5}
+    # R: lasso(df = 1, location = 0, scale = NULL) -> default_scale 0.25
+    assert lasso().params() == {"df": 1.0, "location": 0.0, "scale": 0.25}
     assert product_normal().params() == {"num_terms": 2, "location": 0.0,
                                          "scale": 1.0}
 
@@ -425,7 +426,7 @@ def test_autoscale_rejects_a_non_positive_predictor_scale(bad):
 
 
 def test_autoscale_accepts_a_family_name():
-    assert autoscale("normal", 4.0).scale == pytest.approx(0.25)
+    assert autoscale("normal", 4.0).scale == pytest.approx(0.0625)
 
 
 def test_autoscale_result_is_still_a_valid_spec_and_builds():

@@ -46,8 +46,47 @@ _ALGORITHMS = {
 DEFAULT_RTOL = 0.01
 
 
+
+class _ElboConvergence:
+    """Stop once the ELBO's relative improvement stays below ``rtol``.
+
+    R forwards ``tol_rel_obj`` to CmdStan, which watches the **ELBO** -- not the
+    variational parameters, which is what PyMC's own
+    ``CheckParametersConvergence`` tracks. Using the parameter-based callback
+    stops at a different point and disagrees with
+    :func:`elbo_relative_improvement`, the measure this module reports
+    afterwards, so a run could stop early and still be labelled unconverged.
+
+    The ELBO is a stochastic estimate, so a single quiet stretch is not
+    convergence: two full blocks of it are required, and no check happens until
+    ``min_iter``. Stopping on the first quiet check ends the fit while the
+    optimiser is still climbing -- on the test model that left the posterior
+    mean at 0.19 instead of 3.26.
+    """
+
+    def __init__(self, rtol, every=500, min_iter=5000, consecutive=2):
+        self.rtol = float(rtol)
+        self.every = int(every)
+        self.min_iter = int(min_iter)
+        self.consecutive = int(consecutive)
+        self._hits = 0
+
+    def __call__(self, approx, loss, i):
+        if i < self.min_iter or i % self.every:
+            return
+        elbo = -np.asarray(loss[: i + 1], dtype=float)
+        rel = elbo_relative_improvement(elbo)
+        if np.isfinite(rel) and rel < self.rtol:
+            self._hits += 1
+            if self._hits >= self.consecutive:
+                raise StopIteration(f"ELBO converged at iteration {i}")
+        else:
+            self._hits = 0
+
+
 def fit_variational(model, algorithm="fullrank", iter=50000, draws=1000, seed=0,
-                    progress_bar=True, rtol=DEFAULT_RTOL, **kwargs):
+                    progress_bar=True, rtol=DEFAULT_RTOL, early_stop=True,
+                    **kwargs):
     """Fit a PyMC model by automatic differentiation variational inference.
 
     Parameters
@@ -71,6 +110,10 @@ def fit_variational(model, algorithm="fullrank", iter=50000, draws=1000, seed=0,
         one, so the draws are not the optimiser's own noise stream).
     progress_bar : bool
         Show PyMC's ADVI progress bar (which reports the running average loss).
+    early_stop : bool, default True
+        Stop once the ELBO's relative change falls below ``rtol``, which is what
+        R's ``tol_rel_obj`` does. ``False`` always runs the full ``iter``
+        budget. Passing your own ``callbacks=`` overrides this either way.
     rtol : float
         Relative-improvement tolerance for the plateau check; see
         :func:`elbo_relative_improvement`.
@@ -125,9 +168,17 @@ def fit_variational(model, algorithm="fullrank", iter=50000, draws=1000, seed=0,
         stacklevel=2,
     )
 
+    # R forwards tol_rel_obj to CmdStan, which STOPS the optimiser once the
+    # ELBO's relative change falls below it (R/backend.R:67; CmdStan defaults to
+    # 0.01). Without a callback PyMC always burns the full budget, so an R fit
+    # that converges in 800 iterations took `iter` iterations here.
+    callbacks = kwargs.pop("callbacks", None)
+    if callbacks is None and early_stop:
+        callbacks = [_ElboConvergence(rtol)]
+
     with model:
         approx = pm.fit(n=int(iter), method=method, random_seed=seed,
-                        progressbar=progress_bar, **kwargs)
+                        progressbar=progress_bar, callbacks=callbacks, **kwargs)
 
     # PyMC minimises the loss (= -ELBO); flip it so "up" means "better", which
     # is how the ELBO is reported everywhere else (Stan, the ADVI paper, R).

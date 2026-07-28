@@ -49,10 +49,13 @@ def test_dist_names_mirror_r():
 
 
 def test_defaults_match_the_r_constructors():
-    assert normal().params() == {"location": 0.0, "scale": 1.0}
-    assert student_t().params() == {"df": 1.0, "location": 0.0, "scale": 1.0}
-    assert cauchy().params() == {"location": 0.0, "scale": 1.0}
-    assert laplace().params() == {"location": 0.0, "scale": 1.0}
+    # R's constructors take scale = NULL, which set_prior_scale() resolves to
+    # default_scale = 0.25 (R/misc.R:48-56, R/standata_reg.R:18/32/80). A bare
+    # normal() therefore means N(0, 0.25) in R, not N(0, 1).
+    assert normal().params() == {"location": 0.0, "scale": 0.25}
+    assert student_t().params() == {"df": 1.0, "location": 0.0, "scale": 0.25}
+    assert cauchy().params() == {"location": 0.0, "scale": 0.25}
+    assert laplace().params() == {"location": 0.0, "scale": 0.25}
     assert exponential().params() == {"rate": 1.0}
     assert shifted_gamma().params() == {"shape": 1.0, "scale": 1.0, "shift": 0.0}
     assert decov().params() == {"regularization": 1.0, "concentration": 1.0,

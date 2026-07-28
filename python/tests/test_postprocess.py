@@ -56,15 +56,41 @@ def test_linear_predictor_is_reconstructed_exactly():
 
 
 def test_switching_a_component_off_removes_exactly_that_term():
+    """R selects pp_eta_fe() and pp_eta_re() independently (R/pp_eta.R:26-63).
+
+    The intercept is a column of the FIXED design, and the region deviations b
+    sit with b0 in the RANDOM part -- so fixed=False must drop the intercept and
+    keep Z b, and the two halves must add back to the whole.
+    """
     idata, panel, config = _fixture()
     full = posterior_linpred(idata, panel, config)
-    no_fixed = posterior_linpred(idata, panel, config, fixed=False)
-    no_random = posterior_linpred(idata, panel, config, random=False)
+    only_random = posterior_linpred(idata, panel, config, fixed=False)
+    only_fixed = posterior_linpred(idata, panel, config, random=False)
 
     b0 = np.asarray(idata.posterior["b0"]).reshape(-1, M)
-    np.testing.assert_allclose(no_fixed, np.broadcast_to(b0[:, :, None],
-                                                         full.shape))
-    assert not np.allclose(full, no_random)
+    b = np.asarray(idata.posterior["b"]).reshape(-1, M, K)
+    beta = np.asarray(idata.posterior["beta"]).reshape(-1, K)
+
+    want_random = b0[:, :, None] + np.einsum("mtk,smk->smt", panel.X, b)
+    np.testing.assert_allclose(only_random, want_random)
+
+    want_fixed = np.einsum("mtk,sk->smt", panel.X, beta)
+    if "intercept" in idata.posterior:
+        want_fixed = want_fixed + np.asarray(
+            idata.posterior["intercept"]).reshape(-1)[:, None, None]
+    np.testing.assert_allclose(only_fixed, want_fixed)
+
+    # the decomposition is exact
+    np.testing.assert_allclose(only_fixed + only_random, full)
+
+
+def test_fixed_false_keeps_the_region_slope_deviations():
+    """The old code folded b in under `fixed`, so fixed=False silently lost it."""
+    idata, panel, config = _fixture()
+    only_random = posterior_linpred(idata, panel, config, fixed=False)
+    b0 = np.asarray(idata.posterior["b0"]).reshape(-1, M)
+    assert not np.allclose(only_random,
+                           np.broadcast_to(b0[:, :, None], only_random.shape))
 
 
 def _hand_convolution(idata, config):

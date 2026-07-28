@@ -65,17 +65,24 @@ def posterior_linpred(idata, panel, config, series=None, obs_models=None,
 
     if series is None:
         eta = np.zeros((_flat(post["Rt_unadj"]).shape[0], M, T))
-        if "intercept" in post:
-            eta += _flat(post["intercept"])[:, None, None]
-        if random and "b0" in post:
-            eta += _flat(post["b0"])[:, :, None]
-        if fixed and K and "beta" in post:
-            beta = _flat(post["beta"])                      # (S, K)
-            coef = beta[:, None, :]
-            if random and "b" in post:
-                coef = coef + _flat(post["b"])              # (S, M, K)
-            eta += np.einsum("mtk,smk->smt", np.asarray(panel.X),
-                             np.broadcast_to(coef, (coef.shape[0], M, K)))
+        # R decomposes the predictor into pp_eta_fe() and pp_eta_re() and selects
+        # them independently (R/pp_eta.R:26-63). The intercept belongs to the
+        # FIXED part -- it is a column of object$fe -- and the region deviations
+        # b belong to the RANDOM part alongside b0. Adding the intercept
+        # unconditionally, or folding b in under `fixed`, makes these switches
+        # decompose something other than the model.
+        X = np.asarray(panel.X)
+        if fixed:
+            if "intercept" in post:
+                eta += _flat(post["intercept"])[:, None, None]
+            if K and "beta" in post:
+                beta = _flat(post["beta"])                  # (S, K)
+                eta += np.einsum("mtk,sk->smt", X, beta)
+        if random:
+            if "b0" in post:
+                eta += _flat(post["b0"])[:, :, None]
+            if K and "b" in post:
+                eta += np.einsum("mtk,smk->smt", X, _flat(post["b"]))
         if autocor and getattr(panel, "rw_index", None) is not None:
             eta += _walk_contribution(post, panel, M, prefix="")
         link, cap = getattr(config, "link", "scaled_logit"), config.R_link_K
@@ -99,7 +106,7 @@ def posterior_linpred(idata, panel, config, series=None, obs_models=None,
 
         n_draws = _flat(post[f"{series}|rate"]).shape[0]
         eta = np.zeros((n_draws, M, T))
-        if o.intercept and f"{series}|intercept" in post:
+        if fixed and o.intercept and f"{series}|intercept" in post:
             eta += _flat(post[f"{series}|intercept"])[:, None, None]
         if fixed and o.X is not None and f"{series}|coef" in post:
             coef = _flat(post[f"{series}|coef"])            # (S, Ks)

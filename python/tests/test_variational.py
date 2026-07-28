@@ -38,7 +38,8 @@ def _fit(**kw):
     model, y = _tiny_model()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        idata = fit_variational(model, iter=30000, draws=500, seed=1,
+        kw.setdefault("iter", 30000)
+        idata = fit_variational(model, draws=500, seed=1,
                                 progress_bar=False, **kw)
     return idata, y
 
@@ -73,7 +74,9 @@ def test_elbo_history_is_returned_and_improves():
     idata, _ = _fit(algorithm="meanfield")
     assert "elbo" in idata.groups()
     elbo = np.asarray(idata.elbo["elbo"])
-    assert elbo.shape == (30000,)
+    # early stopping (R's tol_rel_obj) means the history may be SHORTER than the
+    # budget -- it is never longer
+    assert elbo.ndim == 1 and 0 < elbo.shape[0] <= 30000
     assert np.isfinite(elbo).all()
     assert elbo[-1000:].mean() > elbo[:1000].mean()  # ELBO is maximised
     assert idata.attrs["inference_method"] == "variational"
@@ -140,3 +143,16 @@ def test_attrs_record_non_convergence():
     assert idata.attrs["elbo_converged"] is False
     assert idata.attrs["elbo_rel_improvement"] > 0.01
     assert idata.attrs["iter"] == 200
+
+
+def test_early_stopping_can_finish_before_the_iteration_budget():
+    """R's tol_rel_obj stops the optimiser; without a callback PyMC never does."""
+    stopped, _ = _fit(algorithm="meanfield", iter=200000)
+    full, _ = _fit(algorithm="meanfield", iter=2000, early_stop=False)
+    assert np.asarray(stopped.elbo["elbo"]).shape[0] < 200000
+    assert np.asarray(full.elbo["elbo"]).shape[0] == 2000
+
+
+def test_early_stop_false_runs_the_whole_budget():
+    idata, _ = _fit(algorithm="meanfield", iter=1500, early_stop=False)
+    assert np.asarray(idata.elbo["elbo"]).shape[0] == 1500

@@ -61,6 +61,10 @@ from .multilevel import (
 from .diagnostics import SamplerDiagnostics, sampler_diagnostics
 from .plots import (
     available_series,
+    plot_coverage,
+    plot_infectious,
+    plot_linpred,
+    plot_metrics,
     plot_infections,
     plot_obs,
     plot_rt,
@@ -126,7 +130,11 @@ __all__ = [
     "simulate",
     "SamplerDiagnostics",
     "available_series",
+    "plot_coverage",
     "plot_infections",
+    "plot_infectious",
+    "plot_linpred",
+    "plot_metrics",
     "plot_obs",
     "plot_rt",
     "sampler_diagnostics",

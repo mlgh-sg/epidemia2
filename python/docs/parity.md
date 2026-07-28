@@ -45,6 +45,12 @@ missing is halfway through an analysis.
 | Link functions | ✅ | ✅ 3 on `R_t`, 6 on observations |
 | `center=` | ✅ | ✅ |
 | Fully pooled (no region effects) | ✅ | ✅ `region_effects=False` |
+| `plot_coverage` / `plot_metrics` | ✅ | ✅ `epidemia.plots` |
+| `plot_infectious` / `plot_linpred` | ✅ | ✅ `epidemia.plots` |
+| Forecasting a latent (`latent=True`) fit | ✅ | ✅ drawn, not frozen |
+| ADVI stops on ELBO convergence | ✅ `tol_rel_obj` | ✅ `fit_variational(early_stop=)` |
+| Default prior scale when unspecified | 0.25 | 0.25 |
+| `lkj()` as `prior_covariance` | ❌ rejected (no Stan support) | ✅ proper LKJ covariance |
 | Sampler diagnostics retained on the fit | ✅ `sampler_diagnostics()` | ✅ `sampler_diagnostics()` |
 | nutpie sampler, JAX/GPU option | ❌ | ✅ |
 | `plotnine` plots | ❌ | ✅ |

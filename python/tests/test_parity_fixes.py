@@ -185,3 +185,47 @@ def test_autoscale_can_be_switched_off_on_the_config():
     finally:
         pr.autoscale = real
     assert not called
+
+
+# --- a latent fit can now be forecast -------------------------------------
+
+def test_latent_forecast_is_stochastic_and_reads_the_fit_back():
+    """R continues epiinf(latent=TRUE) with normal_lb_rng(mu, sigma, 0).
+
+    Python used to refuse outright. The fitted window must come back from the
+    posterior unchanged; the horizon must be drawn, not set to the mean.
+    """
+    from epidemia.forecast import _renewal
+
+    rng = np.random.default_rng(0)
+    S, Mr, Tt = 40, 2, 24
+    Rt = np.full((S, Mr, Tt), 1.1)
+    gen = np.ones(5) / 5
+    seed = np.full((S, Mr), 10.0)
+    fitted = rng.uniform(5.0, 15.0, size=(S, Mr, 12))     # the fitted window
+
+    inf, _ = _renewal(Rt, gen, seed, seed_days=3,
+                      latent_sd=lambda mean: np.sqrt(2.0 * mean),
+                      rng=rng, observed=fitted)
+
+    # in-sample days are read back verbatim
+    np.testing.assert_allclose(inf[:, :, :12], fitted)
+    # the horizon is not the deterministic mean: repeated draws differ
+    again, _ = _renewal(Rt, gen, seed, seed_days=3,
+                        latent_sd=lambda mean: np.sqrt(2.0 * mean),
+                        rng=np.random.default_rng(1), observed=fitted)
+    assert not np.allclose(inf[:, :, 12:], again[:, :, 12:])
+    # and never negative -- R truncates at zero
+    assert np.all(inf >= 0.0)
+
+
+def test_latent_forecast_without_noise_matches_the_deterministic_recursion():
+    from epidemia.forecast import _renewal
+
+    Rt = np.full((5, 1, 15), 1.2)
+    gen = np.ones(4) / 4
+    seed = np.full((5, 1), 8.0)
+    a, _ = _renewal(Rt, gen, seed, seed_days=3)
+    b, _ = _renewal(Rt, gen, seed, seed_days=3, latent_sd=None,
+                    rng=np.random.default_rng(0))
+    np.testing.assert_allclose(a, b)

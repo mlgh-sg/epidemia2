@@ -25,6 +25,11 @@ frame with future rows whose NPI columns simply repeat the last observed value:
 * **covariates are carried forward.** Any day of the extended window without a
   covariate value (missing column entries, or days past the end of ``newdata``)
   reuses the last row that had one.
+* **a latent fit is continued stochastically.** With ``epiinf(latent = TRUE)``
+  the fitted window's infections are read back from the posterior and the
+  horizon is drawn from ``Normal(mean, sd(mean))`` truncated at zero, which is
+  R's ``normal_lb_rng(mu, sigma, 0)``. Running the deterministic recursion
+  instead would be a different model from the one that was fitted.
 * **the random walk keeps walking.** Past the fitted window new increments are
   drawn at the walk's own fitted scale and cumulated, so forecast ``R_t`` fans
   out -- this is what R does (``new_rw_stanmat``, ``R/pp_eta.R:118-140``). Pass
@@ -437,7 +442,8 @@ def _design_from_newdata(panel: PanelData, newdata, group, date):
 # --------------------------------------------------------------------------
 
 
-def _renewal(Rt_unadj, gen, seed, seed_days, pops=None, susc0=None, rm=None):
+def _renewal(Rt_unadj, gen, seed, seed_days, pops=None, susc0=None, rm=None,
+             latent_sd=None, rng=None, observed=None):
     """Renewal recursion over ``(draws, regions, days)``.
 
     A transcription of the two ``pytensor.scan`` branches of
@@ -447,6 +453,13 @@ def _renewal(Rt_unadj, gen, seed, seed_days, pops=None, susc0=None, rm=None):
     indexing convention. This one must match ``build_epidemia_model`` exactly,
     or the in-sample part of a forecast would not reproduce the fit -- which is
     what the test of that name checks.
+
+    ``latent_sd`` turns the recursion stochastic, for ``epiinf(latent = TRUE)``:
+    each day's infections are drawn from ``Normal(mean, sd(mean))`` truncated at
+    zero rather than set to the mean, which is R's ``normal_lb_rng(mu, sigma, 0)``
+    in ``gen_infections_pp.stan``. ``observed`` supplies the fitted window's
+    infections so they are read back from the posterior instead of re-simulated,
+    matching R's ``-0.5`` sentinel for "not sampled".
 
     Returns ``(infections, susceptible)``; ``susceptible`` is ``None`` when
     ``pops`` is ``None``.
@@ -460,11 +473,26 @@ def _renewal(Rt_unadj, gen, seed, seed_days, pops=None, susc0=None, rm=None):
     inf = np.zeros((S * M, T))
     inf[:, :min(v, T)] = sd[:, None]
 
+    obs_flat = None if observed is None else np.asarray(observed).reshape(S * M, -1)
+    n_obs = 0 if obs_flat is None else obs_flat.shape[1]
+    if n_obs:
+        inf[:, :min(n_obs, T)] = obs_flat[:, :min(n_obs, T)]
+
+    def draw(mean, t):
+        """Mean, or a truncated-normal draw around it for a latent fit."""
+        if latent_sd is None:
+            return mean
+        s_t = latent_sd(np.maximum(mean, 1e-9))
+        out = rng.normal(mean, s_t)
+        return np.maximum(out, 0.0)               # R's lower bound of 0
+
     if pops is None:
         for t in range(v, T):
+            if t < n_obs:
+                continue                          # inside the fit: read back
             lo = max(0, t - L)
             window = inf[:, lo:t][:, ::-1]        # i_{t-1}, i_{t-2}, ...
-            inf[:, t] = R[:, t] * (window @ gen[: t - lo])
+            inf[:, t] = draw(R[:, t] * (window @ gen[: t - lo]), t)
         return inf.reshape(S, M, T), None
 
     p = np.broadcast_to(np.asarray(pops, dtype=float), (S, M)).reshape(-1)
@@ -491,6 +519,10 @@ def _renewal(Rt_unadj, gen, seed, seed_days, pops=None, susc0=None, rm=None):
             pre = R[:, t] * (window @ gen[: t - lo])
         # -expm1(-x) == 1 - exp(-x) but accurate for the tiny x of a big pop.
         i_t = state * -np.expm1(-pre / p)
+        if t >= n_obs:
+            i_t = draw(i_t, t)
+        else:
+            i_t = inf[:, t]                       # inside the fit: read back
         inf[:, t] = i_t
         state = (1.0 - rm_flat[:, t]) * (state - i_t)
         susc[:, t] = state
@@ -591,8 +623,7 @@ def _draw_series(E, obs: ObsModel, aux, rng):
 
 def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
              newdata=None, draws=None, seed=None, series=None,
-             group="country", date="date", allow_latent=False,
-             rw_forecast="draw"):
+             group="country", date="date", rw_forecast="draw"):
     """Forecast every latent and observed series from a fitted model.
 
     Rebuilds the model's design over a (possibly longer) window, reconstructs
@@ -654,19 +685,13 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
     narrower "R_t stays where it ended" forecast this function used to produce
     unconditionally.
     """
-    # The docs have always said a latent fit cannot be forecast; until now the
-    # code did not enforce it and would quietly forward-simulate the
-    # DETERMINISTIC recursion instead, producing output that looks fine and is
-    # not the fitted model. With epiinf(latent = TRUE) the post-seeding
-    # infections are free parameters, so there is no rule to run forward.
-    if getattr(config, "latent", False) and not allow_latent:
-        raise ValueError(
-            "cannot forecast a fit made with latent=True: the post-seeding "
-            "infections are free parameters, so there is no forward rule "
-            "beyond the fitted window. Refit with latent=False to forecast, or "
-            "pass allow_latent=True to simulate the deterministic recursion "
-            "instead -- which is a DIFFERENT model from the one you fitted."
-        )
+    # A latent fit CAN be forecast: R rebuilds infections_raw over the new
+    # window, marks the unseen periods, and continues the latent process with
+    # normal_lb_rng(mu, sigma, 0) (gen_infections_pp.stan:36-44). We do the
+    # same below -- the fitted window is read back from the posterior and the
+    # horizon is drawn, rather than run through the deterministic recursion,
+    # which would be a different model from the one that was fitted.
+    latent_fit = bool(getattr(config, "latent", False))
 
     if isinstance(obs_models, ObsModel):
         obs_models = [obs_models]
@@ -775,6 +800,30 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
 
     # ---- infections ------------------------------------------------------
     seed_draws = take("seed")                                    # (S, M)
+    # With epiinf(latent = TRUE) the post-seeding infections are parameters, so
+    # the recursion supplies their MEAN and the value is drawn around it. Over
+    # the fitted window the draws already exist, so they are read back rather
+    # than re-simulated -- R marks those periods and skips them the same way.
+    latent_sd = observed_inf = None
+    if latent_fit:
+        aux = take("inf_aux", required=False)
+        if aux is None:
+            raise ValueError(
+                "forecasting a latent=True fit needs 'inf_aux' (the latent "
+                "dispersion) in the posterior, and this fit does not carry it."
+            )
+        a = np.repeat(np.asarray(aux, dtype=float).reshape(S, 1), M,
+                      axis=1).reshape(S * M, 1)
+        if getattr(config, "fixed_vtm", True):
+            def latent_sd(mean, _a=a):
+                return np.sqrt(_a * mean)
+        else:
+            def latent_sd(mean, _a=a):
+                return _a * mean
+        fitted_inf = take("infections", required=False)
+        if fitted_inf is not None:
+            observed_inf = np.asarray(fitted_inf, dtype=float)
+
     if config.pop_adjust:
         if panel.pops is None:
             raise ValueError("config.pop_adjust=True requires PanelData.pops")
@@ -796,11 +845,13 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
         infections, susceptible = _renewal(
             Rt_unadj, config.gen, seed_draws, config.seed_days,
             pops=pops[None, :], susc0=susc0, rm=rm,
+            latent_sd=latent_sd, rng=rng, observed=observed_inf,
         )
         Rt = Rt_unadj * susceptible / pops[None, :, None]
     else:
         infections, susceptible = _renewal(
-            Rt_unadj, config.gen, seed_draws, config.seed_days
+            Rt_unadj, config.gen, seed_draws, config.seed_days,
+            latent_sd=latent_sd, rng=rng, observed=observed_inf,
         )
         Rt = Rt_unadj
 
