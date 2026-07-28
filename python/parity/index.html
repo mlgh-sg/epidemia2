@@ -832,6 +832,11 @@ missing is halfway through an analysis.</p>
 <td style="text-align: center;">✅ <code>epidemia.predict</code></td>
 </tr>
 <tr>
+<td>Plots band the posterior <strong>predictive</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>plot_obs(predictive=True)</code>, default</td>
+</tr>
+<tr>
 <td>Spaghetti plots</td>
 <td style="text-align: center;">✅</td>
 <td style="text-align: center;">✅ <code>spaghetti_rt</code> etc.</td>
@@ -907,7 +912,7 @@ missing is halfway through an analysis.</p>
 <td style="text-align: center;">✅ <code>epidemia.postprocess</code></td>
 </tr>
 <tr>
-<td><code>posterior_infectious</code></td>
+<td><code>posterior_infectious</code> (incl. <code>/ max(gen)</code>)</td>
 <td style="text-align: center;">✅</td>
 <td style="text-align: center;">✅ <code>epidemia.postprocess</code></td>
 </tr>
@@ -935,6 +940,11 @@ missing is halfway through an analysis.</p>
 <td>Fully pooled (no region effects)</td>
 <td style="text-align: center;">✅</td>
 <td style="text-align: center;">✅ <code>region_effects=False</code></td>
+</tr>
+<tr>
+<td>Sampler diagnostics retained on the fit</td>
+<td style="text-align: center;">✅ <code>sampler_diagnostics()</code></td>
+<td style="text-align: center;">✅ <code>sampler_diagnostics()</code></td>
 </tr>
 <tr>
 <td>nutpie sampler, JAX/GPU option</td>
