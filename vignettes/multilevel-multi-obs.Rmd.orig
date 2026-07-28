@@ -74,13 +74,23 @@ options(mc.cores = parallel::detectCores())
 
 We use `EuropeCovid2`, which holds daily deaths *and* daily cases for eleven
 European countries, together with the binary intervention series used by
-@Flaxman2020. To keep the example quick we restrict it to three countries.
+@Flaxman2020. To keep the example quick we restrict it to six countries.
+
+Six rather than three, because the number of groups is not just a matter of
+runtime here. A partially pooled slope asks the data to estimate a *variance*
+across groups, and with three groups that variance is barely identified: the
+global effect $\beta$ and the deviations $b^{(m)}$ can trade off against each
+other almost freely, which shows up as a ridge the sampler has to crawl along.
+Fitting the same model to three countries leaves divergent transitions and a
+tail effective sample size in the tens; at six they disappear, and the fit is
+no slower despite twice the data, because the sampler stops fighting the
+geometry.
 
 ```{r mlmo-data}
 data("EuropeCovid2")
 data <- EuropeCovid2$data
 
-groups <- c("Austria", "Germany", "Italy")
+groups <- c("Austria", "Belgium", "Denmark", "Germany", "Italy", "Switzerland")
 data <- filter(data, country %in% groups)
 ```
 
@@ -229,7 +239,7 @@ grid.arrange(p_deaths, p_cases, nrow = 2)
 Reproduction numbers are shown per country. Because the effects are partially
 pooled, each country's curve is informed by the others.
 
-```{r mlmo-rt-plot, echo = FALSE, warning = FALSE, message = FALSE, out.width = "100%", fig.width = 9, fig.height = 3, fig.cap = "Inferred reproduction numbers in each country, plotted as a step function because the only covariate is a binary policy indicator."}
+```{r mlmo-rt-plot, echo = FALSE, warning = FALSE, message = FALSE, out.width = "100%", fig.width = 9, fig.height = 5, fig.cap = "Inferred reproduction numbers in each country, plotted as a step function because the only covariate is a binary policy indicator."}
 plot_rt(fm, step = TRUE, levels = c(50, 95)) + bord + font + leg + marg
 ```
 
@@ -331,8 +341,8 @@ plot_coverage(fm, newdata = newdata, type = "deaths", levels = c(50, 95)) +
 <hr>
 
 As with the other tutorials, this example demonstrates the software rather than
-making a defensible epidemiological claim. Three countries is a thin basis for
-partial pooling; the infection-to-case distribution is invented; case
+making a defensible epidemiological claim. Six countries is still a thin basis
+for partial pooling; the infection-to-case distribution is invented; case
 ascertainment certainly varied over time as well as between countries, which an
 `rw()` term in the `cases` model would capture (see the
 [multiple observations](multiple-obs.html) tutorial); and no adjustment is made
