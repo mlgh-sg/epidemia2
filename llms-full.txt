@@ -4249,25 +4249,31 @@ options(mc.cores = parallel::detectCores())
 
 We use `EuropeCovid2`, which holds daily deaths *and* daily cases for eleven
 European countries, together with the binary intervention series used by
-@Flaxman2020. To keep the example quick we restrict it to six countries.
+@Flaxman2020. We use all eleven.
 
-Six rather than three, because the number of groups is not just a matter of
-runtime here. A partially pooled slope asks the data to estimate a *variance*
-across groups, and with three groups that variance is barely identified: the
-global effect $\beta$ and the deviations $b^{(m)}$ can trade off against each
-other almost freely, which shows up as a ridge the sampler has to crawl along.
-Fitting the same model to three countries leaves divergent transitions and a
-tail effective sample size in the tens; at six they disappear, and the fit is
-no slower despite twice the data, because the sampler stops fighting the
-geometry.
+That is worth a word, because it is tempting to cut the panel down to make the
+example run faster. Doing so costs more than it saves. A partially pooled slope
+asks the data to estimate a *variance* across groups, and a handful of groups
+barely identifies it: the global effect $\beta$ and the deviations $b^{(m)}$ can
+trade off against each other almost freely, which shows up as a ridge the
+sampler has to crawl along. Fitting this model to three countries leaves
+divergent transitions and a tail effective sample size in the tens. The
+[sampler diagnostics](#checking-the-sampler) below show what the full panel
+looks like instead.
 
 
 ``` r
 data("EuropeCovid2")
 data <- EuropeCovid2$data
 
-groups <- c("Austria", "Belgium", "Denmark", "Germany", "Italy", "Switzerland")
-data <- filter(data, country %in% groups)
+groups <- sort(unique(as.character(data$country)))
+groups
+```
+
+```
+##  [1] "Austria"        "Belgium"        "Denmark"        "France"        
+##  [5] "Germany"        "Italy"          "Norway"         "Spain"         
+##  [9] "Sweden"         "Switzerland"    "United_Kingdom"
 ```
 
 As in the multilevel tutorial, seeding is assumed to begin thirty days before
@@ -4406,14 +4412,14 @@ fm <- epim(
 ```
 
 ```
-## Chain 2 finished in 148.4 seconds.
-## Chain 4 finished in 154.6 seconds.
-## Chain 3 finished in 157.3 seconds.
-## Chain 1 finished in 157.8 seconds.
+## Chain 1 finished in 436.9 seconds.
+## Chain 3 finished in 440.2 seconds.
+## Chain 4 finished in 453.4 seconds.
+## Chain 2 finished in 465.1 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 154.5 seconds.
-## Total execution time: 157.8 seconds.
+## Mean chain execution time: 448.9 seconds.
+## Total execution time: 465.2 seconds.
 ```
 
 `all_obs_types()` confirms both series are in the model, and each carries its
@@ -4427,6 +4433,56 @@ all_obs_types(fm)
 ```
 ## [1] "deaths" "cases"
 ```
+
+## Checking the Sampler {#checking-the-sampler}
+<hr>
+
+Before reading anything off a fit, check that the sampler actually explored the
+posterior. CmdStan prints its warnings to the console while it runs, but those
+warnings are not part of the draws — scroll past them, or reload a saved model
+in a new session, and they are gone. `sampler_diagnostics()` keeps them with the
+fit.
+
+
+``` r
+sampler_diagnostics(fm)
+```
+
+```
+## Sampler diagnostics
+## 4 chains x 500 post-warmup draws = 2000
+## 
+##  chain divergent max_treedepth ebfmi
+##      1         0             0 0.867
+##      2         0             0 0.943
+##      3         0             0 0.810
+##      4         0             0 0.929
+## 
+## Divergent transitions: 0 (0.0%)
+## Hit max treedepth:     0 (0.0%)
+## Lowest E-BFMI:         0.81
+## Worst R-hat:           1.010  (R|lockdown)
+## Lowest bulk ESS:       380  (R|Sigma[country:(Intercept),(Intercept)])
+## Lowest tail ESS:       491
+## 
+## Warnings:
+## * Bulk ESS of 380 for R|Sigma[country:(Intercept),(Intercept)] is 95
+##   per chain, below the 100 per chain that keeps posterior summaries
+##   stable.
+```
+
+The three quantities answer different questions. **Divergent transitions** mean
+the sampler could not follow the posterior's curvature; they bias the result and
+drawing more samples does not help, so they have to be fixed by raising
+`adapt_delta` or reparameterising. **Max treedepth** is an efficiency problem
+rather than a correctness one — the sampler was still making progress when it
+ran out of steps. **E-BFMI** below about 0.2 suggests the momentum resampling is
+not exploring the energy distribution well.
+
+This is also where the choice to keep all eleven countries pays off. The same
+model on three countries returns ten divergent transitions, eighteen iterations
+at maximum treedepth, and a tail effective sample size of 59 — versus none, none,
+and a tail ESS in the hundreds here.
 
 ## Checking Both Series
 <hr>
@@ -4484,13 +4540,18 @@ round(t(apply(total, 2, quantile, probs = c(0.05, 0.5, 0.95))), 2)
 ```
 
 ```
-##                5%   50%   95%
-## Austria     -3.93 -3.53 -3.21
-## Belgium     -2.84 -2.66 -2.49
-## Denmark     -1.85 -1.67 -1.49
-## Germany     -2.63 -2.51 -2.38
-## Italy       -2.51 -2.40 -2.29
-## Switzerland -2.48 -2.36 -2.24
+##                   5%   50%   95%
+## Austria        -4.20 -3.74 -3.39
+## Belgium        -2.84 -2.66 -2.49
+## Denmark        -1.80 -1.62 -1.45
+## France         -3.10 -2.91 -2.76
+## Germany        -2.63 -2.50 -2.37
+## Italy          -2.51 -2.40 -2.29
+## Norway         -1.45 -1.33 -1.20
+## Spain          -5.76 -5.02 -4.48
+## Sweden         -4.26 -2.51 -0.77
+## Switzerland    -2.46 -2.35 -2.23
+## United_Kingdom -2.12 -2.01 -1.90
 ```
 
 The country-specific case ascertainment intercepts, by contrast, are ordinary
@@ -4502,10 +4563,12 @@ grep("^cases\\|", colnames(as.matrix(fm)), value = TRUE)
 ```
 
 ```
-## [1] "cases|countryAustria"        "cases|countryBelgium"       
-## [3] "cases|countryDenmark"        "cases|countryGermany"       
-## [5] "cases|countryItaly"          "cases|countrySwitzerland"   
-## [7] "cases|reciprocal dispersion"
+##  [1] "cases|countryAustria"        "cases|countryBelgium"       
+##  [3] "cases|countryDenmark"        "cases|countryFrance"        
+##  [5] "cases|countryGermany"        "cases|countryItaly"         
+##  [7] "cases|countryNorway"         "cases|countrySpain"         
+##  [9] "cases|countrySweden"         "cases|countrySwitzerland"   
+## [11] "cases|countryUnited_Kingdom" "cases|reciprocal dispersion"
 ```
 
 ## Checking the ascertainment
@@ -4531,8 +4594,12 @@ round(iar_by_country, 3)
 ```
 
 ```
-##     Austria     Belgium     Denmark     Germany       Italy Switzerland 
-##       0.253       0.066       0.183       0.259       0.055       0.191
+##        Austria        Belgium        Denmark         France        Germany 
+##          0.265          0.069          0.186          0.059          0.268 
+##          Italy         Norway          Spain         Sweden    Switzerland 
+##          0.057          0.317          0.081          0.045          0.197 
+## United_Kingdom 
+##          0.051
 ```
 
 Now compare the implied totals. If the model were fitting infections directly,
@@ -4567,8 +4634,12 @@ round(ratio, 3)
 ```
 
 ```
-##     Austria     Belgium     Denmark     Germany       Italy Switzerland 
-##       0.247       0.062       0.165       0.248       0.052       0.188
+##        Austria        Belgium        Denmark         France        Germany 
+##          0.260          0.065          0.168          0.056          0.256 
+##          Italy         Norway          Spain         Sweden    Switzerland 
+##          0.054          0.307          0.077          0.027          0.195 
+## United_Kingdom 
+##          0.044
 ```
 
 The two agree: only a fraction of infections becomes a recorded case, and that
@@ -4626,13 +4697,13 @@ head(ev$error)
 ```
 
 ```
-##     group       date    crps mean_abs_error median_abs_error
-## 1 Austria 2020-02-23 0.0e+00          0e+00                0
-## 2 Austria 2020-02-24 0.0e+00          0e+00                0
-## 3 Austria 2020-02-25 0.0e+00          0e+00                0
-## 4 Austria 2020-02-26 0.0e+00          0e+00                0
-## 5 Austria 2020-02-27 2.5e-07          5e-04                0
-## 6 Austria 2020-02-28 2.5e-07          5e-04                0
+##     group       date     crps mean_abs_error median_abs_error
+## 1 Austria 2020-02-23 0.00e+00         0.0000                0
+## 2 Austria 2020-02-24 0.00e+00         0.0000                0
+## 3 Austria 2020-02-25 0.00e+00         0.0000                0
+## 4 Austria 2020-02-26 0.00e+00         0.0000                0
+## 5 Austria 2020-02-27 0.00e+00         0.0000                0
+## 6 Austria 2020-02-28 2.25e-06         0.0015                0
 ```
 
 
@@ -4651,7 +4722,7 @@ head(ev$error)
 <hr>
 
 As with the other tutorials, this example demonstrates the software rather than
-making a defensible epidemiological claim. Six countries is still a thin basis
+making a defensible epidemiological claim. Eleven countries is a modest basis
 for partial pooling; the infection-to-case distribution is invented; case
 ascertainment certainly varied over time as well as between countries, which an
 `rw()` term in the `cases` model would capture (see the
@@ -4711,6 +4782,7 @@ for the susceptible population.
 - `priors`: Prior distributions and options
 - `reexports`: Objects exported from other packages
 - `rw`: Adds random walks with independent Gaussian steps to the parameterization of the time-varying reproduction number.
+- `sampler_diagnostics`: Sampler diagnostics for a fitted model
 - `scaled_logit`: Represents a 'scaled' logit link
 - `shifted_gamma`: A shifted gamma prior
 - `summary.epimodel`: Summary method for epimodel objects
