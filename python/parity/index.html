@@ -872,6 +872,11 @@ missing is halfway through an analysis.</p>
 <td style="text-align: center;">✅ <code>forecast(...)</code></td>
 </tr>
 <tr>
+<td>Random walk keeps walking over the horizon</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅ <code>forecast(rw_forecast="draw")</code>, default</td>
+</tr>
+<tr>
 <td>Stochastic latent infections</td>
 <td style="text-align: center;">✅</td>
 <td style="text-align: center;">✅ <code>latent=True</code></td>
@@ -879,7 +884,7 @@ missing is halfway through an analysis.</p>
 <tr>
 <td>Autoscaled priors, <code>hs</code>/<code>lasso</code> families</td>
 <td style="text-align: center;">✅</td>
-<td style="text-align: center;">✅ <code>epidemia.priors</code></td>
+<td style="text-align: center;">✅ applied by the builder; <code>EpiModelConfig(autoscale=)</code></td>
 </tr>
 <tr>
 <td>Counterfactuals</td>
