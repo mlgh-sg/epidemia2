@@ -60,6 +60,11 @@ class RandomWalk:
         Repeating an index across days gives a coarser walk (R's
         ``rw(time = week)``); ``arange(T)`` broadcast over regions gives a daily
         one. Padded days may carry any in-range value -- they are never used.
+
+        ``-1`` means "this day gets no walk term", which is R's ``NA`` in the
+        ``rw(time =)`` column: the day takes the walk's ``w = 0`` initial
+        condition instead of its first step. Use it for a seeding period, or any
+        stretch the walk should not wander through.
     by_region : bool
         ``False`` (default) puts every region on ONE shared walk, which is R's
         ``rw(time = week)``. ``True`` gives each region its own independent walk
@@ -404,6 +409,11 @@ def _random_walk(pm, pt, rw: RandomWalk, M, T, name="rw"):
         raise ValueError(
             f"rw.index must have shape {(M, T)}, got {index.shape}"
         )
+    if index.min() < -1:
+        raise ValueError(
+            "rw.index entries must be >= -1; -1 means 'this day gets no walk "
+            f"term', and got {int(index.min())}"
+        )
     n_steps = int(index.max()) + 1
     n_procs = M if rw.by_region else 1
 
@@ -412,8 +422,15 @@ def _random_walk(pm, pt, rw: RandomWalk, M, T, name="rw"):
     walk = pt.cumsum(scale[:, None] * noise, axis=1)          # (n_procs, n_steps)
     pm.Deterministic(name, walk)
 
+    # A leading pinned zero, so index -1 contributes nothing. R gets this from
+    # an NA in the rw(time =) column: those days sit outside the walk and take
+    # the w = 0 initial condition. Without it every excluded day would instead
+    # take the walk's FIRST step, which is a free parameter perfectly
+    # confounded with the intercept.
+    padded = pt.concatenate([pt.zeros((n_procs, 1)), walk], axis=1)
+
     proc = np.arange(M) if rw.by_region else np.zeros(M, dtype=int)
-    return walk[proc[:, None], index]                          # (M, T)
+    return padded[proc[:, None], index + 1]                    # (M, T)
 
 
 def _walks(pm, pt, rw, M, T, prefix=""):

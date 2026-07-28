@@ -130,14 +130,17 @@ def _walk_contribution(post, panel, M, prefix=""):
     """
     idx = np.asarray(panel.rw_index)
     total = 0.0
+    # -1 means "no walk term on this day" (core pads a zero level for it)
     i = 1
     while True:
         name = f"{prefix}rw" if i == 1 else f"{prefix}rw{i}"
         if name not in post:
             break
         walk = _flat(post[name])                            # (S, procs, steps)
+        pad = np.concatenate(
+            [np.zeros((walk.shape[0], walk.shape[1], 1)), walk], axis=2)
         proc = np.arange(M) if walk.shape[1] == M else np.zeros(M, int)
-        total = total + walk[:, proc[:, None], idx]
+        total = total + pad[:, proc[:, None], idx + 1]
         i += 1
     return total
 

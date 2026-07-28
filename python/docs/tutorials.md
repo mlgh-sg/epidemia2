@@ -1,13 +1,15 @@
 # Tutorials
 
-Two worked examples, both ported from the R package's vignettes so you can read
+Five worked examples, all ported from the R package's vignettes so you can read
 them side by side. They are **jupytext** notebooks stored as plain `.py` files in
 percent format, which means each one is simultaneously a runnable script and a
 notebook — open it in Jupyter or VS Code, or run it with `python`.
 
 | Tutorial | R counterpart | What it covers |
 |---|---|---|
+| [Spanish flu in Baltimore](tutorials/flu.md) | [Spanish Flu](https://mlgh-sg.com/epidemia2/articles/flu.html) | The smallest interesting model: one population, one series, a daily random walk on `R_t`. Compares the deterministic renewal recursion against the latent (`latent=True`) one, and forecasts from it. |
 | [Assessing the effects of interventions](tutorials/europe-covid.md) | [Multilevel Modeling](https://mlgh-sg.com/epidemia2/articles/europe-covid.html) | A partially pooled model of five NPIs across 11 European countries, fitted to daily deaths. Effect sizes, per-region reproduction numbers, counterfactuals. |
+| [Tracking SARS-CoV-2 in England](tutorials/multiple-obs.md) | [Multiple Observations](https://mlgh-sg.com/epidemia2/articles/multiple-obs.html) | Daily case counts and weekly ONS positivity fitted jointly to one region. Series observed on different days, day-of-week reporting effects, and an `i2o` that deliberately does not sum to one. |
 | [Partial pooling](tutorials/partial-pooling.md) | [Partial Pooling](https://mlgh-sg.com/epidemia2/articles/partial-pooling.html) | How R's `(expr \| factor)` and `(expr \|\| factor)` map onto hierarchical priors here, and what no pooling, partial pooling and full pooling each do to the estimates. |
 | [Several observation series](tutorials/multilevel-multi-obs.md) | [Multilevel + Multiple Observations](https://mlgh-sg.com/epidemia2/articles/multilevel-multi-obs.html) | Deaths and cases fitted jointly, with correlated region effects, a weekly random walk per region, and a susceptibility adjustment. Scored with `epidemia.scoring`. |
 
@@ -17,7 +19,7 @@ side's `vignettes/precompute.R` bakes the vignettes. Nothing is fitted when the
 documentation is built. Re-bake after changing the modelling code:
 
 ```bash
-uv run --group dev python scripts/precompute.py            # all three
+uv run --group dev python scripts/precompute.py            # all five
 uv run --group dev python scripts/precompute.py europe-covid
 ```
 

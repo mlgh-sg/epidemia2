@@ -47,7 +47,17 @@ from .postprocess import (
     prior_summary,
 )
 from .formula import build_from_formula, parse_formula
-from .data import EUROPE_COVID_NPIS, EpiData, EuropeCovid2, europe_covid2, flu1918
+from .data import (
+    EUROPE_COVID_COUNTRIES,
+    EUROPE_COVID_NPIS,
+    EpiData,
+    EuropeCovid,
+    EuropeCovid2,
+    england_new_cases,
+    europe_covid,
+    europe_covid2,
+    flu1918,
+)
 from .infer import fit
 from .model import EpiConfig, build_model
 from .multilevel import (
@@ -83,7 +93,11 @@ from .scoring import crps, evaluate_forecast, posterior_coverage, posterior_metr
 from .variational import fit_variational
 
 __all__ = [
+    "EUROPE_COVID_COUNTRIES",
     "EUROPE_COVID_NPIS",
+    "EuropeCovid",
+    "england_new_cases",
+    "europe_covid",
     "EpiConfig",
     "EpiData",
     "EpiModelConfig",

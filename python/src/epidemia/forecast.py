@@ -725,8 +725,13 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
 
     # ---- posterior draws -------------------------------------------------
     rng = seed if isinstance(seed, np.random.Generator) else np.random.default_rng(seed)
-    b0_all = _stack_draws(post, "b0")
-    n_samples = b0_all.shape[0]
+    # b0 is the per-region intercept deviation. A model built with
+    # region_effects=False never creates it -- a single-population fit has no
+    # regions to vary over -- so it must not be required here. Rt_unadj is
+    # always present and gives the draw count either way.
+    b0_all = _stack_draws(post, "b0", required=False)
+    n_samples = (b0_all.shape[0] if b0_all is not None
+                 else _stack_draws(post, "Rt_unadj").shape[0])
     if draws is not None and int(draws) < n_samples:
         idx = np.sort(rng.choice(n_samples, size=int(draws), replace=False))
     else:
@@ -737,12 +742,11 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
         arr = _stack_draws(post, name, required=required)
         return None if arr is None else np.asarray(arr, dtype=float)[idx]
 
-    b0 = np.asarray(b0_all, dtype=float)[idx]                   # (S, M)
-
     eta = np.zeros((S, M, T_ext))
     if config.intercept:
         eta += take("intercept").reshape(S, 1, 1)
-    eta += b0[:, :, None]
+    if b0_all is not None:
+        eta += np.asarray(b0_all, dtype=float)[idx][:, :, None]  # (S, M)
 
     if K:
         beta = take("beta").reshape(S, 1, K)

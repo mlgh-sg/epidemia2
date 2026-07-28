@@ -229,3 +229,68 @@ def test_latent_forecast_without_noise_matches_the_deterministic_recursion():
     b, _ = _renewal(Rt, gen, seed, seed_days=3, latent_sd=None,
                     rng=np.random.default_rng(0))
     np.testing.assert_allclose(a, b)
+
+
+def test_forecast_works_without_b0_for_a_single_population_fit():
+    """region_effects=False never creates b0; forecast() used to demand it.
+
+    Found by the flu tutorial, which is a one-region model and so has no
+    per-region intercept deviation to forecast with.
+    """
+    import epidemia
+    from epidemia.core import (EpiModelConfig, ObsModel, PanelData, RandomWalk,
+                               fit_epidemia)
+    from epidemia.priors import normal
+
+    flu = epidemia.flu1918()
+    yv, n = flu.incidence[:45], 45
+    panel1 = PanelData(X=np.zeros((1, n, 0)), lengths=np.array([n]),
+                       regions=["Baltimore"], npis=[],
+                       dates=[pd.date_range("1918-09-17", periods=n).values],
+                       pops=None)
+    obs = ObsModel("cases", yv[None, :], np.ones((1, n), bool),
+                   np.repeat(0.25, 4), family="poisson", link="identity",
+                   intercept=False, offset=np.ones((1, n)))
+    cfg = EpiModelConfig(gen=flu.generation, link="log", intercept=True,
+                         prior_intercept=normal(np.log(2), 0.2),
+                         region_effects=False, seed_days=6,
+                         rw=RandomWalk(index=np.tile(np.arange(n), (1, 1)),
+                                       prior_scale=0.01))
+    idata = fit_epidemia(panel1, [obs], cfg, draws=60, tune=60, chains=2,
+                         seed=0, progress_bar=False)
+    assert "b0" not in idata.posterior          # the premise of the test
+    fc = epidemia.forecast(idata, panel1, [obs], cfg, draws=20, seed=0)
+    assert np.isfinite(np.asarray(fc.Rt)).all()
+
+
+# --- rw index -1 excludes a day from the walk -----------------------------
+
+def test_rw_index_minus_one_contributes_nothing():
+    """R's rw(time=) takes NA for "no walk term here"; Python had no equivalent.
+
+    Without it, an excluded day silently takes the walk's FIRST step, which is a
+    free parameter perfectly confounded with the intercept -- it showed up as
+    r_hat 1.03 on `intercept` in the England tutorial.
+    """
+    import pymc as pm
+    import pytensor.tensor as pt
+    from epidemia.core import RandomWalk, _random_walk
+
+    Tn, Mn = 10, 1
+    idx = np.array([[-1, -1, -1, 0, 0, 1, 1, 2, 2, 3]])
+    with pm.Model():
+        contrib = _random_walk(pm, pt, RandomWalk(index=idx), Mn, Tn)
+        fn = pm.compile([], contrib, on_unused_input="ignore")
+    vals = np.asarray(fn())
+    assert np.allclose(vals[0, :3], 0.0), "excluded days must contribute zero"
+    assert not np.allclose(vals[0, 3:], 0.0), "included days must contribute"
+
+
+def test_rw_index_below_minus_one_is_rejected():
+    import pymc as pm
+    import pytensor.tensor as pt
+    from epidemia.core import RandomWalk, _random_walk
+
+    with pm.Model():
+        with pytest.raises(ValueError, match=r">= -1"):
+            _random_walk(pm, pt, RandomWalk(index=np.array([[-2, 0, 1]])), 1, 3)

@@ -153,6 +153,10 @@ The reference implementation the PyMC model is checked against.
 
 ::: epidemia.data
 
+::: epidemia.data.england_new_cases
+
+::: epidemia.data.europe_covid
+
 ---
 
 ## Superseded

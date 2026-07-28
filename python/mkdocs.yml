@@ -67,7 +67,9 @@ nav:
   - User guide: guide.md
   - Tutorials:
       - Overview: tutorials.md
+      - Spanish flu in Baltimore: tutorials/flu.md
       - Assessing the effects of interventions: tutorials/europe-covid.md
+      - Tracking SARS-CoV-2 in England: tutorials/multiple-obs.md
       - Partial pooling: tutorials/partial-pooling.md
       - Several observation series: tutorials/multilevel-multi-obs.md
   - Parity with R: parity.md

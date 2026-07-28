@@ -32,7 +32,8 @@ NOTEBOOKS = ROOT / "notebooks"
 OUT = ROOT / "docs" / "tutorials"
 
 # Order matters only for the printed summary.
-ALL_TUTORIALS = ["europe-covid", "partial-pooling", "multilevel-multi-obs"]
+ALL_TUTORIALS = ["flu", "europe-covid", "multiple-obs", "partial-pooling",
+                 "multilevel-multi-obs"]
 
 TITLES = {
     "europe-covid": "Assessing the effects of interventions",

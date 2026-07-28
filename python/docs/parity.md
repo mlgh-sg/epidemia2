@@ -51,6 +51,7 @@ missing is halfway through an analysis.
 | ADVI stops on ELBO convergence | ✅ `tol_rel_obj` | ✅ `fit_variational(early_stop=)` |
 | Default prior scale when unspecified | 0.25 | 0.25 |
 | `lkj()` as `prior_covariance` | ❌ rejected (no Stan support) | ✅ proper LKJ covariance |
+| Exclude days from a random walk | ✅ `NA` in `rw(time=)` | ✅ `index = -1` |
 | Sampler diagnostics retained on the fit | ✅ `sampler_diagnostics()` | ✅ `sampler_diagnostics()` |
 | nutpie sampler, JAX/GPU option | ❌ | ✅ |
 | `plotnine` plots | ❌ | ✅ |
