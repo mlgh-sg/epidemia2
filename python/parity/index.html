@@ -663,6 +663,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#deliberate-departures-from-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliberate departures from R
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-caveats-that-remain" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -799,6 +810,17 @@
     <span class="md-ellipsis">
       
         Forecasting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deliberate-departures-from-r" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliberate departures from R
       
     </span>
   </a>
@@ -1196,6 +1218,20 @@ walking</strong> — new increments are drawn at its own fitted scale and cumula
 R's <code>new_rw_stanmat</code> does, so forecast <code>R_t</code> fans out. Pass
 <code>rw_forecast="hold"</code> to freeze it at its last fitted step instead.
 <code>fc.predicted</code> holds draws from the observation family, not just the mean.</p>
+<h2 id="deliberate-departures-from-r">Deliberate departures from R<a class="headerlink" href="#deliberate-departures-from-r" title="Permanent link">&para;</a></h2>
+<p>Two places where this port does <strong>not</strong> match R, on purpose:</p>
+<p><strong>The default <code>R_t</code> coefficient prior is a shifted gamma.</strong> R's <code>epirt()</code> defaults
+to <code>normal(0, 0.5)</code>; <code>EpiModelConfig</code> defaults to the shifted gamma
+<code>log(1.05)/6 - Gamma(1/6, 1)</code>, which puts effectively all mass on the negative
+half line. That is the prior every epidemia vignette overrides to, and it
+encodes the modelling stance the package is for: an intervention is a priori
+non-increasing in transmission. Name the prior explicitly — as the R vignettes
+do — if you want R's symmetric default.</p>
+<p><strong>Student-t and Cauchy <code>prior_seeds</code> keep your location and scale.</strong> R
+hard-codes <code>student_t_lpdf(seeds_raw | df, 0, 1)</code> (<code>priors_inf.stan:40-41</code>), so
+<code>student_t(3, 50, 20)</code> silently becomes a half-t(3, 0, 1). That is an R-side
+defect rather than a design choice; this port honours what you asked for. The
+normal case is unaffected in either language.</p>
 <h2 id="the-caveats-that-remain">The caveats that remain<a class="headerlink" href="#the-caveats-that-remain" title="Permanent link">&para;</a></h2>
 <p><strong>The formula's fixed/random split is advisory.</strong> <code>build_epidemia_model</code> shares
 one design matrix between the population-level <code>beta</code> and the region-level <code>b</code>,
