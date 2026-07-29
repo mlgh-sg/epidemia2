@@ -288,8 +288,29 @@ def prepare_panel(df, npis, response="deaths", group="country", date="date",
             stacklevel=2,
         )
 
+    # R drops a covariate that is constant over the MODELLED rows
+    # (R/parse_mm.R:66-67, R/helpers.R:641-649): it carries no information and
+    # its coefficient is not identified. This never fires on the pooled European
+    # design -- every NPI varies somewhere -- but restricting to one country can
+    # leave a column identically zero (Sweden never closed schools or locked
+    # down), and R would then fit a strictly smaller design than Python did.
+    npis = list(npis)
+    modelled = (np.concatenate([X[m, : int(lengths[m]), :] for m in range(M)],
+                               axis=0) if M else X.reshape(-1, K))
+    keep = [k for k in range(K) if len(np.unique(modelled[:, k])) > 1]
+    if len(keep) < K:
+        dropped = [npis[k] for k in range(K) if k not in keep]
+        warnings.warn(
+            f"dropping covariate(s) {dropped}: constant over the modelled rows, "
+            "so the coefficient is not identified. R drops these too "
+            f"(parse_mm.R:66-67); the design is now {len(keep)} column(s) wide.",
+            stacklevel=2,
+        )
+        X = X[:, :, keep]
+        npis = [npis[k] for k in keep]
+
     return MultilevelData(deaths=deaths, X=X, mask=mask, lengths=lengths,
-                          regions=regions, npis=list(npis), dates=dates)
+                          regions=regions, npis=npis, dates=dates)
 
 
 def build_multilevel_model(data: MultilevelData, config: MultilevelConfig):
@@ -385,7 +406,7 @@ def build_multilevel_model(data: MultilevelData, config: MultilevelConfig):
             terms.append(i2o[k - 1] * pt.concatenate(
                 [pt.zeros((M, k)), infections[:, :T - k]], axis=1))
         conv = pt.add(*terms) if len(terms) > 1 else terms[0]
-        E = pm.Deterministic("E_deaths", ifr * conv + 1e-6,
+        E = pm.Deterministic("E_deaths", ifr * conv + 1e-15,
                              dims=("region", "region_time"))
 
         # --- Likelihood on genuine days only (negative binomial, as in R)

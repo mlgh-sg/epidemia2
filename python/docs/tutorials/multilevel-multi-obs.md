@@ -146,34 +146,35 @@ print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
 ```
 
                              mean      sd  r_hat  ess_bulk
-    beta[lockdown]         -1.636   0.112    1.0    2692.0
-    seed[Austria]         132.152  35.831    1.0    5006.0
-    seed[Belgium]          65.062  17.238    1.0    4659.0
-    seed[Denmark]         132.728  37.166    1.0    4281.0
-    seed[France]           65.665  17.781    1.0    4093.0
-    seed[Germany]          81.048  20.701    1.0    4558.0
-    seed[Italy]            30.472   9.003    1.0    3498.0
-    seed[Norway]          179.280  48.325    1.0    3771.0
-    seed[Spain]            46.663  11.543    1.0    3964.0
-    seed[Sweden]          311.626  58.846    1.0    4147.0
-    seed[Switzerland]     111.302  27.414    1.0    2837.0
-    seed[United_Kingdom]  209.481  36.539    1.0    4386.0
-    rw_scale[0]             0.078   0.059    1.0    2808.0
-    rw_scale[1]             0.194   0.055    1.0    3573.0
-    rw_scale[2]             0.076   0.057    1.0    2429.0
-    rw_scale[3]             0.282   0.053    1.0    3444.0
-    rw_scale[4]             0.219   0.052    1.0    4379.0
-    rw_scale[5]             0.302   0.061    1.0    2148.0
-    rw_scale[6]             0.094   0.065    1.0    2009.0
-    rw_scale[7]             0.251   0.050    1.0    3156.0
-    rw_scale[8]             0.335   0.051    1.0    4638.0
-    rw_scale[9]             0.134   0.074    1.0    1098.0
-    rw_scale[10]            0.094   0.065    1.0    1264.0
-    Sigma_chol_stds[0]      0.423   0.134    1.0     631.0
-    Sigma_chol_stds[1]      0.422   0.104    1.0    1948.0
+    beta[lockdown]         -1.633   0.127   1.00    2319.0
+    seed[Austria]         129.854  35.911   1.00    4482.0
+    seed[Belgium]          65.410  17.427   1.00    4585.0
+    seed[Denmark]         134.835  37.240   1.00    4057.0
+    seed[France]           65.742  17.599   1.00    4871.0
+    seed[Germany]          80.712  20.040   1.00    4025.0
+    seed[Italy]            30.183   8.983   1.00    4278.0
+    seed[Norway]          183.405  48.164   1.00    4163.0
+    seed[Spain]            46.832  11.038   1.00    4174.0
+    seed[Sweden]          312.635  55.301   1.00    4209.0
+    seed[Switzerland]     112.390  28.128   1.00    3567.0
+    seed[United_Kingdom]  209.564  35.906   1.00    4360.0
+    rw_scale[0]             0.077   0.057   1.00    2805.0
+    rw_scale[1]             0.194   0.056   1.00    3922.0
+    rw_scale[2]             0.075   0.058   1.00    2265.0
+    rw_scale[3]             0.281   0.051   1.00    3680.0
+    rw_scale[4]             0.218   0.051   1.00    3819.0
+    rw_scale[5]             0.303   0.061   1.00    2399.0
+    rw_scale[6]             0.093   0.068   1.00    1602.0
+    rw_scale[7]             0.251   0.050   1.00    3403.0
+    rw_scale[8]             0.334   0.052   1.00    4095.0
+    rw_scale[9]             0.132   0.072   1.00    1176.0
+    rw_scale[10]            0.095   0.065   1.00    1085.0
+    Sigma_chol_stds[0]      0.445   0.151   1.01     510.0
+    Sigma_chol_stds[1]      0.463   0.122   1.00    1447.0
 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: 292 iterations saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 448 iterations saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 389 for Sigma_chol[2] is 97 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 ### Read the diagnostics before the estimates
@@ -193,20 +194,21 @@ print(epidemia.sampler_diagnostics(idata))
     4 chains x 1000 post-warmup draws = 4000
     
      chain  divergent  max_treedepth  ebfmi
-         1          0             85  0.856
-         2          0             78  0.929
-         3          0             63  0.914
-         4          0             66  0.931
+         1          0             99  0.910
+         2          0            218  0.889
+         3          0             86  0.875
+         4          0             45  0.858
     
     Divergent transitions: 0 (0.0%)
-    Hit max treedepth:     292 (7.3%)
+    Hit max treedepth:     448 (11.2%)
     Lowest E-BFMI:         0.86
-    Worst R-hat:           1.010  (Sigma_chol[2])
-    Lowest bulk ESS:       451  (Sigma_chol_corr[0, 1])
-    Lowest tail ESS:       497
+    Worst R-hat:           1.010  (z_full[3, 0])
+    Lowest bulk ESS:       389  (Sigma_chol[2])
+    Lowest tail ESS:       553
     
     Warnings:
-    * 292 iterations saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
+    * 448 iterations saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
+    * Bulk ESS of 389 for Sigma_chol[2] is 97 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 The three sampler quantities answer different questions. **Divergent
@@ -248,7 +250,7 @@ else:
     print(f"all clear: max r_hat = {summ['r_hat'].max():.3f}")
 ```
 
-    all clear: max r_hat = 1.000
+    all clear: max r_hat = 1.010
 
 
 ## Both series are explained
@@ -307,17 +309,17 @@ for m, region in enumerate(panel.regions):
           f"at the end;  Rt {Rt[m, n-1]:.2f} vs unadjusted {Rt_un[m, n-1]:.2f}")
 ```
 
-    Austria    susceptible 0.926 at the end;  Rt 0.80 vs unadjusted 0.87
-    Belgium    susceptible 0.882 at the end;  Rt 0.73 vs unadjusted 0.83
+    Austria    susceptible 0.928 at the end;  Rt 0.80 vs unadjusted 0.87
+    Belgium    susceptible 0.881 at the end;  Rt 0.73 vs unadjusted 0.83
     Denmark    susceptible 0.915 at the end;  Rt 0.98 vs unadjusted 1.07
-    France     susceptible 0.915 at the end;  Rt 0.64 vs unadjusted 0.70
-    Germany    susceptible 0.921 at the end;  Rt 0.72 vs unadjusted 0.78
-    Italy      susceptible 0.906 at the end;  Rt 0.81 vs unadjusted 0.90
-    Norway     susceptible 0.919 at the end;  Rt 0.82 vs unadjusted 0.90
-    Spain      susceptible 0.894 at the end;  Rt 0.63 vs unadjusted 0.70
-    Sweden     susceptible 0.907 at the end;  Rt 0.90 vs unadjusted 0.99
+    France     susceptible 0.913 at the end;  Rt 0.65 vs unadjusted 0.72
+    Germany    susceptible 0.922 at the end;  Rt 0.72 vs unadjusted 0.78
+    Italy      susceptible 0.906 at the end;  Rt 0.82 vs unadjusted 0.90
+    Norway     susceptible 0.918 at the end;  Rt 0.83 vs unadjusted 0.90
+    Spain      susceptible 0.891 at the end;  Rt 0.63 vs unadjusted 0.71
+    Sweden     susceptible 0.907 at the end;  Rt 0.89 vs unadjusted 0.99
     Switzerland susceptible 0.905 at the end;  Rt 0.65 vs unadjusted 0.72
-    United_Kingdom susceptible 0.897 at the end;  Rt 0.97 vs unadjusted 1.09
+    United_Kingdom susceptible 0.895 at the end;  Rt 0.97 vs unadjusted 1.08
 
 
 ## Per-region reproduction numbers
@@ -374,11 +376,11 @@ print(result.coverage.groupby("level")["in_ci"].mean().round(3))
 ```
 
       group       date          crps  mean_abs_error  median_abs_error
-    0   all 2020-02-23  0.000000e+00          0.0000               0.0
-    1   all 2020-02-24  0.000000e+00          0.0000               0.0
-    2   all 2020-02-25  0.000000e+00          0.0000               0.0
-    3   all 2020-02-26  1.000000e-06          0.0010               0.0
-    4   all 2020-02-27  2.500000e-07          0.0005               0.0
+    0   all 2020-02-23  0.000000e+00         0.00000               0.0
+    1   all 2020-02-24  0.000000e+00         0.00000               0.0
+    2   all 2020-02-25  6.250000e-08         0.00025               0.0
+    3   all 2020-02-26  2.500000e-07         0.00050               0.0
+    4   all 2020-02-27  5.625000e-07         0.00075               0.0
     level
     50.0    0.583
     95.0    0.917

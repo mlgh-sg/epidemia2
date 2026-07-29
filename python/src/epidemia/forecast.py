@@ -726,7 +726,7 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
     ``config.pop_adjust``) and, per observation series::
 
         rate = link_K * sigmoid(obs eta)
-        E    = rate * conv(infections, i2o) + 1e-6
+        E    = rate * conv(infections, i2o) + 1e-15
 
     finally drawing from that series' family. Nothing is re-fitted.
 
@@ -944,9 +944,10 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
 
         rate = _apply_link(getattr(o, "link", "scaled_logit"), oeta,
                            float(o.link_K))
-        # 1e-6 floor, exactly as build_epidemia_model records E_<series>.
+        # 1e-15 floor, exactly as build_epidemia_model records E_<series>
+        # and as R adds inside neg_binomial_2_lpmf.
         E = expected_observations(infections, np.asarray(o.i2o, dtype=float),
-                                  rate) + 1e-6
+                                  rate) + 1e-15
         aux = take(f"{o.name}|aux", required=False)
         expected[o.name] = E
         predicted[o.name] = _draw_series(E, o, aux, rng)

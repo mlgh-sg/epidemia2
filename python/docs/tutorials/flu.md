@@ -187,17 +187,17 @@ print(epidemia.sampler_diagnostics(idata))
     4 chains x 1000 post-warmup draws = 4000
     
      chain  divergent  max_treedepth  ebfmi
-         1          0              0  0.936
-         2          0              0  0.996
-         3          0              0  0.973
-         4          0              0  0.953
+         1          0              0  1.021
+         2          0              0  1.053
+         3          0              0  0.930
+         4          0              0  0.977
     
     Divergent transitions: 0 (0.0%)
     Hit max treedepth:     0 (0.0%)
-    Lowest E-BFMI:         0.94
-    Worst R-hat:           1.010  (intercept)
-    Lowest bulk ESS:       479  (intercept)
-    Lowest tail ESS:       929
+    Lowest E-BFMI:         0.93
+    Worst R-hat:           1.010  (rw_noise[0, 10])
+    Lowest bulk ESS:       633  (rw_scale[0])
+    Lowest tail ESS:       1067
     
     No problems detected.
 
@@ -211,17 +211,17 @@ print(epidemia.sampler_diagnostics(idata_latent))
     4 chains x 1000 post-warmup draws = 4000
     
      chain  divergent  max_treedepth  ebfmi
-         1          0              0  0.917
-         2          0              0  1.003
-         3          0              0  0.942
-         4          0              0  0.897
+         1          0              0  0.894
+         2          0              0  0.999
+         3          0              0  0.944
+         4          0              0  0.916
     
     Divergent transitions: 0 (0.0%)
     Hit max treedepth:     0 (0.0%)
-    Lowest E-BFMI:         0.90
-    Worst R-hat:           1.010  (rw_noise[0, 4])
-    Lowest bulk ESS:       1377  (infections_raw[0, 7])
-    Lowest tail ESS:       473
+    Lowest E-BFMI:         0.89
+    Worst R-hat:           1.010  (rw_noise[0, 13])
+    Lowest bulk ESS:       2133  (infections_raw[0, 13])
+    Lowest tail ESS:       880
     
     No problems detected.
 
@@ -327,11 +327,11 @@ print()
 print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
 ```
 
-    mean 95% R_t width, deterministic : 0.251
-    mean 95% R_t width, latent        : 0.426
+    mean 95% R_t width, deterministic : 0.249
+    mean 95% R_t width, latent        : 0.430
     
-               mean     sd  r_hat  ess_bulk
-    inf_aux  10.818  0.737    1.0    3898.0
+              mean     sd  r_hat  ess_bulk
+    inf_aux  10.81  0.748    1.0    3682.0
 
 
 The dispersion `inf_aux` is estimated rather than assumed, so the data get a

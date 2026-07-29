@@ -91,6 +91,39 @@ def _validate_positive(value: Any, what: str) -> float:
 #: a bare ``normal()`` must mean N(0, 0.25) in both languages, not N(0, 1).
 DEFAULT_PRIOR_SCALE = 0.25
 
+#: R resolves ``scale = NULL`` against whatever ``default_scale`` the CALL SITE
+#: passes, and the call sites differ. Coefficients, intercepts and auxiliary
+#: parameters get 0.25 (standata_reg.R:18, :32, :80); seeds get 1
+#: (stan_data.R:45); susceptibility and removal noise get 0.1 (stan_data.R:87,
+#: :104). Using one constant everywhere makes a bare ``normal()`` mean something
+#: different from R wherever it is used in a non-coefficient role.
+ROLE_DEFAULT_SCALE = {
+    "coefficient": 0.25,
+    "intercept": 0.25,
+    "aux": 0.25,
+    "seeds": 1.0,
+    "susceptibility": 0.1,
+    "removal_noise": 0.1,
+}
+
+
+def role_scale(spec, role):
+    """``spec`` with R's ``default_scale`` for ``role`` if it kept the generic one.
+
+    Python has no ``NULL`` to resolve late, so a constructor default of
+    :data:`DEFAULT_PRIOR_SCALE` is treated as "unspecified" and replaced by the
+    role's default. An explicitly-chosen scale is never overridden -- only the
+    value that means "I did not say".
+    """
+    from dataclasses import replace as _replace
+
+    want = ROLE_DEFAULT_SCALE.get(role)
+    if spec is None or want is None or want == DEFAULT_PRIOR_SCALE:
+        return spec
+    if getattr(spec, "scale", None) != DEFAULT_PRIOR_SCALE:
+        return spec
+    return _replace(spec, scale=want)
+
 class Prior:
     """Base class for prior specifications.
 

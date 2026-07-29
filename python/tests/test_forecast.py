@@ -264,7 +264,7 @@ def test_in_sample_reproduces_the_models_own_deterministics(
     """Feeding the fitted design back in must give back the fit, exactly.
 
     This is the load-bearing test: it pins the linear predictor, the seeding
-    convention, the susceptibility recursion and the 1e-6 floor on E to what
+    convention, the susceptibility recursion and the 1e-15 floor on E to what
     `build_epidemia_model` actually computes.
     """
     fc = forecast(idata, panel, obs_models, config, seed=0)

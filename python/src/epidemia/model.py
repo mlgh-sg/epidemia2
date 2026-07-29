@@ -58,7 +58,9 @@ class EpiConfig:
     seed_days: int = 6
     link: object = "log"
     family: str = "poisson"
-    rw_prior_scale: float = 0.1
+    # R's rw() defaults prior_scale = 0.2 (R/autocor.R:22), which becomes
+    # HalfNormal(0.2) on the walk's step size. 0.1 was half as wide.
+    rw_prior_scale: float = 0.2
     intercept_loc: float = 0.0
     intercept_scale: float = 0.5
     seed_prior_mean: float = 10.0
@@ -142,7 +144,7 @@ def build_model(y, config: EpiConfig):
         terms = []
         for k in range(1, len(i2o) + 1):
             terms.append(i2o[k - 1] * pt.concatenate([pt.zeros(k), infections[:-k]]))
-        E = (pt.add(*terms) if len(terms) > 1 else terms[0]) + 1e-6
+        E = (pt.add(*terms) if len(terms) > 1 else terms[0]) + 1e-15
         pm.Deterministic("E_obs", E)
 
         # likelihood on observed days only

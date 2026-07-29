@@ -446,7 +446,7 @@ az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    done in 21.3s
+    done in 33.0s
 
 
     [epidemia] sampling 4 chains x (2000 tune + 1000 draws)
@@ -585,7 +585,7 @@ az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed
                     </td>
                     <td>3000</td>
                     <td>0</td>
-                    <td>0.02</td>
+                    <td>0.01</td>
                     <td>1023</td>
                 </tr>
 
@@ -598,7 +598,7 @@ az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed
                     </td>
                     <td>3000</td>
                     <td>0</td>
-                    <td>0.01</td>
+                    <td>0.02</td>
                     <td>1023</td>
                 </tr>
 
@@ -635,15 +635,15 @@ az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed
 
 
 
-    [epidemia] sampled in 3042.3s
+    [epidemia] sampled in 2965.4s
 
 
     divergences: 0
 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: 1273 iterations saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: R-hat of 1.070 for g_beta[schools_universities] exceeds 1.01, so the chains have not mixed.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: Bulk ESS of 50 for g_beta[schools_universities] is 12 per chain, below the 100 per chain that keeps posterior summaries stable.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 1441 iterations saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.080 for g_beta[schools_universities] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 51 for g_beta[schools_universities] is 13 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 
@@ -681,134 +681,134 @@ az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed
   <tbody>
     <tr>
       <th>beta[schools_universities]</th>
-      <td>-0.237</td>
-      <td>0.393</td>
-      <td>-1.067</td>
+      <td>-0.331</td>
+      <td>0.463</td>
+      <td>-1.280</td>
       <td>0.008</td>
-      <td>0.033</td>
-      <td>0.029</td>
-      <td>50.0</td>
-      <td>131.0</td>
-      <td>1.07</td>
+      <td>0.047</td>
+      <td>0.034</td>
+      <td>51.0</td>
+      <td>92.0</td>
+      <td>1.08</td>
     </tr>
     <tr>
       <th>beta[self_isolating_if_ill]</th>
-      <td>-0.174</td>
-      <td>0.288</td>
-      <td>-0.763</td>
+      <td>-0.168</td>
+      <td>0.305</td>
+      <td>-0.802</td>
       <td>0.008</td>
-      <td>0.016</td>
-      <td>0.015</td>
-      <td>95.0</td>
-      <td>108.0</td>
-      <td>1.04</td>
+      <td>0.019</td>
+      <td>0.017</td>
+      <td>68.0</td>
+      <td>97.0</td>
+      <td>1.06</td>
     </tr>
     <tr>
       <th>beta[public_events]</th>
-      <td>-0.124</td>
-      <td>0.235</td>
-      <td>-0.625</td>
+      <td>-0.095</td>
+      <td>0.201</td>
+      <td>-0.509</td>
       <td>0.008</td>
-      <td>0.013</td>
-      <td>0.017</td>
-      <td>314.0</td>
-      <td>238.0</td>
-      <td>1.01</td>
-    </tr>
-    <tr>
-      <th>beta[social_distancing_encouraged]</th>
-      <td>-1.278</td>
-      <td>0.518</td>
-      <td>-1.989</td>
       <td>0.008</td>
-      <td>0.040</td>
-      <td>0.032</td>
-      <td>200.0</td>
-      <td>98.0</td>
+      <td>0.011</td>
+      <td>199.0</td>
+      <td>170.0</td>
       <td>1.02</td>
     </tr>
     <tr>
+      <th>beta[social_distancing_encouraged]</th>
+      <td>-1.239</td>
+      <td>0.547</td>
+      <td>-1.966</td>
+      <td>0.008</td>
+      <td>0.054</td>
+      <td>0.037</td>
+      <td>114.0</td>
+      <td>63.0</td>
+      <td>1.04</td>
+    </tr>
+    <tr>
       <th>beta[lockdown]</th>
-      <td>-1.771</td>
-      <td>0.436</td>
-      <td>-2.597</td>
-      <td>-0.966</td>
+      <td>-1.780</td>
+      <td>0.430</td>
+      <td>-2.587</td>
+      <td>-0.969</td>
       <td>0.013</td>
       <td>0.012</td>
-      <td>1111.0</td>
-      <td>845.0</td>
-      <td>1.00</td>
+      <td>1187.0</td>
+      <td>901.0</td>
+      <td>1.01</td>
     </tr>
     <tr>
       <th>sd[0]</th>
-      <td>1.434</td>
-      <td>0.302</td>
-      <td>0.937</td>
-      <td>2.041</td>
-      <td>0.008</td>
-      <td>0.005</td>
-      <td>1329.0</td>
-      <td>2150.0</td>
+      <td>1.446</td>
+      <td>0.310</td>
+      <td>0.874</td>
+      <td>1.998</td>
+      <td>0.009</td>
+      <td>0.006</td>
+      <td>1153.0</td>
+      <td>2147.0</td>
       <td>1.00</td>
     </tr>
     <tr>
       <th>sd[1]</th>
-      <td>0.650</td>
-      <td>0.320</td>
-      <td>0.000</td>
-      <td>1.144</td>
-      <td>0.021</td>
-      <td>0.010</td>
-      <td>200.0</td>
-      <td>179.0</td>
-      <td>1.02</td>
+      <td>0.564</td>
+      <td>0.351</td>
+      <td>0.001</td>
+      <td>1.106</td>
+      <td>0.034</td>
+      <td>0.014</td>
+      <td>93.0</td>
+      <td>94.0</td>
+      <td>1.04</td>
     </tr>
     <tr>
       <th>sd[2]</th>
-      <td>0.124</td>
-      <td>0.165</td>
+      <td>0.115</td>
+      <td>0.153</td>
       <td>0.000</td>
-      <td>0.435</td>
+      <td>0.410</td>
       <td>0.007</td>
       <td>0.011</td>
-      <td>483.0</td>
-      <td>470.0</td>
+      <td>567.0</td>
+      <td>634.0</td>
       <td>1.01</td>
     </tr>
     <tr>
       <th>sd[3]</th>
-      <td>0.674</td>
-      <td>0.250</td>
-      <td>0.224</td>
-      <td>1.167</td>
-      <td>0.011</td>
-      <td>0.008</td>
-      <td>453.0</td>
-      <td>322.0</td>
-      <td>1.01</td>
+      <td>0.700</td>
+      <td>0.236</td>
+      <td>0.318</td>
+      <td>1.185</td>
+      <td>0.007</td>
+      <td>0.005</td>
+      <td>981.0</td>
+      <td>996.0</td>
+      <td>1.00</td>
     </tr>
     <tr>
       <th>sd[4]</th>
-      <td>0.244</td>
-      <td>0.266</td>
+      <td>0.251</td>
+      <td>0.286</td>
       <td>0.000</td>
-      <td>0.759</td>
-      <td>0.018</td>
-      <td>0.014</td>
-      <td>244.0</td>
-      <td>417.0</td>
-      <td>1.01</td>
+      <td>0.804</td>
+      <td>0.034</td>
+      <td>0.019</td>
+      <td>61.0</td>
+      <td>261.0</td>
+      <td>1.06</td>
     </tr>
     <tr>
       <th>sd[5]</th>
-      <td>0.926</td>
-      <td>0.260</td>
-      <td>0.466</td>
-      <td>1.424</td>
-      <td>0.007</td>
+      <td>0.906</td>
+      <td>0.268</td>
+      <td>0.431</td>
+      <td>1.416</td>
+      <td>0.008</td>
       <td>0.005</td>
-      <td>1324.0</td>
-      <td>1350.0</td>
+      <td>1033.0</td>
+      <td>1506.0</td>
       <td>1.00</td>
     </tr>
     <tr>
@@ -819,32 +819,32 @@ az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed
       <td>0.012</td>
       <td>0.000</td>
       <td>0.000</td>
-      <td>4085.0</td>
-      <td>3519.0</td>
+      <td>3922.0</td>
+      <td>3084.0</td>
       <td>1.00</td>
     </tr>
     <tr>
       <th>reciprocal_dispersion</th>
-      <td>15.382</td>
-      <td>1.239</td>
-      <td>13.206</td>
-      <td>17.732</td>
+      <td>15.358</td>
+      <td>1.269</td>
+      <td>12.985</td>
+      <td>17.760</td>
       <td>0.021</td>
-      <td>0.020</td>
-      <td>3368.0</td>
-      <td>2617.0</td>
+      <td>0.022</td>
+      <td>3525.0</td>
+      <td>2200.0</td>
       <td>1.00</td>
     </tr>
     <tr>
       <th>seed_tau</th>
-      <td>26.011</td>
-      <td>9.754</td>
-      <td>10.326</td>
-      <td>42.984</td>
-      <td>0.169</td>
-      <td>0.228</td>
-      <td>3656.0</td>
-      <td>3082.0</td>
+      <td>25.876</td>
+      <td>9.360</td>
+      <td>11.286</td>
+      <td>43.074</td>
+      <td>0.154</td>
+      <td>0.205</td>
+      <td>4027.0</td>
+      <td>3020.0</td>
       <td>1.00</td>
     </tr>
   </tbody>
@@ -872,12 +872,12 @@ else:
 
     NOT CONVERGED — do not quote these:
                                          mean  ess_bulk  r_hat
-    beta[schools_universities]         -0.237      50.0   1.07
-    beta[self_isolating_if_ill]        -0.174      95.0   1.04
-    beta[public_events]                -0.124     314.0   1.01
-    beta[social_distancing_encouraged] -1.278     200.0   1.02
-    sd[1]                               0.650     200.0   1.02
-    sd[4]                               0.244     244.0   1.01
+    beta[schools_universities]         -0.331      51.0   1.08
+    beta[self_isolating_if_ill]        -0.168      68.0   1.06
+    beta[public_events]                -0.095     199.0   1.02
+    beta[social_distancing_encouraged] -1.239     114.0   1.04
+    sd[1]                               0.564      93.0   1.04
+    sd[4]                               0.251      61.0   1.06
 
 
 ## Posterior predictive checks
@@ -1034,22 +1034,22 @@ print(pd.DataFrame(np.round(np.corrcoef(beta), 2), index=labels, columns=labels)
 ```
 
     Combined effect of all five measures (logit Rt scale):
-      median -3.59  90% CI [-4.38, -2.78]
+      median -3.60  90% CI [-4.45, -2.80]
     
     Individual measures — note how much wider these are relative to their size:
-      Schools     median -0.02  90% CI [-1.14, +0.01]   P(effect < 0) = 0.60
-      Isolating   median -0.03  90% CI [-0.81, +0.01]   P(effect < 0) = 0.62
-      Events      median -0.01  90% CI [-0.68, +0.01]   P(effect < 0) = 0.56
-      Distancing  median -1.35  90% CI [-2.02, -0.22]   P(effect < 0) = 0.99
-      Lockdown    median -1.78  90% CI [-2.47, -1.05]   P(effect < 0) = 1.00
+      Schools     median -0.08  90% CI [-1.35, +0.01]   P(effect < 0) = 0.70
+      Isolating   median -0.01  90% CI [-0.85, +0.01]   P(effect < 0) = 0.55
+      Events      median +0.00  90% CI [-0.56, +0.01]   P(effect < 0) = 0.49
+      Distancing  median -1.33  90% CI [-2.00, -0.10]   P(effect < 0) = 0.98
+      Lockdown    median -1.79  90% CI [-2.47, -1.08]   P(effect < 0) = 1.00
     
     Posterior correlation between the coefficients (collinearity fingerprint):
                 Schools  Isolating  Events  Distancing  Lockdown
-    Schools        1.00       0.06   -0.14       -0.49     -0.02
-    Isolating      0.06       1.00   -0.05       -0.37     -0.02
-    Events        -0.14      -0.05    1.00       -0.02     -0.23
-    Distancing    -0.49      -0.37   -0.02        1.00     -0.27
-    Lockdown      -0.02      -0.02   -0.23       -0.27      1.00
+    Schools        1.00       0.04   -0.10       -0.53     -0.02
+    Isolating      0.04       1.00   -0.03       -0.43      0.01
+    Events        -0.10      -0.03    1.00       -0.03     -0.18
+    Distancing    -0.53      -0.43   -0.03        1.00     -0.25
+    Lockdown      -0.02       0.01   -0.18       -0.25      1.00
 
 
 ### The per-country lockdown effect
@@ -1122,45 +1122,45 @@ for reg in fit.regions:
     
     term            schools_universities  self_isolating_if_ill  public_events  social_distancing_encouraged  lockdown  all measures
     region                                                                                                                          
-    Austria                          2.8                    0.8           -1.1                          28.5      53.2          87.4
-    Belgium                          1.4                    0.4           -0.2                          19.4      61.2          89.1
-    Denmark                          3.1                    0.8            0.5                          32.7      49.8          85.9
-    France                          -8.7                    1.3          -15.1                          43.5      81.7          86.0
-    Germany                          0.7                    0.6            4.7                          26.8      50.1          87.3
-    Italy                           48.5                    1.6           -3.3                          46.6       6.2          83.2
-    Norway                          -0.1                    1.6           -3.2                          48.2      64.1          87.4
-    Spain                            5.0                    0.5            3.4                          16.3      39.0          90.9
-    Sweden                           6.8                    2.6           40.0                          54.9      57.6          97.8
-    Switzerland                     12.9                    4.0           14.8                          53.5      33.5          88.4
-    United_Kingdom                   1.7                    1.5            2.2                          37.4      49.0          86.8
+    Austria                          3.9                    0.6           -1.4                          27.9      52.9          87.4
+    Belgium                          2.0                    0.3           -0.5                          19.1      61.7          89.1
+    Denmark                          4.3                    0.7            0.2                          32.3      48.9          86.0
+    France                          -4.7                    1.0          -16.7                          42.3      81.0          86.0
+    Germany                          1.9                    0.4            4.0                          24.9      50.2          87.4
+    Italy                           46.7                    1.2           -2.7                          46.8       7.7          83.1
+    Norway                           3.2                    0.9           -4.2                          46.6      64.3          87.5
+    Spain                            5.3                    0.4            3.4                          16.3      39.6          90.9
+    Sweden                           9.7                    2.1           40.9                          54.8      58.9          98.0
+    Switzerland                     16.7                    3.0           13.3                          52.7      34.4          88.3
+    United_Kingdom                   3.9                    1.1            1.2                          36.7      49.5          86.8
     
     
     All five measures combined:
     
-      Austria           87.4%  [ 83.6,  89.4]
-      Belgium           89.1%  [ 87.3,  90.4]
-      Denmark           85.9%  [ 81.0,  88.6]
-      France            86.0%  [ 84.0,  87.9]
-      Germany           87.3%  [ 84.4,  89.1]
-      Italy             83.2%  [ 81.3,  84.9]
-      Norway            87.4%  [ 76.8,  92.6]
+      Austria           87.4%  [ 83.4,  89.4]
+      Belgium           89.1%  [ 87.3,  90.3]
+      Denmark           86.0%  [ 80.9,  88.7]
+      France            86.0%  [ 83.9,  87.9]
+      Germany           87.4%  [ 84.7,  89.2]
+      Italy             83.1%  [ 81.2,  84.9]
+      Norway            87.5%  [ 77.5,  92.7]
       Spain             90.9%  [ 89.9,  91.8]
-      Sweden            97.8%  [ 81.6,  99.7]
-      Switzerland       88.4%  [ 85.0,  91.5]
-      United_Kingdom    86.8%  [ 84.7,  88.7]
+      Sweden            98.0%  [ 83.4,  99.8]
+      Switzerland       88.3%  [ 84.8,  91.4]
+      United_Kingdom    86.8%  [ 84.6,  88.6]
     
     
     R_0 -> R_t once every measure is in force:
     
-      Austria          5.57  ->  0.70
+      Austria          5.55  ->  0.70
       Belgium          5.90  ->  0.64
-      Denmark          5.24  ->  0.73
-      France           4.67  ->  0.66
-      Germany          5.58  ->  0.70
-      Italy            4.41  ->  0.74
-      Norway           4.02  ->  0.50
-      Spain            6.06  ->  0.55
-      Sweden           4.58  ->  0.10
+      Denmark          5.26  ->  0.74
+      France           4.69  ->  0.66
+      Germany          5.60  ->  0.70
+      Italy            4.37  ->  0.74
+      Norway           4.07  ->  0.50
+      Spain            6.05  ->  0.55
+      Sweden           4.53  ->  0.09
       Switzerland      3.79  ->  0.44
       United_Kingdom   5.18  ->  0.68
 
@@ -1332,7 +1332,7 @@ save_plot(p, "uk-forecast")
 p
 ```
 
-    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_61389/728124685.py:1: UserWarning: 2 missing deaths value(s) inside the modelled window were left out of the likelihood (masked as unobserved, as R treats NA). The latent series are still estimated on those days.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_92762/728124685.py:1: UserWarning: 2 missing deaths value(s) inside the modelled window were left out of the likelihood (masked as unobserved, as R treats NA). The latent series are still estimated on those days.
 
 
     [epidemia] saved figures/uk-forecast.png

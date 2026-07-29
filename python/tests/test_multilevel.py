@@ -182,5 +182,5 @@ def test_i2o_convolution_starts_at_lag_one_like_R():
     E = np.asarray(pr.prior["E_deaths"])[0, 0, 0]
     inf = np.asarray(pr.prior["infections"])[0, 0, 0]
     ifr = float(np.asarray(pr.prior["ifr"])[0, 0])
-    np.testing.assert_allclose(E[1:], ifr * inf[:-1] + 1e-6, rtol=1e-6)
-    np.testing.assert_allclose(E[0], 1e-6, atol=1e-9)  # nothing precedes day 0
+    np.testing.assert_allclose(E[1:], ifr * inf[:-1] + 1e-15, rtol=1e-6)
+    np.testing.assert_allclose(E[0], 1e-15, atol=1e-18)  # nothing precedes day 0

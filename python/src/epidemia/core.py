@@ -282,9 +282,15 @@ class EpiModelConfig:
     beta_shift: float = float(np.log(1.05) / 6.0)
     correlated: bool = False
     lkj_eta: float = 1.0
-    sd_intercept_shape: float = 2.0
-    sd_slope_shape: float = 0.5
-    sd_scale: float = 0.25
+    # R's epirt() defaults prior_covariance = decov(scale = .5) with shape = 1
+    # (R/epirt.R:97, R/priors.R:175-182), so every term's SD is
+    # Gamma(1, scale .5) = Exponential(2): prior mean 0.5 for the intercept AND
+    # for each slope. The previous defaults (2 / 0.5 / 0.25) encoded what the
+    # VIGNETTES override to, not what R defaults to, which gave slopes a 4x
+    # tighter prior than a ported model would have.
+    sd_intercept_shape: float = 1.0
+    sd_slope_shape: float = 1.0
+    sd_scale: float = 0.5
     sd_slope_fixed: object = None
     rw: RandomWalk | list[RandomWalk] | None = None
     seed_days: int = 6
@@ -562,7 +568,7 @@ def _likelihood(pm, pt, obs: ObsModel, E, aux_name, prior_PD=False):
 
 
 
-def _maybe_autoscale(spec, X, enabled):
+def _maybe_autoscale(spec, X, enabled, lengths=None):
     """Rescale a coefficient prior to its predictors' units, as R's standata_reg does.
 
     R divides each coefficient's prior scale by that column's own scale -- the
@@ -581,7 +587,16 @@ def _maybe_autoscale(spec, X, enabled):
         want = getattr(spec, "autoscale_default", False)
     if not (enabled and want):
         return spec
-    flat = np.asarray(X, dtype=float).reshape(-1, np.shape(X)[-1])
+    # Only the MODELLED rows, as R does (process_x works on xtemp, the design
+    # after padding is removed -- R/helpers.R:628-651). Including each short
+    # region's zero-padded tail inflates the divisor: measured 2.62 against a
+    # true 1.53 on a 3-region panel with lengths 20/12/7 and a N(5,2) covariate.
+    Xa = np.asarray(X, dtype=float)
+    if lengths is not None and Xa.ndim == 3:
+        rows = [Xa[m, :int(n), :] for m, n in enumerate(np.asarray(lengths))]
+        flat = np.concatenate(rows, axis=0) if rows else Xa.reshape(-1, Xa.shape[-1])
+    else:
+        flat = Xa.reshape(-1, Xa.shape[-1])
     scales = np.array([_p.predictor_scale(flat[:, k]) for k in range(flat.shape[1])])
     return _p.autoscale(spec, scales)
 
@@ -671,7 +686,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             if config.prior_covariates is not None:
                 beta = _priors.build(
                     _maybe_autoscale(config.prior_covariates, data.X,
-                                     config.autoscale),
+                                     config.autoscale, data.lengths),
                     "beta", shape=K, allowed=_priors.OK_DISTS)
             else:
                 # The default is R's shifted_gamma: effects a priori
@@ -683,7 +698,8 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 default_beta = _priors.shifted_gamma(
                     shape=config.beta_shape, scale=config.beta_scale,
                     shift=config.beta_shift)
-                scaled = _maybe_autoscale(default_beta, data.X, config.autoscale)
+                scaled = _maybe_autoscale(default_beta, data.X, config.autoscale,
+                                          data.lengths)
                 g_beta = pm.Gamma("g_beta", alpha=scaled.shape,
                                   beta=1.0 / scaled.scale, dims="npi")
                 beta = pm.Deterministic("beta", scaled.shift - g_beta,
@@ -712,7 +728,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
         if config.prior_seeds is not None:
             # hexp() reproduces the pooled form below; any other family gives
             # each region an independent draw.
-            seed = _priors.build(config.prior_seeds, "seed", shape=M,
+            seed = _priors.build(_priors.role_scale(config.prior_seeds, "seeds"), "seed", shape=M,
                                  allowed=_priors.OK_SEED_DISTS,
                                  positive=True)
         elif config.seed_pooling:
@@ -794,7 +810,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                     # clipped, which changes both the density and the geometry.
                     import pymc as _pm
 
-                    spec = _pr.resolve(config.prior_rm_noise,
+                    spec = _pr.resolve(_pr.role_scale(config.prior_rm_noise, "removal_noise"),
                                        allowed=frozenset({"normal"}),
                                        what="veps")
                     veps = _pm.Truncated(
@@ -946,7 +962,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                     )
                 ocoef = (
                     _priors.build(
-                        _maybe_autoscale(o.prior, oX, config.autoscale),
+                        _maybe_autoscale(o.prior, oX, config.autoscale, data.lengths),
                         f"{o.name}|coef", shape=oX.shape[2])
                     if o.prior is not None
                     else pm.Normal(f"{o.name}|coef", 0.0, o.prior_coef_scale,
@@ -971,7 +987,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             )
             conv = _convolve(pt, infections, np.asarray(o.i2o, dtype=float), M, T)
             E = pm.Deterministic(
-                f"E_{o.name}", rate * conv + 1e-6,
+                f"E_{o.name}", rate * conv + 1e-15,
                 dims=("region", "region_time"),
             )
             # prior_PD drops the likelihood but keeps every deterministic, so a
