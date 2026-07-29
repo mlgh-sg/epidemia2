@@ -1122,12 +1122,12 @@ weeks from the 1st of April and place each on the Thursday of its week.</p>
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="p">)</span>
 </code></pre></div>
 <h2 id="transmission">Transmission<a class="headerlink" href="#transmission" title="Permanent link">&para;</a></h2>
-<p>$R_t = 7\,g^{-1}(\beta_0 + w_t)$ with a logit link, so $R_t$ is confined to
-$[0, 7]$. The walk is daily.</p>
+<p><span class="arithmatex">\(R_t = 7\,g^{-1}(\beta_0 + w_t)\)</span> with a logit link, so <span class="arithmatex">\(R_t\)</span> is confined to
+<span class="arithmatex">\([0, 7]\)</span>. The walk is daily.</p>
 <p>The R vignette does something worth copying: it builds a <code>dt</code> column that is
 <code>NA</code> before the 1st of April, which keeps the walk out of the window where
 there is no data to constrain it. <code>RandomWalk(index=-1)</code> is the Python
-spelling of that <code>NA</code> — those days take the walk's $w = 0$ initial condition.</p>
+spelling of that <code>NA</code> — those days take the walk's <span class="arithmatex">\(w = 0\)</span> initial condition.</p>
 <p>It matters more than it looks. Giving the seeding days the walk's <em>first step</em>
 instead leaves that step confounded with the intercept, since both just shift
 the level: the fit comes back with <code>r_hat</code> 1.03 on <code>intercept</code> and no
@@ -1190,7 +1190,7 @@ R's parameterisation <code>neg_binomial_2(E, E/aux)</code>.</p>
 <h2 id="series-2-ons-positivity">Series 2 — ONS positivity<a class="headerlink" href="#series-2-ons-positivity" title="Permanent link">&para;</a></h2>
 <p>This one does not fit the usual template, and the R vignette is explicit about
 it. Positivity is the <em>proportion of the population currently infected</em>:</p>
-<p>$$ y^{(2)}<em s="1">t = \frac{\sum</em> $$}^{14} i_{t-s-3}}{P</p>
+<div class="arithmatex">\[ y^{(2)}_t = \frac{\sum_{s=1}^{14} i_{t-s-3}}{P} \]</div>
 <p>— everyone infected in the previous three days tests negative, everyone
 infected in the two weeks before that tests positive. There is no
 ascertainment rate at all, and the weights deliberately <strong>do not sum to one</strong>:
@@ -1227,13 +1227,12 @@ scale <code>rw_scale</code> sits in a funnel against the walk's own increments, 
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>                     <span class="n">draws</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">12345</span><span class="p">,</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>                     <span class="n">target_accept</span><span class="o">=</span><span class="mf">0.99</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.030 for rw_scale[0] exceeds 1.01, so the chains have not mixed.
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 201 for rw_scale[0] is 50 per chain, below the 100 per chain that keeps posterior summaries stable.
+<div class="highlight"><pre><span></span><code>/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: Bulk ESS of 273 for rw_scale[0] is 68 per chain, below the 100 per chain that keeps posterior summaries stable.
 </code></pre></div>
 <h2 id="check-the-sampler-first">Check the sampler first<a class="headerlink" href="#check-the-sampler-first" title="Permanent link">&para;</a></h2>
 <p>This model does not sample cleanly, and it is worth being plain about why
 rather than quietly raising the iteration count until the warning goes away.</p>
-<p>There are <strong>two random walks</strong> here — one on $R_t$, one on case ascertainment
+<p>There are <strong>two random walks</strong> here — one on <span class="arithmatex">\(R_t\)</span>, one on case ascertainment
 — and with a single region they compete for the same signal. A dip in reported
 cases can be explained by transmission falling or by ascertainment falling,
 and only the seven ONS positivity numbers distinguish them. The walk <em>scales</em>
@@ -1245,7 +1244,7 @@ problem rather than too short a run.</p>
 "in order to ensure a large enough effective sample size" it raises the tree
 depth and uses 4,000 iterations. Treat the walk scales as poorly identified in
 this specification and do not quote their intervals. The quantities the
-tutorial is actually about — $R_t$, infections, the day-of-week effects — are
+tutorial is actually about — <span class="arithmatex">\(R_t\)</span>, infections, the day-of-week effects — are
 fine, which the summary below is the check for.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">epidemia</span><span class="o">.</span><span class="n">sampler_diagnostics</span><span class="p">(</span><span class="n">idata</span><span class="p">))</span>
 </code></pre></div>
@@ -1253,36 +1252,35 @@ fine, which the summary below is the check for.</p>
 4 chains x 2000 post-warmup draws = 8000
 
  chain  divergent  max_treedepth  ebfmi
-     1          0              0  0.682
-     2          0              0  0.682
-     3          0              0  0.695
-     4          0              0  0.740
+     1          0              0  0.781
+     2          0              0  0.869
+     3          0              0  0.900
+     4          0              0  0.844
 
 Divergent transitions: 0 (0.0%)
 Hit max treedepth:     0 (0.0%)
-Lowest E-BFMI:         0.68
-Worst R-hat:           1.030  (rw_scale[0])
-Lowest bulk ESS:       201  (rw_scale[0])
-Lowest tail ESS:       320
+Lowest E-BFMI:         0.78
+Worst R-hat:           1.010  (intercept)
+Lowest bulk ESS:       273  (rw_scale[0])
+Lowest tail ESS:       578
 
 Warnings:
-* R-hat of 1.030 for rw_scale[0] exceeds 1.01, so the chains have not mixed.
-* Bulk ESS of 201 for rw_scale[0] is 50 per chain, below the 100 per chain that keeps posterior summaries stable.
+* Bulk ESS of 273 for rw_scale[0] is 68 per chain, below the 100 per chain that keeps posterior summaries stable.
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">summ</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;intercept&quot;</span><span class="p">,</span> <span class="s2">&quot;cases|coef&quot;</span><span class="p">,</span> <span class="s2">&quot;cases|aux&quot;</span><span class="p">,</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>                                    <span class="s2">&quot;positivity|aux&quot;</span><span class="p">])</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="nb">print</span><span class="p">(</span><span class="n">summ</span><span class="p">[[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;sd&quot;</span><span class="p">,</span> <span class="s2">&quot;r_hat&quot;</span><span class="p">,</span> <span class="s2">&quot;ess_bulk&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>                  mean     sd  r_hat  ess_bulk
-intercept       -1.503  0.258   1.01     401.0
-cases|coef[0]   -0.052  0.085   1.00   11110.0
-cases|coef[1]    0.054  0.090   1.00   11795.0
-cases|coef[2]   -0.115  0.089   1.00    9593.0
-cases|coef[3]   -0.352  0.090   1.00    8757.0
-cases|coef[4]   -0.665  0.091   1.00    8504.0
-cases|coef[5]   -0.379  0.083   1.00    9954.0
-cases|aux       11.154  3.429   1.00    1913.0
-positivity|aux   0.012  0.002   1.00    1851.0
+intercept       -1.375  0.240   1.01     466.0
+cases|coef[0]   -0.045  0.088   1.00   13023.0
+cases|coef[1]    0.056  0.094   1.00   12219.0
+cases|coef[2]   -0.108  0.093   1.00   11421.0
+cases|coef[3]   -0.344  0.093   1.00   10325.0
+cases|coef[4]   -0.656  0.092   1.00   10860.0
+cases|coef[5]   -0.374  0.086   1.00   11631.0
+cases|aux       13.287  2.457   1.00    2661.0
+positivity|aux   0.013  0.002   1.00    1504.0
 </code></pre></div>
 <h2 id="both-series-have-to-be-explained">Both series have to be explained<a class="headerlink" href="#both-series-have-to-be-explained" title="Permanent link">&para;</a></h2>
 <p>A joint model must fit everything it is conditioned on. <code>series=</code> picks one.</p>
@@ -1303,7 +1301,7 @@ model only where it was measured.</p>
 <p><img alt="png" src="../multiple-obs_files/multiple-obs_23_0.png" /></p>
 <h2 id="what-the-day-of-week-effects-look-like">What the day-of-week effects look like<a class="headerlink" href="#what-the-day-of-week-effects-look-like" title="Permanent link">&para;</a></h2>
 <p>Reporting, not transmission. These shift the <em>ascertainment</em> rate, so they
-explain the weekly sawtooth in the case counts without contaminating $R_t$.</p>
+explain the weekly sawtooth in the case counts without contaminating <span class="arithmatex">\(R_t\)</span>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">coef</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">idata</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="s2">&quot;cases|coef&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">days</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Tue&quot;</span><span class="p">,</span> <span class="s2">&quot;Wed&quot;</span><span class="p">,</span> <span class="s2">&quot;Thu&quot;</span><span class="p">,</span> <span class="s2">&quot;Fri&quot;</span><span class="p">,</span> <span class="s2">&quot;Sat&quot;</span><span class="p">,</span> <span class="s2">&quot;Sun&quot;</span><span class="p">]</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">tbl</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
@@ -1317,15 +1315,15 @@ explain the weekly sawtooth in the case counts without contaminating $R_t$.</p>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>logit-scale shift vs Monday:
 day  median     5%    95%
-Tue  -0.053 -0.190  0.091
-Wed   0.053 -0.094  0.205
-Thu  -0.116 -0.261  0.030
-Fri  -0.353 -0.502 -0.207
-Sat  -0.663 -0.818 -0.518
-Sun  -0.378 -0.516 -0.244
+Tue  -0.046 -0.189  0.099
+Wed   0.056 -0.097  0.216
+Thu  -0.108 -0.263  0.046
+Fri  -0.343 -0.498 -0.193
+Sat  -0.654 -0.810 -0.508
+Sun  -0.374 -0.517 -0.233
 </code></pre></div>
 <h2 id="infections-and-susceptibility">Infections and susceptibility<a class="headerlink" href="#infections-and-susceptibility" title="Permanent link">&para;</a></h2>
-<p><code>pop_adjust=True</code> tracks the susceptible pool, so $R_t$ and the <em>effective</em>
+<p><code>pop_adjust=True</code> tracks the susceptible pool, so <span class="arithmatex">\(R_t\)</span> and the <em>effective</em>
 reproduction number diverge as the epidemic depletes susceptibles.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">epidemia</span><span class="o">.</span><span class="n">plot_infections</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">panel</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">95</span><span class="p">),</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div>
@@ -1394,11 +1392,8 @@ fit.</p>
 <a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;prior R_t: median </span><span class="si">{</span><span class="n">qs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, 90% interval [</span><span class="si">{</span><span class="n">qs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">qs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
 <a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(the scaled_logit cap is </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">R_link_K</span><span class="si">}</span><span class="s2">, so R_t cannot exceed it)&quot;</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>prior R_t: median 0.85, 90% interval [0.21, 2.14]
+<div class="highlight"><pre><span></span><code>prior R_t: median 0.86, 90% interval [0.21, 2.01]
 (the scaled_logit cap is 7.0, so R_t cannot exceed it)
-
-
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.020 for cases|rw_noise[0, 17] exceeds 1.01, so the chains have not mixed.
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">epidemia</span><span class="o">.</span><span class="n">plot_rt</span><span class="p">(</span><span class="n">idata_prior</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">panel</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">95</span><span class="p">),</span> <span class="n">save</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>                 <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Prior predictive $R_t$&quot;</span><span class="p">)</span>
@@ -1470,6 +1465,10 @@ estimates should not be read as a measurement of testing capacity.</p>
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
     
   </body>

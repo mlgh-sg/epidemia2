@@ -1009,10 +1009,11 @@ PyMC model (<code>epidemia.multilevel</code>). This notebook explains the mappin
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">arviz</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">az</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">plotnine</span><span class="w"> </span><span class="kn">import</span> <span class="n">aes</span><span class="p">,</span> <span class="n">geom_hline</span><span class="p">,</span> <span class="n">geom_pointrange</span><span class="p">,</span> <span class="n">ggplot</span><span class="p">,</span> <span class="n">labs</span><span class="p">,</span> <span class="n">coord_flip</span><span class="p">,</span> <span class="n">position_dodge</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">import</span><span class="w"> </span><span class="nn">epidemia</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">epi</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">epidemia.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_plot</span><span class="p">,</span> <span class="n">theme_epidemia</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">plotnine</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">aes</span><span class="p">,</span> <span class="n">coord_flip</span><span class="p">,</span> <span class="n">geom_hline</span><span class="p">,</span> <span class="n">geom_pointrange</span><span class="p">,</span> <span class="n">ggplot</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                      <span class="n">labs</span><span class="p">,</span> <span class="n">position_dodge</span><span class="p">,</span> <span class="n">scale_color_manual</span><span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">epidemia</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">epi</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="kn">from</span><span class="w"> </span><span class="nn">epidemia.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_plot</span><span class="p">,</span> <span class="n">theme_epidemia</span>
 </code></pre></div>
 <h2 id="from-r-formulas-to-hierarchical-priors">From R formulas to hierarchical priors<a class="headerlink" href="#from-r-formulas-to-hierarchical-priors" title="Permanent link">&para;</a></h2>
 <p>A term <code>(expr | factor)</code> says: the columns of the model matrix parsed from
@@ -1062,22 +1063,22 @@ information across levels. The table below maps the R formula idioms
   are scarce (early epidemic, small regions).</li>
 <li><strong>Full pooling</strong> forces one shared value — hides genuine between-region
   variation.</li>
-<li><strong>Partial pooling</strong> estimates a common distribution $N(0, \sigma_k)$ and lets
+<li><strong>Partial pooling</strong> estimates a common distribution <span class="arithmatex">\(N(0, \sigma_k)\)</span> and lets
   each region's effect deviate from the global mean by an amount <strong>shrunk</strong>
-  toward zero; $\sigma_k$ (estimated) controls how much. It interpolates
+  toward zero; <span class="arithmatex">\(\sigma_k\)</span> (estimated) controls how much. It interpolates
   between the two extremes and is what the Europe/COVID example uses.</li>
 </ul>
 <p>The <code>epidemia.multilevel</code> model implements the last two rows: fixed global
 effects <code>beta_k</code> <strong>plus</strong> partially-pooled region deviations <code>b[region, k]</code>
 with <code>b[region, k] ~ N(0, sigma_k)</code> (the <code>||</code>, independent-effects, case).</p>
 <h3 id="selecting-a-regime">Selecting a regime<a class="headerlink" href="#selecting-a-regime" title="Permanent link">&para;</a></h3>
-<p>What separates the three regimes is <strong>what happens to $\sigma_k$</strong>, the
+<p>What separates the three regimes is <strong>what happens to <span class="arithmatex">\(\sigma_k\)</span></strong>, the
 between-region SD:</p>
 <table>
 <thead>
 <tr>
 <th>Regime</th>
-<th>$\sigma_k$</th>
+<th><span class="arithmatex">\(\sigma_k\)</span></th>
 <th><code>MultilevelConfig</code></th>
 </tr>
 </thead>
@@ -1094,18 +1095,18 @@ between-region SD:</p>
 </tr>
 <tr>
 <td>Full pooling</td>
-<td>fixed ~0 — every region collapses onto the global $\beta_k$</td>
+<td>fixed ~0 — every region collapses onto the global <span class="arithmatex">\(\beta_k\)</span></td>
 <td><code>config.pooling("full")</code></td>
 </tr>
 </tbody>
 </table>
 <blockquote>
 <p><strong>Do not fake no-pooling by inflating the Gamma prior's <em>shape</em></strong> (e.g.
-<code>sd_slope_shape=1e6</code>). That puts $\sigma_k$ itself near $10^6$, so
-<code>b = sigma * z</code> lands around $N(0, 10^6)$, $\eta$ saturates the
-<code>scaled_logit(6.5)</code> link, and every $R_t$ collapses to exactly 0 or 6.5.
+<code>sd_slope_shape=1e6</code>). That puts <span class="arithmatex">\(\sigma_k\)</span> itself near <span class="arithmatex">\(10^6\)</span>, so
+<code>b = sigma * z</code> lands around <span class="arithmatex">\(N(0, 10^6)\)</span>, <span class="arithmatex">\(\eta\)</span> saturates the
+<code>scaled_logit(6.5)</code> link, and every <span class="arithmatex">\(R_t\)</span> collapses to exactly 0 or 6.5.
 That is a broken prior, not an unpooled model. <code>pooling("none")</code> fixes
-$\sigma_k$ at a large-but-sane value instead.</p>
+<span class="arithmatex">\(\sigma_k\)</span> at a large-but-sane value instead.</p>
 </blockquote>
 <h2 id="a-worked-demonstration">A worked demonstration<a class="headerlink" href="#a-worked-demonstration" title="Permanent link">&para;</a></h2>
 <p>We use a small slice of the Europe/COVID data — three countries and a single
@@ -1120,7 +1121,7 @@ strength — and the one to watch below.</p>
 <blockquote>
 <p><strong>Why not Sweden, the famous case?</strong> Sweden never locked down, so with
 <code>lockdown</code> as the only covariate it would have <em>nothing</em> that ever switches
-on: its $R_t$ would be pinned to a constant, and (since its epidemic was
+on: its <span class="arithmatex">\(R_t\)</span> would be pinned to a constant, and (since its epidemic was
 growing when the window opens) a constant above one. The model then could not
 reproduce Sweden's deaths falling at all, and that misfit would leak into
 every shared parameter. Sweden <em>did</em> suppress its epidemic, with softer
@@ -1157,8 +1158,8 @@ how much data each brings: Italy ~140x Norway. That is what pooling acts on.
 </code></pre></div>
 <h3 id="partial-pooling_1">Partial pooling<a class="headerlink" href="#partial-pooling_1" title="Permanent link">&para;</a></h3>
 <p>The default <code>MultilevelConfig</code> partially pools the region effects. We estimate
-the country-specific lockdown effect $\beta + b^{(m)}$ for each country and the
-between-country SD $\sigma_\text{lockdown}$.</p>
+the country-specific lockdown effect <span class="arithmatex">\(\beta + b^{(m)}\)</span> for each country and the
+between-country SD <span class="arithmatex">\(\sigma_\text{lockdown}\)</span>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">config</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">MultilevelConfig</span><span class="p">(</span><span class="n">gen</span><span class="o">=</span><span class="n">ec</span><span class="o">.</span><span class="n">si</span><span class="p">,</span> <span class="n">i2o</span><span class="o">=</span><span class="n">ec</span><span class="o">.</span><span class="n">inf2death</span><span class="p">,</span> <span class="n">seed_days</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">idata_pp</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">fit_multilevel</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">pooling</span><span class="p">(</span><span class="s2">&quot;partial&quot;</span><span class="p">),</span> <span class="n">draws</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>                              <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -1347,15 +1348,15 @@ done in 20.7s
     </table>
 </div>
 
-<div class="highlight"><pre><span></span><code>[epidemia] sampled in 52.4s
+<div class="highlight"><pre><span></span><code>[epidemia] sampled in 48.1s
 
 
 divergences: 8
 
 
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: 8 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.050 for sd[0] exceeds 1.01, so the chains have not mixed.
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 64 for sd[0] is 16 per chain, below the 100 per chain that keeps posterior summaries stable.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: 8 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: R-hat of 1.050 for sd[0] exceeds 1.01, so the chains have not mixed.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: Bulk ESS of 64 for sd[0] is 16 per chain, below the 100 per chain that keeps posterior summaries stable.
 </code></pre></div>
 <div>
 <style scoped>
@@ -1431,17 +1432,14 @@ divergences: 8
 <p>Before reading any effect size, look at the fit itself — one panel per country.
 <code>Rt</code>, <code>infections</code> and <code>E_deaths</code> are indexed by <code>region</code> in the posterior, so
 passing the <code>fit</code> panel as <code>data=</code> places each country on <strong>its own</strong> dates
-(country $m$'s column $t$ is a different calendar day from country $n$'s) and
+(country <span class="arithmatex">\(m\)</span>'s column <span class="arithmatex">\(t\)</span> is a different calendar day from country <span class="arithmatex">\(n\)</span>'s) and
 drops its padded tail. Every plot is written to <code>figures/</code> by default.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_obs</span><span class="p">(</span><span class="n">idata_pp</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;pp-deaths-ppc&quot;</span><span class="p">,</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                   <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Posterior predictive: deaths&quot;</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_97016/4267129354.py:1: UserWarning: cannot draw the posterior predictive for &#39;deaths&#39;: the observation family is not recorded on this fit and no obs_model= was given. Falling back to banding the expected count, whose interval excludes observation noise and is therefore too narrow to compare against the plotted data. Pass obs_model=&lt;the ObsModel&gt; or predictive=False to silence.
-
-
-[epidemia] saved figures/pp-deaths-ppc.png
+<div class="highlight"><pre><span></span><code>[epidemia] saved figures/pp-deaths-ppc.png
 </code></pre></div>
-<p><img alt="png" src="../partial-pooling_files/partial-pooling_8_2.png" /></p>
+<p><img alt="png" src="../partial-pooling_files/partial-pooling_8_1.png" /></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">epi</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">plot_rt</span><span class="p">(</span><span class="n">idata_pp</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s2">&quot;pp-rt&quot;</span><span class="p">,</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>                  <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Inferred $R_t$ (a step function of lockdown)&quot;</span><span class="p">)</span>
 </code></pre></div>
@@ -1449,9 +1447,9 @@ drops its padded tail. Every plot is written to <code>figures/</code> by default
 </code></pre></div>
 <p><img alt="png" src="../partial-pooling_files/partial-pooling_9_1.png" /></p>
 <p>Each country steps down at <em>its own</em> lockdown date — the model has no
-random walk here, so $R_t$ is a two-level step function by construction: one
-level before, one after. Each also starts from its <strong>own</strong> baseline $R_0$,
-which is what the country-specific intercepts $b^{(m)}_0$ buy you. Without
+random walk here, so <span class="arithmatex">\(R_t\)</span> is a two-level step function by construction: one
+level before, one after. Each also starts from its <strong>own</strong> baseline <span class="arithmatex">\(R_0\)</span>,
+which is what the country-specific intercepts <span class="arithmatex">\(b^{(m)}_0\)</span> buy you. Without
 them every country would be forced to share one baseline, and the lockdown
 effect would have to absorb the difference.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">b0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">idata_pp</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="s2">&quot;b0&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">s</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;chain&quot;</span><span class="p">,</span> <span class="s2">&quot;draw&quot;</span><span class="p">)))</span>
@@ -1468,9 +1466,9 @@ effect would have to absorb the difference.</p>
 </code></pre></div>
 <h3 id="no-pooling-and-full-pooling">No pooling, and full pooling<a class="headerlink" href="#no-pooling-and-full-pooling" title="Permanent link">&para;</a></h3>
 <p>Now the two extremes, via <code>config.pooling(...)</code>. "No pooling" fixes
-$\sigma_\text{lockdown}$ large so each country's <code>b[m]</code> is effectively free;
+<span class="arithmatex">\(\sigma_\text{lockdown}\)</span> large so each country's <code>b[m]</code> is effectively free;
 "full pooling" fixes it at ~0 so every country is forced onto the single
-global $\beta$.</p>
+global <span class="arithmatex">\(\beta\)</span>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">per_country_effect</span><span class="p">(</span><span class="n">idata</span><span class="p">):</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Country-specific lockdown effect beta + b[region] from a pooled fit.&quot;&quot;&quot;</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">post</span> <span class="o">=</span> <span class="n">idata</span><span class="o">.</span><span class="n">posterior</span>
@@ -1496,7 +1494,7 @@ global $\beta$.</p>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>[epidemia] compiling the log-density (numba backend)...
 
-done in 19.8s
+done in 19.9s
 
 
 [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -1676,17 +1674,17 @@ done in 19.8s
     </table>
 </div>
 
-<div class="highlight"><pre><span></span><code>[epidemia] sampled in 76.8s
+<div class="highlight"><pre><span></span><code>[epidemia] sampled in 76.2s
 
 
 [epidemia] compiling the log-density (numba backend)...
 
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: 18 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.020 for g_beta[lockdown] exceeds 1.01, so the chains have not mixed.
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 213 for sd_intercept is 53 per chain, below the 100 per chain that keeps posterior summaries stable.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: 18 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: R-hat of 1.020 for g_beta[lockdown] exceeds 1.01, so the chains have not mixed.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: Bulk ESS of 213 for sd_intercept is 53 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
-done in 20.1s
+done in 20.2s
 
 
 [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -1866,12 +1864,12 @@ done in 20.1s
     </table>
 </div>
 
-<div class="highlight"><pre><span></span><code>[epidemia] sampled in 18.5s
+<div class="highlight"><pre><span></span><code>[epidemia] sampled in 18.2s
 
 
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: 34 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.120 for z0[Denmark] exceeds 1.01, so the chains have not mixed.
-/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 24 for z0[Denmark] is 6 per chain, below the 100 per chain that keeps posterior summaries stable.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: 34 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: R-hat of 1.120 for z0[Denmark] exceeds 1.01, so the chains have not mixed.
+/Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: Bulk ESS of 24 for z0[Denmark] is 6 per chain, below the 100 per chain that keeps posterior summaries stable.
 </code></pre></div>
 <h3 id="comparison">Comparison<a class="headerlink" href="#comparison" title="Permanent link">&para;</a></h3>
 <p>Plotting the country-specific lockdown effect under all three regimes shows
@@ -1899,12 +1897,17 @@ what any of them knew.</p>
 <a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>    <span class="o">+</span> <span class="n">geom_hline</span><span class="p">(</span><span class="n">yintercept</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">linetype</span><span class="o">=</span><span class="s2">&quot;dotted&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#555555&quot;</span><span class="p">)</span>
 <a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>    <span class="o">+</span> <span class="n">geom_pointrange</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="o">=</span><span class="s2">&quot;lo&quot;</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=</span><span class="s2">&quot;hi&quot;</span><span class="p">),</span> <span class="n">position</span><span class="o">=</span><span class="n">position_dodge</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mf">0.5</span><span class="p">))</span>
 <a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>    <span class="o">+</span> <span class="n">coord_flip</span><span class="p">()</span>
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>    <span class="o">+</span> <span class="n">labs</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;Lockdown effect on logit $R_t$  ($</span><span class="se">\\</span><span class="s2">beta + b^{(m)}$)&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>           <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Three pooling regimes: country-specific lockdown effect&quot;</span><span class="p">)</span>
-<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    <span class="o">+</span> <span class="n">theme_epidemia</span><span class="p">()</span>
-<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="p">)</span>
-<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="n">save_plot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;pooling-comparison&quot;</span><span class="p">)</span>
-<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="n">p</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>    <span class="c1"># Sequential, not a hue wheel: the three regimes are ordered (none -&gt;</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>    <span class="c1"># partial -&gt; full), so they should read as an ordered ramp.</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    <span class="o">+</span> <span class="n">scale_color_manual</span><span class="p">(</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>        <span class="n">values</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;no pooling&quot;</span><span class="p">:</span> <span class="s2">&quot;#9ecae1&quot;</span><span class="p">,</span> <span class="s2">&quot;partial pooling&quot;</span><span class="p">:</span> <span class="s2">&quot;#4292c6&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>                <span class="s2">&quot;full pooling&quot;</span><span class="p">:</span> <span class="s2">&quot;#08306b&quot;</span><span class="p">},</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>    <span class="o">+</span> <span class="n">labs</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;Lockdown effect on logit $R_t$  ($</span><span class="se">\\</span><span class="s2">beta + b^{(m)}$)&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>           <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Three pooling regimes: country-specific lockdown effect&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>    <span class="o">+</span> <span class="n">theme_epidemia</span><span class="p">()</span>
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a><span class="p">)</span>
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a><span class="n">save_plot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;pooling-comparison&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a><span class="n">p</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>[epidemia] saved figures/pooling-comparison.png
 </code></pre></div>
@@ -1939,15 +1942,15 @@ between-country SD sigma_lockdown under partial pooling:
    partial pooling shrinks nearly all the way to full pooling)
 </code></pre></div>
 <h3 id="what-the-effect-means-in-percent">What the effect means, in percent<a class="headerlink" href="#what-the-effect-means-in-percent" title="Permanent link">&para;</a></h3>
-<p>A coefficient of $-2.3$ on the logit scale is hard to feel. <code>epi.effect_table</code>
+<p>A coefficient of <span class="arithmatex">\(-2.3\)</span> on the logit scale is hard to feel. <code>epi.effect_table</code>
 turns it into the percent by which lockdown cut transmission, by counterfactual
-— comparing $6.5\,\mathrm{sigmoid}(b_0^{(m)})$ with
-$6.5\,\mathrm{sigmoid}(b_0^{(m)} + \beta + b^{(m)})$ on every posterior draw.</p>
+— comparing <span class="arithmatex">\(6.5\,\mathrm{sigmoid}(b_0^{(m)})\)</span> with
+<span class="arithmatex">\(6.5\,\mathrm{sigmoid}(b_0^{(m)} + \beta + b^{(m)})\)</span> on every posterior draw.</p>
 <blockquote>
 <p>Note the percentages differ across countries even though the <em>coefficients</em>
 are nearly identical after shrinkage. That is not a bug: the link is
 <code>scaled_logit(6.5)</code>, not a log link, so the same coefficient buys a bigger
-percentage where $R_0$ is lower. It is also why $1 - e^{\beta}$ — the log-link
+percentage where <span class="arithmatex">\(R_0\)</span> is lower. It is also why <span class="arithmatex">\(1 - e^{\beta}\)</span> — the log-link
 shortcut — is the wrong conversion here and overstates the effect.</p>
 </blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">tab</span> <span class="o">=</span> <span class="n">epi</span><span class="o">.</span><span class="n">effect_table</span><span class="p">(</span><span class="n">idata_pp</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">fit</span><span class="p">)</span>
@@ -1983,17 +1986,17 @@ see Sweden in the europe-covid notebook.)
 <p><img alt="png" src="../partial-pooling_files/partial-pooling_19_1.png" /></p>
 <p>The partially-pooled intervals sit between the two extremes: narrower than
 no-pooling because information is shared through the common prior
-$N(0, \sigma_\text{lockdown})$, but — unlike full pooling — still able to
+<span class="arithmatex">\(N(0, \sigma_\text{lockdown})\)</span>, but — unlike full pooling — still able to
 differ from one another if the data insist. This is exactly the behaviour the
-<code>(lockdown || country)</code> term encodes in R, and $\sigma_\text{lockdown}$ is the
+<code>(lockdown || country)</code> term encodes in R, and <span class="arithmatex">\(\sigma_\text{lockdown}\)</span> is the
 dial: the smaller the data say it is, the closer partial pooling sits to full
 pooling.</p>
 <h3 id="reading-the-output">Reading the output<a class="headerlink" href="#reading-the-output" title="Permanent link">&para;</a></h3>
 <p>A caution that matters as soon as there is more than one covariate: the global
-$\beta_k$ printed by <code>az.summary</code> is <strong>not</strong> "the effect in country $m$" — that
-is $\beta_k + b^{(m)}_k$, which <code>per_country_effect</code> (or
+<span class="arithmatex">\(\beta_k\)</span> printed by <code>az.summary</code> is <strong>not</strong> "the effect in country <span class="arithmatex">\(m\)</span>" — that
+is <span class="arithmatex">\(\beta_k + b^{(m)}_k\)</span>, which <code>per_country_effect</code> (or
 <code>epi.plots.plot_region_effects</code>) computes. And with several <em>collinear</em>
-covariates, a single $\beta_k$ whose interval covers zero usually means "not
+covariates, a single <span class="arithmatex">\(\beta_k\)</span> whose interval covers zero usually means "not
 separately identifiable from the others", not "this measure did nothing". The
 <a href="../europe-covid/">europe-covid</a> notebook works through that case.</p>
 <h3 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h3>
@@ -2061,6 +2064,10 @@ separately identifiable from the others", not "this measure did nothing". The
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
     
   </body>
