@@ -1142,17 +1142,17 @@ every iteration. The diagnostics below are the check that catches it.</p>
 4 chains x 1000 post-warmup draws = 4000
 
  chain  divergent  max_treedepth  ebfmi
-     1          0              0  0.936
-     2          0              0  0.996
-     3          0              0  0.973
-     4          0              0  0.953
+     1          0              0  1.021
+     2          0              0  1.053
+     3          0              0  0.930
+     4          0              0  0.977
 
 Divergent transitions: 0 (0.0%)
 Hit max treedepth:     0 (0.0%)
-Lowest E-BFMI:         0.94
-Worst R-hat:           1.010  (intercept)
-Lowest bulk ESS:       479  (intercept)
-Lowest tail ESS:       929
+Lowest E-BFMI:         0.93
+Worst R-hat:           1.010  (rw_noise[0, 10])
+Lowest bulk ESS:       633  (rw_scale[0])
+Lowest tail ESS:       1067
 
 No problems detected.
 </code></pre></div>
@@ -1162,17 +1162,17 @@ No problems detected.
 4 chains x 1000 post-warmup draws = 4000
 
  chain  divergent  max_treedepth  ebfmi
-     1          0              0  0.917
-     2          0              0  1.003
-     3          0              0  0.942
-     4          0              0  0.897
+     1          0              0  0.894
+     2          0              0  0.999
+     3          0              0  0.944
+     4          0              0  0.916
 
 Divergent transitions: 0 (0.0%)
 Hit max treedepth:     0 (0.0%)
-Lowest E-BFMI:         0.90
-Worst R-hat:           1.010  (rw_noise[0, 4])
-Lowest bulk ESS:       1377  (infections_raw[0, 7])
-Lowest tail ESS:       473
+Lowest E-BFMI:         0.89
+Worst R-hat:           1.010  (rw_noise[0, 13])
+Lowest bulk ESS:       2133  (infections_raw[0, 13])
+Lowest tail ESS:       880
 
 No problems detected.
 </code></pre></div>
@@ -1222,11 +1222,11 @@ epidemics do not follow the renewal equation exactly. Compare the widths.</p>
 <a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="nb">print</span><span class="p">()</span>
 <a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="nb">print</span><span class="p">(</span><span class="n">summ</span><span class="p">[[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;sd&quot;</span><span class="p">,</span> <span class="s2">&quot;r_hat&quot;</span><span class="p">,</span> <span class="s2">&quot;ess_bulk&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>mean 95% R_t width, deterministic : 0.251
-mean 95% R_t width, latent        : 0.426
+<div class="highlight"><pre><span></span><code>mean 95% R_t width, deterministic : 0.249
+mean 95% R_t width, latent        : 0.430
 
-           mean     sd  r_hat  ess_bulk
-inf_aux  10.818  0.737    1.0    3898.0
+          mean     sd  r_hat  ess_bulk
+inf_aux  10.81  0.748    1.0    3682.0
 </code></pre></div>
 <p>The dispersion <code>inf_aux</code> is estimated rather than assumed, so the data get a
 say in how far infections may stray from the renewal equation.</p>
