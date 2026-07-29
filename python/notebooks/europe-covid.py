@@ -430,7 +430,9 @@ fc = posterior_deaths(idata, [X_uk], config, seed=1)[0]
 # split into in-sample and out-of-sample. A single 95% band with one colour of
 # bar hides both how the uncertainty is shaped and where the fit stopped.
 _LEVELS = (30, 60, 90)
-_BANDS = {30: "#08306b", 60: "#4292c6", 90: "#9ecae1"}
+# String keys: the frame stores level as str(lv), and an int-keyed dict
+# silently falls through to plotnine's grey default.
+_BANDS = {"30": "#2171b5", "60": "#6baed6", "90": "#c6dbef"}
 
 uk_bands = pd.concat([
     pd.DataFrame({

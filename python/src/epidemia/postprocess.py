@@ -444,4 +444,12 @@ def summary(idata, pars=None, regex=None, series=None, groups=None,
         rows[col] = row
 
     out = pd.DataFrame.from_dict(rows, orient="index")
-    return out if digits is None else out.round(digits)
+    out = out if digits is None else out.round(digits)
+    # A compact default: the eight ArviZ columns wrap on any reasonable page and
+    # are unreadable in rendered docs. Keep the estimate, the interval and the
+    # two diagnostics anyone actually acts on; the rest stay available through
+    # arviz.summary for whoever wants them.
+    keep = [c for c in out.columns
+            if c in ("mean", "sd") or c.endswith("%")
+            or c in ("ess_bulk", "r_hat")]
+    return out[keep] if keep else out

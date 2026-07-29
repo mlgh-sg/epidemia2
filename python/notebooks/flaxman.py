@@ -37,7 +37,9 @@
 # alpha_hier ~ gamma(.1667, 1);
 # alpha[i]    = alpha_hier[i] - log(1.05) / 6.0;
 # mu          ~ normal(3.28, kappa);     kappa ~ normal(0, 0.5);
-# lockdown    ~ normal(0, gamma);
+# gamma             ~ normal(0, 0.2);
+# lockdown          ~ normal(0, gamma);
+# last_intervention ~ normal(0, gamma);   // socialDistancing, column 6
 # Rt[,m]      = mu[m] * exp(-X[m] * alpha - X[m][,5] * lockdown[m]);
 # tau ~ exponential(0.03);  y[m] ~ exponential(1/tau);
 # ```
@@ -46,7 +48,7 @@
 # |---|---|---|
 # | Link | `mu[m] * exp(-X·alpha)` | `6.5 * sigmoid(eta)` |
 # | Covariates | **six** — the five NPIs plus `firstIntervention` | the five NPIs |
-# | Country deviations | **lockdown only** | **all five NPIs** |
+# | Country deviations | **lockdown AND socialDistancing**, sharing one scale | **all five NPIs** |
 # | Coefficient prior | `gamma(1/6, 1)`, shifted by `log(1.05)/6` | identical |
 # | Seeding | `tau ~ Exp(0.03)`, `y ~ Exp(1/tau)` | identical |
 # | Observations | negative binomial | identical |
@@ -61,8 +63,11 @@
 # columns must between them account for the entire fall in transmission, and
 # which one takes the mass is largely arbitrary.
 #
-# **The pooling.** Only lockdown gets a country-specific term; the other five
-# share one global coefficient each with no freedom to vary by country.
+# **The pooling.** TWO covariates get a country-specific term -- lockdown
+# (column 5) and socialDistancing (column 6, the "last intervention") -- and
+# they share ONE scale, `gamma ~ normal(0, 0.2)`. That scale is tight: a
+# half-normal(0.2) has mean 0.16, against 0.5 for epidemia's decov default. The
+# other four covariates have no country term at all.
 #
 # Getting this wrong is instructive. A first draft of this notebook omitted
 # `firstIntervention` and put a country deviation on lockdown alone — and
@@ -129,9 +134,13 @@ print("NPI order:", NPIS)
 # zero (no deviation at all), and `nan` means "estimate this one".
 
 # %%
-LOCKDOWN = NPIS.index("lockdown")
+# Flaxman pools TWO covariates by country -- lockdown and socialDistancing --
+# sharing one scale gamma ~ normal(0, 0.2). nan means "estimate this slope's
+# between-country SD"; 0 pins it at zero (no country term at all).
+POOLED = [NPIS.index("lockdown"), NPIS.index("social_distancing_encouraged")]
 slope_sd = [0.0] * len(NPIS)
-slope_sd[LOCKDOWN] = np.nan          # the only NPI that varies by country
+for k in POOLED:
+    slope_sd[k] = np.nan
 
 flaxman_cfg = EpiModelConfig(
     gen=ec.si,
@@ -140,6 +149,10 @@ flaxman_cfg = EpiModelConfig(
     region_effects=True,
     correlated=False,
     sd_slope_fixed=slope_sd,
+    # gamma ~ normal(0, 0.2) is a half-normal with mean 0.16. epidemia's slope
+    # SD is Gamma(shape, scale); shape 1 with scale 0.16 matches that mean.
+    sd_slope_shape=1.0,
+    sd_scale=0.16,
     prior_covariates=shifted_gamma(shape=1 / 6, scale=1.0,
                                    shift=np.log(1.05) / 6),
     seed_days=6,
@@ -309,7 +322,45 @@ print(pd.DataFrame(rows).to_string(index=False))
 # %% [markdown]
 # ## Where this does not reproduce (yet)
 #
-# Measured against Nature Figure 2, this specification gets two of five right:
+# The full `base.stan` shows five differences from what this notebook builds,
+# three of which were invisible from the fragments used to write it.
+#
+# **1. X has SEVEN columns, and column 7 carries no global coefficient.**
+#
+# ```stan
+# Rt[,m] = mu[m] * exp(-X[m][,1:6]*alpha[1:6]
+#                      - X[m][,5]*lockdown[m]
+#                      - X[m][,7]*last_intervention[m]);
+# ```
+#
+# `alpha` spans columns 1-6 only. Column 7 (`last_intervention`) enters
+# *exclusively* through a per-country term -- it has no pooled effect at all.
+# It is NOT socialDistancing (column 6).
+#
+# **2. The susceptibility adjustment is linear.** `Rt_adj = (S/P) * Rt`, where
+# epidemia's `pop_adjust` uses `i = S(1 - exp(-i'/P))`. Different functional
+# form, and this notebook has no depletion at all.
+#
+# **3. There is no ascertainment regression.** `f = h*s` (IFR x delay) is passed
+# as DATA, with `ifr_noise[m] ~ normal(1, 0.1)` as a tight per-country
+# multiplier. This notebook uses epidemia's fitted logistic ascertainment with
+# `link_K=0.02`, which is far more flexible -- and that flexibility lets the
+# model trade IFR against the NPI coefficients, diluting lockdown.
+#
+# **4. `mu[m] ~ normal(3.28, kappa)`, `kappa ~ normal(0, 0.5)`** -- informative,
+# on the NATURAL scale. `(1 | country)` is diffuse and on `log R_0`.
+#
+# **5. `gamma ~ normal(0, 0.2)` is SHARED** by both per-country terms. epidemia
+# gives each slope its own Gamma-scaled SD and shares one `sd_scale` with the
+# intercept, where Flaxman's intercept scale is `kappa` (0.5) and the slope
+# scale is `gamma` (0.2).
+#
+# Items 2 and 3 are not reachable by configuration: `pop_adjust` has the wrong
+# functional form, and an essentially fixed IFR with a narrow multiplier is not
+# what `epiobs` is built for -- though `link="identity"` with an offset gets
+# close, as the flu tutorial does for full ascertainment.
+#
+# ## What this notebook currently produces
 #
 # | intervention | Nature Fig. 2 | here |
 # |---|---|---|
@@ -319,24 +370,9 @@ print(pd.DataFrame(rows).to_string(index=False))
 # | Distancing | ~0% | **52.5%** |
 # | Lockdown | ~**80%** | **30.3%** |
 #
-# And the fit is not trustworthy: 146 divergent transitions (3.6%) with an R-hat
-# of 1.35, so the point estimates above are not a fair reading of the
-# specification either.
+# 146 divergent transitions (3.6%), R-hat 1.35 -- so the point estimates are not
+# a fair reading of the specification either.
 #
-# The most likely remaining cause is the prior on $R_0$. Flaxman writes
-#
-# ```stan
-# mu[m] ~ normal(3.28, kappa);   kappa ~ normal(0, 0.5);
-# ```
-#
-# an informative prior on $R_0$ **on its natural scale**, tightly centred at
-# 3.28. This notebook uses `(1 | country)`, which puts a Gamma-scaled deviation
-# on $\log R_0$ — a different distributional shape and far more diffuse. That
-# lets the model explain the data with a lower $R_0$ and a correspondingly
-# weaker lockdown effect, which is exactly the pattern in the table. Pinning
-# $R_0$ near 3.28 is what forces the interventions to account for the whole
-# fall in transmission.
-#
-# Two other pieces still have no epidemia expression: `ifr_noise[m] ~ normal(1,
-# 0.1)`, a per-country IFR multiplier; and the exact hierarchical scale
-# `lockdown[m] ~ normal(0, gamma)`, which is approximated here by decov.
+# An earlier draft, WITHOUT the `firstIntervention` column, returned lockdown
+# 0.4% and distancing 63.3% -- the exact inverse of the paper. That column
+# matters, and so, on the evidence above, do at least two more things.
