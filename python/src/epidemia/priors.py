@@ -199,29 +199,35 @@ class Prior:
             # 10.3 / sd 4.7 / min 0.
             loc = float(getattr(self, "location", 0.0))
             scl = float(getattr(self, "scale", 1.0))
-            std_cls, std_kwargs = self._standardised_dist()
-            # An explicit initval: PyMC's default starting point for a
-            # Truncated with an unbounded-below base lands outside the support
-            # for the heavy-tailed families, giving an initial logp of -inf and
-            # a sampler that refuses to start. Measured: cauchy(10, 5) and
-            # student_t(3, 10, 5) both gave -inf; normal was fine.
-            raw = pm.Truncated(f"{name}_raw", std_cls.dist(**std_kwargs),
-                               lower=0.0, shape=shape,
-                               initval=np.ones(shape) if shape else 1.0)
+            raw = self._half_raw(pm, f"{name}_raw", shape)
             return pm.Deterministic(name, loc + scl * raw, dims=dims)
+
         return cls(name, shape=shape, dims=dims, **kwargs)
 
-    def _standardised_dist(self):
-        """The family with location 0 and scale 1, for R's raw-parameter form.
+    def _half_raw(self, pm, name, shape):
+        """The standardised lower-0 raw parameter R declares.
 
-        Overridden where the standardised form is not simply the family with
-        those two hyperparameters zeroed and unitised.
+        PyMC's native half-families are used rather than ``pm.Truncated``: they
+        need no ``initval`` (a truncated heavy-tailed base starts at -inf logp),
+        and a model carrying a non-default initial value cannot be converted to
+        a function graph, which breaks ``pm.compute_log_likelihood`` and so any
+        LOO/ELPD comparison.
         """
+        dist = getattr(self, "dist", "")
+        if dist == "t":
+            return pm.HalfStudentT(name, nu=float(getattr(self, "df", 1.0)),
+                                   sigma=1.0, shape=shape)
+        if dist == "cauchy":
+            return pm.HalfCauchy(name, beta=1.0, shape=shape)
+        if dist == "normal":
+            return pm.HalfNormal(name, 1.0, shape=shape)
+        # Everything else keeps the generic truncation of its standardised form.
         cls, kwargs = self._pymc_dist()
         for k, v in (("mu", 0.0), ("sigma", 1.0), ("beta", 1.0), ("alpha", 0.0)):
             if k in kwargs:
                 kwargs[k] = v
-        return cls, kwargs
+        return pm.Truncated(name, cls.dist(**kwargs), lower=0.0, shape=shape,
+                            initval=np.ones(shape) if shape else 1.0)
 
 
 @dataclass(frozen=True)

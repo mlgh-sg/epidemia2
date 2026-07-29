@@ -428,6 +428,49 @@ def _observed_frame(data, group=None, obs_model=None, transform=None):
 # --------------------------------------------------------------------------
 
 
+
+
+def _stepify(df, enabled=True):
+    """Duplicate each point at the next x, so a ribbon reads as a step.
+
+    R draws a stepped ``R_t`` with geom_stepribbon, which shades the BAND as a
+    step too. plotnine has no stepped ribbon, and geom_ribbon takes no ``step``
+    argument, so the staircase is built in the data: each row is repeated at the
+    following x value, giving flat treads and vertical risers.
+    """
+    if not enabled or df is None or not len(df):
+        return df
+    parts = []
+    keys = [c for c in ("region", "level") if c in df.columns]
+    for _, grp in (df.groupby(keys, sort=False) if keys else [((), df)]):
+        g = grp.sort_values("x")
+        nxt = g.copy()
+        nxt["x"] = g["x"].shift(-1)
+        parts.append(pd.concat([g, nxt.iloc[:-1]], ignore_index=True))
+    return pd.concat(parts, ignore_index=True).sort_values("x")
+
+
+def _check_levels(levels):
+    """Validate credible levels the way R's ``check_levels`` does.
+
+    R warns and falls back to c(50, 95) for an empty or invalid set
+    (R/plots_epi.R:901-912). Silently accepting a negative level draws a ribbon
+    whose lower bound is above its upper one.
+    """
+    import warnings
+
+    if levels is None:
+        return (30, 60, 90)
+    lv = [levels] if np.isscalar(levels) else list(levels)
+    good = [float(x) for x in lv if np.isfinite(x) and 0 < float(x) < 100]
+    if len(good) != len(lv) or not good:
+        warnings.warn(
+            f"levels={levels!r} must all lie strictly between 0 and 100; "
+            "falling back to (30, 60, 90).", stacklevel=3)
+        return (30, 60, 90)
+    return tuple(sorted(good))
+
+
 def _level_colours(palette, levels):
     """Map each level to a colour, interpolating for levels the palette lacks.
 
@@ -453,7 +496,8 @@ def _ribbon_plot(band, med, palette, levels, ylab, xlab, hline=None, facet=0,
     cols = _level_colours(palette, levels)
     p = (
         ggplot()
-        + geom_ribbon(band, aes("x", ymin="lower", ymax="upper", fill="level"))
+        + geom_ribbon(_stepify(band, step) if step else band,
+                      aes("x", ymin="lower", ymax="upper", fill="level"))
         # Bands are drawn widest-first (see _interval_frame); the legend still
         # reads narrowest-first, which is the order people expect to see.
         + scale_fill_manual(values=cols, name="Credible interval (%)",
@@ -763,6 +807,7 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                  by_100k=False, step=False, obs_model=None, draws=None,
                  n_fitted=None, date_breaks=None, date_format=None):
     """Dispatch: multi-region (facet on real dates) vs single-population."""
+    levels = _check_levels(levels)
     transform = _draw_transform(cumulative, smooth, by_100k,
                                 getattr(data, "pops", None))
     if _is_forecast(idata):

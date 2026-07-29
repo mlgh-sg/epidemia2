@@ -353,12 +353,22 @@ def prior_summary(panel, obs_models, config):
             else f"independent Gamma(shape=[{config.sd_intercept_shape:.4g}, "
                  f"{config.sd_slope_shape:.4g}...], scale={config.sd_scale:.4g})")))
     if config.rw is not None:
+        # EpiModelConfig.rw may be a LIST of walks (core._walks sums them);
+        # reading .prior_scale off the list raised AttributeError.
+        _walk_terms = (config.rw if isinstance(config.rw, (list, tuple))
+                       else [config.rw])
+        scales = ", ".join(f"{t.prior_scale:.4g}" for t in _walk_terms)
+        per_region = any(getattr(t, "by_region", False) for t in _walk_terms)
         rows.append(("R_t", "random walk",
-                     f"HalfNormal({config.rw.prior_scale:.4g}) on the step size"
-                     + (" (one per region)" if config.rw.by_region else " (shared)")))
+                     f"HalfNormal({scales}) on the step size"
+                     + (" (one per region)" if per_region else " (shared)")))
+
+    # role_scale is what core.py builds with, so report the SAME prior rather
+    # than the unscaled spec -- they differ 4x for a bare normal().
+    from . import priors as _pr
 
     rows.append(("infections", "seeds", describe(
-        config.prior_seeds,
+        _pr.role_scale(config.prior_seeds, "seeds"),
         f"hexp(exponential({config.seed_aux_rate:.4g}))" if config.seed_pooling
         else f"exponential(1/{config.seed_prior_mean:.4g})")))
     if config.latent:

@@ -291,6 +291,10 @@ class EpiModelConfig:
     sd_intercept_shape: float = 1.0
     sd_slope_shape: float = 1.0
     sd_scale: float = 0.5
+    #: Fix each slope's between-region SD instead of estimating it. A scalar
+    #: applies to every slope; a per-slope sequence may use ``nan`` for "estimate
+    #: this one", which is how Flaxman's model gives a country deviation to
+    #: lockdown alone.
     sd_slope_fixed: object = None
     rw: RandomWalk | list[RandomWalk] | None = None
     seed_days: int = 6
@@ -416,9 +420,21 @@ def _region_effects(pm, pt, config, M, K):
                        beta=1.0 / config.sd_scale)
         slopes = np.broadcast_to(
             np.asarray(config.sd_slope_fixed, dtype=float), (K,)
-        ).copy()
+        ).astype(float).copy()
+        # NaN means "estimate this one". Flaxman's model needs exactly that: a
+        # country-specific deviation on lockdown ALONE, with the other four NPIs
+        # sharing one global coefficient and no per-country term. Without it the
+        # choice was all-fixed or all-estimated.
+        free = np.isnan(slopes)
+        if free.any():
+            est = pm.Gamma("sd_slope_free", alpha=config.sd_slope_shape,
+                           beta=1.0 / config.sd_scale, shape=int(free.sum()))
+            vec = pt.as_tensor_variable(np.nan_to_num(slopes, nan=0.0))
+            vec = pt.set_subtensor(vec[np.where(free)[0]], est)
+        else:
+            vec = pt.as_tensor_variable(slopes)
         sd = pm.Deterministic(
-            "sd", pt.concatenate([sd0.reshape((1,)), pt.as_tensor_variable(slopes)])
+            "sd", pt.concatenate([sd0.reshape((1,)), vec])
         )
 
     z0 = pm.Normal("z0", 0.0, 1.0, dims="region")
