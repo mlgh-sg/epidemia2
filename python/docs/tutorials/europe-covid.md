@@ -446,7 +446,7 @@ az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    done in 33.0s
+    done in 20.7s
 
 
     [epidemia] sampling 4 chains x (2000 tune + 1000 draws)
@@ -635,7 +635,7 @@ az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed
 
 
 
-    [epidemia] sampled in 2965.4s
+    [epidemia] sampled in 3056.9s
 
 
     divergences: 0
@@ -1332,7 +1332,7 @@ save_plot(p, "uk-forecast")
 p
 ```
 
-    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_92762/728124685.py:1: UserWarning: 2 missing deaths value(s) inside the modelled window were left out of the likelihood (masked as unobserved, as R treats NA). The latent series are still estimated on those days.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_21348/728124685.py:1: UserWarning: 2 missing deaths value(s) inside the modelled window were left out of the likelihood (masked as unobserved, as R treats NA). The latent series are still estimated on those days.
 
 
     [epidemia] saved figures/uk-forecast.png

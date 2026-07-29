@@ -110,10 +110,15 @@ ROLE_DEFAULT_SCALE = {
 def role_scale(spec, role):
     """``spec`` with R's ``default_scale`` for ``role`` if it kept the generic one.
 
-    Python has no ``NULL`` to resolve late, so a constructor default of
+    Python has no ``NULL`` to resolve late, so a scale equal to
     :data:`DEFAULT_PRIOR_SCALE` is treated as "unspecified" and replaced by the
-    role's default. An explicitly-chosen scale is never overridden -- only the
-    value that means "I did not say".
+    role's default.
+
+    .. note::
+       That is a heuristic, not R's semantics. R distinguishes ``scale = NULL``
+       from ``scale = 0.25``; this cannot, so writing ``normal(0, 0.25)``
+       explicitly in a seeds or susceptibility role WILL be rescaled. Pass a
+       different value, or the role's own default, if you mean it literally.
     """
     from dataclasses import replace as _replace
 
@@ -121,6 +126,11 @@ def role_scale(spec, role):
     if spec is None or want is None or want == DEFAULT_PRIOR_SCALE:
         return spec
     if getattr(spec, "scale", None) != DEFAULT_PRIOR_SCALE:
+        return spec
+    # `scale` is a read-only property on some families (ExponentialPrior reports
+    # 1/rate), so replace() would raise rather than rescale. Those families have
+    # no scale hyperparameter to substitute in the first place.
+    if "scale" not in {f.name for f in fields(spec)}:
         return spec
     return _replace(spec, scale=want)
 
@@ -190,8 +200,14 @@ class Prior:
             loc = float(getattr(self, "location", 0.0))
             scl = float(getattr(self, "scale", 1.0))
             std_cls, std_kwargs = self._standardised_dist()
+            # An explicit initval: PyMC's default starting point for a
+            # Truncated with an unbounded-below base lands outside the support
+            # for the heavy-tailed families, giving an initial logp of -inf and
+            # a sampler that refuses to start. Measured: cauchy(10, 5) and
+            # student_t(3, 10, 5) both gave -inf; normal was fine.
             raw = pm.Truncated(f"{name}_raw", std_cls.dist(**std_kwargs),
-                               lower=0.0, shape=shape)
+                               lower=0.0, shape=shape,
+                               initval=np.ones(shape) if shape else 1.0)
             return pm.Deterministic(name, loc + scl * raw, dims=dims)
         return cls(name, shape=shape, dims=dims, **kwargs)
 

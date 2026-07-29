@@ -195,7 +195,16 @@ def _draws(idata, var):
     return arr.reshape(-1, *arr.shape[2:]), tuple(da.dims[2:])
 
 
+def _is_forecast(obj):
+    """True for a :class:`~epidemia.forecast.Forecast` (duck-typed, no import)."""
+    return all(hasattr(obj, a) for a in
+               ("regions", "dates", "lengths", "Rt", "predicted", "expected"))
+
 def _is_multiregion(idata, var):
+    # A Forecast is always per-region: it carries a `regions` list rather than
+    # a posterior whose dims can be inspected.
+    if _is_forecast(idata):
+        return True
     return "region" in idata.posterior[var].dims
 
 
@@ -669,10 +678,6 @@ def _span_days(*frames):
     return None
 
 
-def _is_forecast(obj):
-    """True for a :class:`~epidemia.forecast.Forecast` (duck-typed, no import)."""
-    return all(hasattr(obj, a) for a in
-               ("regions", "dates", "lengths", "Rt", "predicted", "expected"))
 
 
 _FORECAST_VARS = {"Rt": "Rt", "Rt_unadj": "Rt_unadj", "infections": "infections"}
@@ -1202,6 +1207,33 @@ def _region_path_frame(idata, var, data, idx, group=None, draws=None,
     return pd.concat(paths, ignore_index=True), pd.concat(meds, ignore_index=True), keep
 
 
+
+def _forecast_path_frame(fc, arr, idx, group=None, transform=None):
+    """Per-region path + median frames from a Forecast, padding dropped."""
+    regions = [str(r) for r in fc.regions]
+    want = _as_groups(group, None)
+    keep = regions if want is None else want
+    unknown = set(keep) - set(regions)
+    if unknown:
+        raise ValueError(f"unknown region(s) {sorted(unknown)}; have {regions}")
+    paths, meds = [], []
+    for r in keep:
+        m = regions.index(r)
+        n = int(fc.lengths[m])
+        x = pd.to_datetime(fc.dates[m])[:n]
+        d = arr[:, m, :n]
+        if transform is not None:
+            d = transform(d, m)
+        pf = _path_frame(d, x, idx)
+        pf["region"] = r
+        paths.append(pf)
+        mf = _median_frame(d, x)
+        mf["region"] = r
+        meds.append(mf)
+    return (pd.concat(paths, ignore_index=True),
+            pd.concat(meds, ignore_index=True), keep)
+
+
 def _spaghetti_plot(paths, med, color, alpha, ylab, xlab, hline=None, facet=0,
                     title=None, obs=None, obs_kind="point"):
     """``facet`` is the number of region panels (0/1 => no faceting)."""
@@ -1212,41 +1244,23 @@ def _spaghetti_plot(paths, med, color, alpha, ylab, xlab, hline=None, facet=0,
     )
     if obs is not None:
         has_period = "period" in getattr(obs, "columns", [])
-        # Points, not filled columns. A geom_col at daily width over a 3-month
-        # window merges into a solid block that hides the ribbon underneath --
-        # which is exactly what made the England case plot unreadable. Points
-        # keep every observation visible AND let the bands show through, which
-        # is how the FT and Our World in Data draw daily counts.
+        pal = {"In-sample": COLORS["in_sample"],
+               "Out-of-sample": COLORS["out_of_sample"]}
         if has_period:
-            pal = {"In-sample": COLORS["in_sample"],
-                   "Out-of-sample": COLORS["out_of_sample"]}
             if obs_kind == "col":
-                p = p + geom_col(obs, aes("x", "obs", fill="period"),
-                                 alpha=0.55, width=0.75)
-                p = p + scale_fill_manual(
-                    values={**{str(lv): c for lv, c in cols.items()}, **pal},
-                    name="Credible interval (%)",
-                    breaks=[str(lv) for lv in sorted(levels)])
+                p = (p + geom_col(obs, aes("x", "obs", fill="period"),
+                                  alpha=0.55, width=0.75)
+                       + scale_fill_manual(values=pal, name=""))
             else:
-                p = p + geom_point(obs, aes("x", "obs", color="period"),
-                                   size=0.9, alpha=0.75, stroke=0)
-                p = p + scale_color_manual(values=pal, name="")
+                p = (p + geom_point(obs, aes("x", "obs", color="period"),
+                                    size=0.9, alpha=0.75, stroke=0)
+                       + scale_color_manual(values=pal, name=""))
         elif obs_kind == "col":
             p = p + geom_col(obs, aes("x", "obs"), fill=COLORS["observed"],
                              alpha=0.45, width=0.75)
         else:
             p = p + geom_point(obs, aes("x", "obs"), color=COLORS["observed"],
                                size=0.9, alpha=0.75, stroke=0)
-    # The median goes on last so it stays readable through the bundle of paths.
-    p = p + geom_line(med, aes("x", "median"), color="black", size=0.8) + labs(x=xlab, y=ylab)
-    if hline is not None:
-        p = p + geom_hline(yintercept=hline, linetype="dotted", color="#555555")
-    if title:
-        p = p + labs(title=title)
-    p = p + theme_epidemia()
-    if facet:
-        p = p + facet_wrap("region", scales="free_y", ncol=_FACET_NCOL)
-        p = _size_for_panels(p, facet)
     return p
 
 
@@ -1259,6 +1273,26 @@ def _spaghetti_series(idata, var, data, group, draws, alpha, seed, x, xlab, ylab
     _check_alpha(alpha)
     transform = _draw_transform(cumulative, smooth, by_100k,
                                 getattr(data, "pops", None))
+    if _is_forecast(idata):
+        # A Forecast carries its own draws, dates and lengths -- the ribbon
+        # plots have handled one since they gained _is_forecast; the spaghetti
+        # path never consulted it and went straight to idata.posterior.
+        fc = idata
+        arr = (np.asarray(draws_override) if draws_override is not None
+               else _forecast_draws(fc, var))
+        idx = _sample_draw_index(arr.shape[0], draws, seed)
+        paths, med, keep = _forecast_path_frame(fc, arr, idx,
+                                                _as_groups(group, None),
+                                                transform=transform)
+        obs_df = (_forecast_observed(fc, obs_model, group)
+                  if obs is True and obs_model is not None else None)
+        paths, med, obs_df = _window(paths, med, obs_df, dates)
+        p = _spaghetti_plot(paths, med, color, alpha, ylab, xlab or "", hline,
+                            facet=len(keep) if len(keep) > 1 else 0, title=title,
+                            obs=obs_df, obs_kind=obs_kind)
+        p = _log_scale(p, log)
+        return _maybe_save(p, save, default_name, n_panels=len(keep))
+
     arr, _ = _draws(idata, var)
     if draws_override is not None:
         arr = np.asarray(draws_override)
@@ -1356,7 +1390,21 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
     a :class:`~epidemia.core.PanelData` carries no counts, so pass
     ``obs_model=`` (the :class:`~epidemia.core.ObsModel` for this series) there.
     """
-    var = _pick_obs_var(idata, series)
+    if _is_forecast(idata):
+        # Resolve the series against the Forecast's own dict; _pick_obs_var
+        # reads idata.posterior, which a Forecast does not have.
+        names = sorted(idata.predicted)
+        if series is None:
+            if len(names) != 1:
+                raise ValueError(
+                    f"this forecast has {len(names)} series ({', '.join(names)}); "
+                    "pass series= to say which to plot")
+            series = names[0]
+        elif series not in names:
+            raise ValueError(f"no series named {series!r}; have {names}")
+        var = series
+    else:
+        var = _pick_obs_var(idata, series)
     grp = _as_groups(group if group is not None else region, groups)
     obs = observed
     if _is_multiregion(idata, var) and obs is None:
@@ -1370,7 +1418,8 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
                                      idata, var,
                                      series if series is not None else var[2:],
                                      obs_model)
-                                 if predictive else None),
+                                 if predictive and not _is_forecast(idata)
+                                 else None),
                              dates=dates, log=log, smooth=smooth,
                              cumulative=cumulative, by_100k=by_100k)
 

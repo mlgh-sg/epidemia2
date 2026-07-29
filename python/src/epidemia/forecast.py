@@ -536,11 +536,18 @@ def _renewal(Rt_unadj, gen, seed, seed_days, pops=None, susc0=None, rm=None,
             window = inf[:, lo:t][:, ::-1]
             pre = R[:, t] * (window @ gen[: t - lo])
         # -expm1(-x) == 1 - exp(-x) but accurate for the tiny x of a big pop.
-        i_t = state * -np.expm1(-pre / p)
-        if t >= n_obs:
-            i_t = draw(i_t, t)
-        else:
+        if t < n_obs:
             i_t = inf[:, t]                       # inside the fit: read back
+        elif latent_sd is None:
+            i_t = state * -np.expm1(-pre / p)
+        else:
+            # R saturates the DRAW, not the mean: E_infections is the unadjusted
+            # renewal term, the latent value is drawn around it, and only then
+            # is it capped by the susceptible pool
+            # (gen_infections_pp.stan:35-50). Saturating first and drawing
+            # around the saturated value loses the i_t <= S invariant.
+            i_t = np.maximum(rng.normal(pre, latent_sd(np.maximum(pre, 1e-9))), 0.0)
+            i_t = state * -np.expm1(-i_t / p)
         inf[:, t] = i_t
         state = (1.0 - rm_flat[:, t]) * (state - i_t)
         susc[:, t] = state
@@ -879,8 +886,11 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
                 "forecasting a latent=True fit needs 'inf_aux' (the latent "
                 "dispersion) in the posterior, and this fit does not carry it."
             )
+        # A FLAT (S*M,) vector: _renewal calls latent_sd with a 1-D mean of that
+        # shape, so a column here broadcast to (S*M, S*M) and the assignment
+        # back into inf[:, t] failed outright.
         a = np.repeat(np.asarray(aux, dtype=float).reshape(S, 1), M,
-                      axis=1).reshape(S * M, 1)
+                      axis=1).reshape(S * M)
         if getattr(config, "fixed_vtm", True):
             def latent_sd(mean, _a=a):
                 return np.sqrt(_a * mean)
@@ -930,6 +940,14 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
             oeta += take(f"{o.name}|intercept").reshape(S, 1, 1)
         if o.X is not None:
             oX = _carry_forward(np.asarray(o.X, dtype=float), lengths, T_ext)
+            if getattr(o, "center", False):
+                # build_epidemia_model centres a series' own design too
+                # (core.py), so its coefficients are on the centred scale.
+                # Forecasting from the raw design shifted E by xbar . coef.
+                fit_rows = np.concatenate(
+                    [np.asarray(o.X, dtype=float)[m, : int(lengths[m]), :]
+                     for m in range(M)], axis=0)
+                oX = oX - fit_rows.mean(axis=0)[None, None, :]
             ocoef = take(f"{o.name}|coef").reshape(S, oX.shape[2])
             oeta += np.einsum("sk,mtk->smt", ocoef, oX)
         if o.offset is not None:

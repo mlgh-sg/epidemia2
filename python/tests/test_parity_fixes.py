@@ -754,3 +754,82 @@ def test_observed_overlay_gets_the_same_transform_as_the_bands():
                           transform=_draw_transform(cumulative=True))
     np.testing.assert_allclose(plain["obs"].to_numpy(), y[0])
     np.testing.assert_allclose(cum["obs"].to_numpy(), np.cumsum(y[0]))
+
+
+# --- regressions introduced while fixing the priors, caught by the final audit ---
+
+@pytest.mark.parametrize("spec_name", ["normal", "cauchy", "student_t"])
+def test_positive_prior_has_a_finite_initial_logp(spec_name):
+    """The affine form must START somewhere valid, or the sampler refuses to run.
+
+    PyMC's default initial point for a Truncated with an unbounded-below base
+    lands outside the support for the heavy-tailed families, giving logp -inf.
+    """
+    import pymc as pm
+    from epidemia.priors import build, cauchy, normal, student_t
+
+    spec = {"normal": normal(10, 5), "cauchy": cauchy(10, 5),
+            "student_t": student_t(3, 10, 5)}[spec_name]
+    with pm.Model() as m:
+        build(spec, "aux", positive=True)
+    assert np.isfinite(float(m.compile_logp()(m.initial_point())))
+
+
+def test_role_scale_does_not_crash_on_a_property_scale():
+    """ExponentialPrior.scale is 1/rate, a property -- replace() would raise."""
+    from epidemia.priors import exponential, role_scale
+
+    out = role_scale(exponential(4.0), "seeds")
+    assert out.rate == 4.0
+
+
+def test_latent_forecast_shapes_and_saturation():
+    """The sd closure returned a column, broadcasting (S*M,1)*(S*M,) to a matrix.
+
+    And the pop-adjusted branch had R's two operations reversed: R saturates the
+    DRAW, not the mean, so i_t <= S must hold.
+    """
+    from epidemia.forecast import _renewal
+
+    rng = np.random.default_rng(0)
+    S, Mr, Tt, POP = 4, 2, 20, 1000.0
+    Rt = np.full((S, Mr, Tt), 1.2)
+    inf, su = _renewal(Rt, np.ones(4) / 4, np.full((S, Mr), 8.0), seed_days=3,
+                       pops=np.full((1, Mr), POP),
+                       latent_sd=lambda m: np.sqrt(2.0 * m), rng=rng)
+    assert inf.shape == (S, Mr, Tt)
+    assert inf.max() <= POP + 1e-6, "saturation must cap infections at the pool"
+    assert su.min() >= -1e-6, "susceptibles must not go negative"
+
+
+def test_forecast_centres_the_observation_design_too():
+    """core centres a series' own design; the forecast must match or E shifts."""
+    import inspect
+    from epidemia import forecast as fmod
+
+    src = inspect.getsource(fmod)
+    assert "getattr(o, \"center\", False)" in src, \
+        "the observation block must honour ObsModel(center=True)"
+
+
+def test_spaghetti_plot_in_out_of_sample_branch_has_no_free_names():
+    """It was a verbatim copy of _ribbon_plot's branch, referencing cols/levels."""
+    import inspect
+    from epidemia import plots
+
+    src = inspect.getsource(plots._spaghetti_plot)
+    assert "cols" not in src, "cols is not in _spaghetti_plot's scope"
+    assert "levels" not in src, "levels is not in _spaghetti_plot's scope"
+
+
+def test_centring_uses_modelled_rows_not_padding():
+    from epidemia.core import _modelled_rows
+
+    X = np.zeros((3, 20, 1))
+    lengths = np.array([20, 12, 7])
+    rng = np.random.default_rng(0)
+    for m, n in enumerate(lengths):
+        X[m, :n, 0] = rng.normal(5.0, 2.0, n)
+    modelled = _modelled_rows(X, lengths)
+    assert modelled.shape[0] == int(lengths.sum())
+    assert modelled.mean() > X.reshape(-1, 1).mean() + 1.0   # padding drags it down

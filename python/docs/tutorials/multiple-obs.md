@@ -232,7 +232,7 @@ idata = fit_epidemia(panel, [obs_cases, obs_ons], config,
 ```
 
     /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for rw_scale[0] exceeds 1.01, so the chains have not mixed.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 275 for rw_scale[0] is 69 per chain, below the 100 per chain that keeps posterior summaries stable.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 260 for rw_scale[0] is 65 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 ## Check the sampler first
@@ -265,21 +265,21 @@ print(epidemia.sampler_diagnostics(idata))
     4 chains x 2000 post-warmup draws = 8000
     
      chain  divergent  max_treedepth  ebfmi
-         1          0              0  0.859
-         2          0              0  0.849
-         3          0              0  0.863
-         4          0              0  0.894
+         1          0              0  0.886
+         2          0              0  0.856
+         3          0              0  0.821
+         4          0              0  0.901
     
     Divergent transitions: 0 (0.0%)
     Hit max treedepth:     0 (0.0%)
-    Lowest E-BFMI:         0.85
+    Lowest E-BFMI:         0.82
     Worst R-hat:           1.020  (rw_scale[0])
-    Lowest bulk ESS:       275  (rw_scale[0])
-    Lowest tail ESS:       366
+    Lowest bulk ESS:       260  (rw_scale[0])
+    Lowest tail ESS:       447
     
     Warnings:
     * R-hat of 1.020 for rw_scale[0] exceeds 1.01, so the chains have not mixed.
-    * Bulk ESS of 275 for rw_scale[0] is 69 per chain, below the 100 per chain that keeps posterior summaries stable.
+    * Bulk ESS of 260 for rw_scale[0] is 65 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 
@@ -290,15 +290,15 @@ print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
 ```
 
                       mean     sd  r_hat  ess_bulk
-    intercept       -1.379  0.227    1.0     594.0
-    cases|coef[0]   -0.046  0.090    1.0   13008.0
-    cases|coef[1]    0.055  0.095    1.0   12544.0
-    cases|coef[2]   -0.108  0.091    1.0   12220.0
-    cases|coef[3]   -0.345  0.094    1.0   12534.0
-    cases|coef[4]   -0.656  0.091    1.0   10289.0
-    cases|coef[5]   -0.374  0.086    1.0   12532.0
-    cases|aux       13.275  2.436    1.0    2919.0
-    positivity|aux   0.013  0.002    1.0    2025.0
+    intercept       -1.392  0.237   1.01     466.0
+    cases|coef[0]   -0.047  0.089   1.00   12435.0
+    cases|coef[1]    0.055  0.094   1.00   13145.0
+    cases|coef[2]   -0.109  0.093   1.00   12864.0
+    cases|coef[3]   -0.346  0.091   1.00   10565.0
+    cases|coef[4]   -0.657  0.093   1.00   10656.0
+    cases|coef[5]   -0.376  0.087   1.00   11464.0
+    cases|aux       13.249  2.391   1.00    2558.0
+    positivity|aux   0.013  0.002   1.00    2094.0
 
 
 ## Both series have to be explained
@@ -376,12 +376,12 @@ print(tbl.round(3).to_string(index=False))
 
     logit-scale shift vs Monday:
     day  median     5%    95%
-    Tue  -0.047 -0.191  0.102
-    Wed   0.055 -0.100  0.211
-    Thu  -0.108 -0.255  0.040
-    Fri  -0.345 -0.498 -0.192
-    Sat  -0.654 -0.809 -0.510
-    Sun  -0.374 -0.516 -0.236
+    Tue  -0.047 -0.192  0.100
+    Wed   0.054 -0.100  0.212
+    Thu  -0.110 -0.261  0.045
+    Fri  -0.344 -0.495 -0.196
+    Sat  -0.656 -0.816 -0.507
+    Sun  -0.375 -0.521 -0.233
 
 
 ## Infections and susceptibility

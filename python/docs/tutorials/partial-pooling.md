@@ -144,7 +144,7 @@ az.summary(idata_pp, var_names=["beta", "sd"])
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    done in 27.7s
+    done in 20.7s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -251,7 +251,7 @@ az.summary(idata_pp, var_names=["beta", "sd"])
         Finished Chains:
         <span id="active-chains">4</span>
     </p>
-    <p>Sampling for a minute</p>
+    <p>Sampling for 44 seconds</p>
     <p>
         Estimated Time to Completion:
         <span id="eta">now</span>
@@ -333,7 +333,7 @@ az.summary(idata_pp, var_names=["beta", "sd"])
 
 
 
-    [epidemia] sampled in 48.7s
+    [epidemia] sampled in 44.2s
 
 
     divergences: 5
@@ -521,7 +521,7 @@ eff = {
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    done in 27.3s
+    done in 19.9s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -710,7 +710,7 @@ eff = {
 
 
 
-    [epidemia] sampled in 70.5s
+    [epidemia] sampled in 71.7s
 
 
     [epidemia] compiling the log-density (numba backend)... 
@@ -720,7 +720,7 @@ eff = {
     /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 204 for g_beta[lockdown] is 51 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
-    done in 28.0s
+    done in 19.8s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -909,7 +909,7 @@ eff = {
 
 
 
-    [epidemia] sampled in 18.5s
+    [epidemia] sampled in 19.0s
 
 
     /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 1 divergent transition. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.

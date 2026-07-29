@@ -131,6 +131,24 @@ R's `new_rw_stanmat` does, so forecast `R_t` fans out. Pass
 `rw_forecast="hold"` to freeze it at its last fitted step instead.
 `fc.predicted` holds draws from the observation family, not just the mean.
 
+## Deliberate departures from R
+
+Two places where this port does **not** match R, on purpose:
+
+**The default `R_t` coefficient prior is a shifted gamma.** R's `epirt()` defaults
+to `normal(0, 0.5)`; `EpiModelConfig` defaults to the shifted gamma
+`log(1.05)/6 - Gamma(1/6, 1)`, which puts effectively all mass on the negative
+half line. That is the prior every epidemia vignette overrides to, and it
+encodes the modelling stance the package is for: an intervention is a priori
+non-increasing in transmission. Name the prior explicitly — as the R vignettes
+do — if you want R's symmetric default.
+
+**Student-t and Cauchy `prior_seeds` keep your location and scale.** R
+hard-codes `student_t_lpdf(seeds_raw | df, 0, 1)` (`priors_inf.stan:40-41`), so
+`student_t(3, 50, 20)` silently becomes a half-t(3, 0, 1). That is an R-side
+defect rather than a design choice; this port honours what you asked for. The
+normal case is unaffected in either language.
+
 ## The caveats that remain
 
 **The formula's fixed/random split is advisory.** `build_epidemia_model` shares

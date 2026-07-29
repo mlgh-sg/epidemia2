@@ -568,6 +568,16 @@ def _likelihood(pm, pt, obs: ObsModel, E, aux_name, prior_PD=False):
 
 
 
+
+def _modelled_rows(X, lengths):
+    """The design restricted to genuine days, dropping each region's padding."""
+    Xa = np.asarray(X, dtype=float)
+    if lengths is None or Xa.ndim != 3:
+        return Xa.reshape(-1, Xa.shape[-1])
+    rows = [Xa[m, : int(n), :] for m, n in enumerate(np.asarray(lengths))]
+    return np.concatenate(rows, axis=0) if rows else Xa.reshape(-1, Xa.shape[-1])
+
+
 def _maybe_autoscale(spec, X, enabled, lengths=None):
     """Rescale a coefficient prior to its predictors' units, as R's standata_reg does.
 
@@ -591,12 +601,7 @@ def _maybe_autoscale(spec, X, enabled, lengths=None):
     # after padding is removed -- R/helpers.R:628-651). Including each short
     # region's zero-padded tail inflates the divisor: measured 2.62 against a
     # true 1.53 on a 3-region panel with lengths 20/12/7 and a N(5,2) covariate.
-    Xa = np.asarray(X, dtype=float)
-    if lengths is not None and Xa.ndim == 3:
-        rows = [Xa[m, :int(n), :] for m, n in enumerate(np.asarray(lengths))]
-        flat = np.concatenate(rows, axis=0) if rows else Xa.reshape(-1, Xa.shape[-1])
-    else:
-        flat = Xa.reshape(-1, Xa.shape[-1])
+    flat = _modelled_rows(X, lengths)
     scales = np.array([_p.predictor_scale(flat[:, k]) for k in range(flat.shape[1])])
     return _p.autoscale(spec, scales)
 
@@ -672,8 +677,11 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             )
 
         if config.center and K:
-            # Centre on the modelled days; padding would drag the mean.
-            X = X - X.reshape(-1, K).mean(axis=0)[None, None, :]
+            # Modelled rows only -- the comment here already claimed this, but
+            # the code averaged the PADDED array, dragging the mean toward zero
+            # for every short region. Measured 3.68 against a true 5.66 on a
+            # 3-region panel: a 35% error in the centring offset.
+            X = X - _modelled_rows(X, data.lengths).mean(axis=0)[None, None, :]
 
         if config.region_effects:
             b0, b = _region_effects(pm, pt, config, M, K)
@@ -689,8 +697,11 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                                      config.autoscale, data.lengths),
                     "beta", shape=K, allowed=_priors.OK_DISTS)
             else:
-                # The default is R's shifted_gamma: effects a priori
-                # non-positive. It has to go through _maybe_autoscale like any
+                # The default is a shifted gamma -- effects a priori
+                # non-positive. This is a DELIBERATE departure: R's epirt()
+                # defaults to normal(0, 0.5), but the shifted gamma is what
+                # every epidemia vignette overrides to, and it encodes the
+                # modelling stance the package exists for. See docs/parity.md. It has to go through _maybe_autoscale like any
                 # other shifted_gamma -- R autoscales it in standata_reg, and
                 # leaving it out meant the IDENTICAL prior behaved differently
                 # depending on whether the user spelled it out or took the
@@ -955,7 +966,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             if o.X is not None:
                 oX = np.asarray(o.X, dtype=float)
                 if o.center:
-                    oX = oX - oX.reshape(-1, oX.shape[2]).mean(0)[None, None, :]
+                    oX = oX - _modelled_rows(oX, data.lengths).mean(axis=0)[None, None, :]
                 if oX.shape[:2] != (M, T):
                     raise ValueError(
                         f"series {o.name!r}: X must be (M, T, Ks); got {oX.shape}"
@@ -963,7 +974,9 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 ocoef = (
                     _priors.build(
                         _maybe_autoscale(o.prior, oX, config.autoscale, data.lengths),
-                        f"{o.name}|coef", shape=oX.shape[2])
+                        f"{o.name}|coef", shape=oX.shape[2],
+                        # R/epiobs.R:103 is check_in_set(prior$dist, "normal")
+                        allowed=frozenset({"normal"}))
                     if o.prior is not None
                     else pm.Normal(f"{o.name}|coef", 0.0, o.prior_coef_scale,
                                    shape=oX.shape[2])
