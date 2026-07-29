@@ -74,6 +74,7 @@ from .plots import (
     available_series,
     pairs_plot,
     plot_coverage,
+    plot_effects,
     plot_infectious,
     plot_linpred,
     plot_intervals,
@@ -93,7 +94,7 @@ from .renewal import (
     renewal_infections,
 )
 from .scoring import crps, evaluate_forecast, posterior_coverage, posterior_metrics
-from .variational import fit_variational
+from .variational import ALGORITHMS, fit_pathfinder, fit_variational
 
 __all__ = [
     "EUROPE_COVID_COUNTRIES",
@@ -130,6 +131,8 @@ __all__ = [
     "expected_observations",
     "fit",
     "fit_multilevel",
+    "ALGORITHMS",
+    "fit_pathfinder",
     "fit_variational",
     "flu1918",
     "infectiousness",
@@ -149,6 +152,7 @@ __all__ = [
     "available_series",
     "pairs_plot",
     "plot_coverage",
+    "plot_effects",
     "plot_infections",
     "plot_infectious",
     "plot_linpred",

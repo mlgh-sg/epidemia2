@@ -143,11 +143,36 @@ class Prior:
 
         cls, kwargs = self._pymc_dist()
         if positive and not self.positive_support:
-            # An honest truncation, not a re-parameterisation: Stan's
-            # `real<lower=0> x; x ~ normal(m, s);` *is* a truncated normal.
-            return pm.Truncated(name, cls.dist(**kwargs), lower=0.0, shape=shape,
-                                dims=dims)
+            # epidemia does NOT truncate at zero. It declares a `lower=0` RAW
+            # parameter carrying the STANDARDISED density and affinely maps it
+            #
+            #     real<lower=0> aux_raw;  aux_raw ~ normal(0, 1);
+            #     aux = location + scale * aux_raw;
+            #
+            # (parameters_obs.stan / priors_obs.stan / epidemia_base.stan:68-106)
+            # so the support starts at `location`, not at 0. Truncating instead
+            # is a different prior wherever location != 0: for normal(10, 5),
+            # R has mean 14.0 / sd 3.0 / min 10, a truncated normal has mean
+            # 10.3 / sd 4.7 / min 0.
+            loc = float(getattr(self, "location", 0.0))
+            scl = float(getattr(self, "scale", 1.0))
+            std_cls, std_kwargs = self._standardised_dist()
+            raw = pm.Truncated(f"{name}_raw", std_cls.dist(**std_kwargs),
+                               lower=0.0, shape=shape)
+            return pm.Deterministic(name, loc + scl * raw, dims=dims)
         return cls(name, shape=shape, dims=dims, **kwargs)
+
+    def _standardised_dist(self):
+        """The family with location 0 and scale 1, for R's raw-parameter form.
+
+        Overridden where the standardised form is not simply the family with
+        those two hyperparameters zeroed and unitised.
+        """
+        cls, kwargs = self._pymc_dist()
+        for k, v in (("mu", 0.0), ("sigma", 1.0), ("beta", 1.0), ("alpha", 0.0)):
+            if k in kwargs:
+                kwargs[k] = v
+        return cls, kwargs
 
 
 @dataclass(frozen=True)

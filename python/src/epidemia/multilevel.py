@@ -540,7 +540,7 @@ def _compile(model, backend="numba", progress_bar=True, **sample_kw):
 
 def fit_multilevel(data: MultilevelData, config: MultilevelConfig,
                    draws=1000, tune=1000, chains=4, seed=0, adaptation="low_rank",
-                   backend="numba", progress_bar=True, target_accept=0.95, **kwargs):
+                   backend="numba", progress_bar=True, target_accept=0.95, algorithm="sampling", **kwargs):
     """Fit the multi-region renewal model with nutpie (NUTS / MCMC).
 
     Parameters mirror :func:`epidemia.fit`. Returns an ArviZ ``InferenceData``
@@ -583,6 +583,13 @@ def fit_multilevel(data: MultilevelData, config: MultilevelConfig,
        for ``r_hat`` and ``ess_bulk`` too.
     """
     model = build_multilevel_model(data, config)
+    if algorithm != "sampling":
+        from .variational import run_algorithm
+
+        idata = run_algorithm(model, algorithm, draws=draws, seed=seed,
+                              progress_bar=progress_bar, **kwargs)
+        _record_families(idata, {"deaths": getattr(config, "family", "poisson")})
+        return idata
     idata = _compile(model, backend=backend, draws=draws, tune=tune, chains=chains,
                      seed=seed, adaptation=adaptation, progress_bar=progress_bar,
                      target_accept=target_accept, **kwargs)

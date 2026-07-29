@@ -31,7 +31,8 @@
 import numpy as np
 import pandas as pd
 import arviz as az
-from plotnine import aes, geom_hline, geom_pointrange, ggplot, labs, coord_flip, position_dodge
+from plotnine import (aes, coord_flip, geom_hline, geom_pointrange, ggplot,
+                      labs, position_dodge, scale_color_manual)
 
 import epidemia as epi
 from epidemia.plots import save_plot, theme_epidemia
@@ -238,6 +239,11 @@ p = (
     + geom_hline(yintercept=0.0, linetype="dotted", color="#555555")
     + geom_pointrange(aes(ymin="lo", ymax="hi"), position=position_dodge(width=0.5))
     + coord_flip()
+    # Sequential, not a hue wheel: the three regimes are ordered (none ->
+    # partial -> full), so they should read as an ordered ramp.
+    + scale_color_manual(
+        values={"no pooling": "#9ecae1", "partial pooling": "#4292c6",
+                "full pooling": "#08306b"}, name="")
     + labs(x="", y="Lockdown effect on logit $R_t$  ($\\beta + b^{(m)}$)",
            title="Three pooling regimes: country-specific lockdown effect")
     + theme_epidemia()

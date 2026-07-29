@@ -14,7 +14,7 @@ from .model import build_model
 
 
 def fit(y, config, draws=1000, tune=1000, chains=4, seed=0,
-        adaptation="low_rank", backend="numba", progress_bar=True, **kwargs):
+        adaptation="low_rank", backend="numba", progress_bar=True, algorithm="sampling", **kwargs):
     """Fit a single-population renewal model with nutpie.
 
     Parameters
@@ -62,6 +62,13 @@ def fit(y, config, draws=1000, tune=1000, chains=4, seed=0,
     from .multilevel import _record_families, _warn_on_divergences
 
     model = build_model(np.asarray(y), config)
+    if algorithm != "sampling":
+        from .variational import run_algorithm
+
+        idata = run_algorithm(model, algorithm, draws=draws, seed=seed,
+                              progress_bar=progress_bar, **kwargs)
+        _record_families(idata, {"obs": getattr(config, "family", "poisson")})
+        return idata
     idata = _compile(model, backend=backend, draws=draws, tune=tune, chains=chains,
                      seed=seed, adaptation=adaptation, progress_bar=progress_bar,
                      **kwargs)

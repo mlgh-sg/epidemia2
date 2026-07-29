@@ -37,7 +37,9 @@
 import numpy as np
 import pandas as pd
 import arviz as az
-from plotnine import aes, geom_col, geom_line, geom_ribbon, geom_vline, ggplot, labs
+from plotnine import (aes, geom_col, geom_line, geom_point, geom_ribbon,
+                      geom_vline, ggplot, labs, scale_color_manual,
+                      scale_fill_manual)
 
 import epidemia as epi
 from epidemia.plots import save_plot, theme_epidemia
@@ -345,6 +347,14 @@ epi.plots.plot_percent_effects(idata, config, data=fit, group="Italy", labels=la
                                save="percent-effects-italy",
                                title="Italy: reduction in transmission by measure")
 
+# %%
+# One palette for the whole notebook, so "observed", "fitted", "forecast" and
+# "counterfactual" keep the same meaning in every figure.
+from epidemia.plots import COLORS as _C
+_PALETTE = {"observed": _C["observed"], "forecast_band": "#6baed6",
+            "median": _C["median"], "counterfactual": _C["counterfactual"],
+            "out_of_sample": _C["out_of_sample"]}
+
 # %% [markdown]
 # ## Forecasting and counterfactuals
 #
@@ -416,25 +426,45 @@ X_uk = full.X[uk, : full.lengths[uk], :]
 uk_dates = pd.to_datetime(full.dates[uk])
 fc = posterior_deaths(idata, [X_uk], config, seed=1)[0]
 
-uk_df = pd.DataFrame({
-    "date": uk_dates,
-    "median": np.median(fc, axis=0),
-    "lo": np.percentile(fc, 2.5, axis=0),
-    "hi": np.percentile(fc, 97.5, axis=0),
-})
+# Three NESTED credible bands, as R's plot_obs draws, and the observed counts
+# split into in-sample and out-of-sample. A single 95% band with one colour of
+# bar hides both how the uncertainty is shaped and where the fit stopped.
+_LEVELS = (30, 60, 90)
+_BANDS = {30: "#08306b", 60: "#4292c6", 90: "#9ecae1"}
+
+uk_bands = pd.concat([
+    pd.DataFrame({
+        "date": uk_dates,
+        "lo": np.percentile(fc, (100 - lv) / 2, axis=0),
+        "hi": np.percentile(fc, 100 - (100 - lv) / 2, axis=0),
+        "level": str(lv),
+    })
+    for lv in sorted(_LEVELS, reverse=True)          # widest first, so it sits behind
+], ignore_index=True)
+uk_med = pd.DataFrame({"date": uk_dates, "median": np.median(fc, axis=0)})
+
+n_fit = int(fit.lengths[fit.regions.index("United_Kingdom")])
 uk_obs = pd.DataFrame({
     "date": uk_dates,
     "deaths": full.deaths[uk, : full.lengths[uk]],
+    "period": np.where(np.arange(full.lengths[uk]) < n_fit,
+                       "In-sample", "Out-of-sample"),
 })
+
 p = (
-    ggplot(uk_df, aes("date"))
-    + geom_col(uk_obs, aes("date", "deaths"), fill="#b2182b", alpha=0.5)
-    + geom_ribbon(aes(ymin="lo", ymax="hi"), fill="#6baed6", alpha=0.5)
-    + geom_line(aes(y="median"), color="black", size=0.5)
-    + geom_vline(xintercept=pd.Timestamp("2020-05-05"), linetype="dotted",
-                 color="#555555")
+    ggplot()
+    + geom_ribbon(uk_bands, aes("date", ymin="lo", ymax="hi", fill="level"))
+    + scale_fill_manual(values=_BANDS, name="Credible interval (%)",
+                        breaks=[str(lv) for lv in sorted(_LEVELS)])
+    + geom_point(uk_obs, aes("date", "deaths", color="period"), size=0.9,
+                 alpha=0.8, stroke=0)
+    + scale_color_manual(
+        values={"In-sample": _PALETTE["observed"],
+                "Out-of-sample": _PALETTE["out_of_sample"]}, name="")
+    + geom_line(uk_med, aes("date", "median"), color=_PALETTE["median"],
+                size=0.7)
     + labs(x="", y="Daily deaths",
-           title="United Kingdom: out-of-sample forecast (fit ends 5 May, dotted)")
+           title="United Kingdom: fitted to 5 May, forecast beyond")
     + theme_epidemia()
 )
 save_plot(p, "uk-forecast")
@@ -462,10 +492,20 @@ cmp = pd.concat([
                   "lo": np.percentile(cf, 2.5, axis=0),
                   "hi": np.percentile(cf, 97.5, axis=0), "scenario": "3 days earlier"}),
 ], ignore_index=True)
+# The scenario colours come from epidemia's palette rather than plotnine's
+# defaults: the counterfactual must not share a hue with the fitted series, or
+# the two read as the same quantity. Purple against blue separates in hue, in
+# lightness and under deuteranopia.
+from epidemia.plots import COLORS
+from plotnine import scale_color_manual, scale_fill_manual
+
+_scen = {"actual": COLORS["in_sample"], "3 days earlier": COLORS["counterfactual"]}
 p = (
     ggplot(cmp, aes("date", color="scenario", fill="scenario"))
     + geom_ribbon(aes(ymin="lo", ymax="hi"), alpha=0.25, color=None)
-    + geom_line(aes(y="median"), size=0.6)
+    + geom_line(aes(y="median"), size=0.7)
+    + scale_color_manual(values=_scen, name="")
+    + scale_fill_manual(values=_scen, name="")
     + labs(x="", y="Daily deaths",
            title="United Kingdom: counterfactual (policies enacted 3 days earlier)")
     + theme_epidemia()

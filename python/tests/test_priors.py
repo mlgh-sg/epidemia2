@@ -151,16 +151,46 @@ def test_build_honours_dims():
     assert tuple(rv.shape.eval()) == (3,)
 
 
-@pytest.mark.parametrize("spec", [normal(10, 5), student_t(3, 10, 5), cauchy(0, 5),
-                                  laplace(0, 1)])
-def test_positive_truncation(spec):
-    """R's `real<lower=0> aux; aux ~ normal(10, 5);` is a truncated normal."""
+@pytest.mark.parametrize("spec", [normal(10, 5), normal(10, 2), student_t(3, 10, 5),
+                                  cauchy(0, 5)])
+def test_positive_builds_rs_affine_raw_form(spec):
+    """epidemia does NOT truncate at zero; it affinely maps a lower=0 raw draw.
+
+    R declares ``real<lower=0> aux_raw; aux_raw ~ normal(0, 1);`` and then sets
+    ``aux = location + scale * aux_raw`` (epidemia_base.stan:68-106), so the
+    support starts at ``location``. Truncating instead keeps everything above 0,
+    which for normal(10, 5) is a different prior: R has mean 14.0 / min 10,
+    truncation gives mean 10.3 / min 0.
+
+    Checked structurally rather than by drawing, because PyMC cannot sample a
+    truncated Student-t (the logp is fine; only random() is unavailable).
+    """
+    with pm.Model() as m:
+        rv = build(spec, "aux", positive=True)
+    assert rv.name == "aux"
+    assert "aux" in {d.name for d in m.deterministics}, "must be the affine map"
+    assert "aux_raw" in {v.name for v in m.free_RVs}, "must carry a raw parameter"
+
+
+def test_positive_normal_matches_rs_affine_form():
+    """R: aux = location + scale * HalfNormal(1), so E[aux] = loc + scale*sqrt(2/pi)."""
     with pm.Model():
-        free = build(spec, "free")
-        trunc = build(spec, "trunc", positive=True)
-    assert np.isfinite(pm.logp(free, -1.0).eval())
-    assert pm.logp(trunc, -1.0).eval() == -np.inf
-    assert np.isfinite(pm.logp(trunc, 1.0).eval())
+        rv = build(normal(10, 5), "aux", positive=True)
+        draws = pm.draw(rv, draws=200000, random_seed=0)
+    assert draws.min() >= 10.0 - 1e-9, "support starts at the location, not 0"
+    assert draws.mean() == pytest.approx(10 + 5 * np.sqrt(2 / np.pi), rel=0.02)
+    assert draws.std() == pytest.approx(5 * np.sqrt(1 - 2 / np.pi), rel=0.03)
+
+
+def test_truncating_would_have_been_a_different_prior():
+    """Guards the bug this replaced: a truncated normal(10, 5) is not R's."""
+    with pm.Model():
+        affine = pm.draw(build(normal(10, 5), "a", positive=True),
+                         draws=100000, random_seed=0)
+        trunc = pm.draw(pm.Truncated.dist(pm.Normal.dist(10, 5), lower=0.0),
+                        draws=100000, random_seed=0)
+    assert affine.mean() > trunc.mean() + 3.0     # ~14.0 vs ~10.3
+    assert trunc.min() < 5.0 < affine.min()
 
 
 def test_truncation_is_a_no_op_for_an_already_positive_family():
@@ -169,11 +199,12 @@ def test_truncation_is_a_no_op_for_an_already_positive_family():
     assert rv.owner.op.name == "exponential"  # not wrapped in a Truncated
 
 
-def test_truncation_works_with_a_shape():
+def test_positive_works_with_a_shape():
     with pm.Model():
         rv = build(normal(10, 5), "x", shape=3, positive=True)
+        draws = pm.draw(rv, draws=2000, random_seed=0)
     assert tuple(rv.shape.eval()) == (3,)
-    assert pm.logp(rv, np.array([-1.0, 1.0, 1.0])).eval()[0] == -np.inf
+    assert draws.min() >= 10.0 - 1e-9
 
 
 # --------------------------------------------------------------------------

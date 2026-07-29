@@ -40,6 +40,10 @@ gpu = ["jax[cuda12]>=0.4.34; sys_platform == 'linux'"]
 # Normalizing-flow ("Fisher HMC") adaptation for hard posteriors.
 #   uv sync --extra flow  (then fit(..., adaptation="flow"))
 flow = ["nutpie[nnflow]>=0.13"]
+# Pathfinder variational inference -- a better approximate posterior than ADVI
+# for this model class, and much faster than NUTS for iterating on a model.
+#   uv sync --extra approx  (then fit(..., algorithm="pathfinder"))
+approx = ["pymc-extras>=0.2"]
 
 [project.scripts]
 epidemia-flu = "epidemia.examples.flu:main"

@@ -35,7 +35,6 @@
 import numpy as np
 import pandas as pd
 import arviz as az
-from plotnine import aes, geom_line, geom_ribbon, facet_wrap, ggplot, labs, theme_bw
 
 import epidemia
 from epidemia.core import (
@@ -204,35 +203,21 @@ else:
 # A joint model has to fit everything it is conditioned on, so check each series.
 
 # %%
-def series_frame(idata, panel, var, obs_y, obs_mask):
-    """Median and 95% band for a latent series, long-form, with the observations."""
-    da = idata.posterior[var]
-    rows = []
-    for m, region in enumerate(panel.regions):
-        n = int(panel.lengths[m])
-        draws = da.isel(region=m).values.reshape(-1, da.shape[-1])[:, :n]
-        lo, mid, hi = np.percentile(draws, [2.5, 50, 97.5], axis=0)
-        rows.append(pd.DataFrame({
-            "region": region, "date": pd.to_datetime(panel.dates[m][:n]),
-            "lower": lo, "median": mid, "upper": hi,
-            "observed": np.where(obs_mask[m, :n], obs_y[m, :n], np.nan),
-        }))
-    return pd.concat(rows, ignore_index=True)
+# `plot_obs` bands the posterior **predictive** -- draws pushed through each
+# series' observation family -- so the ribbon carries the negative-binomial (and
+# quasi-Poisson) noise, not just parameter uncertainty. Banding `E_deaths`
+# directly, which an earlier version of this notebook did by hand, gives an
+# interval several times too narrow to compare against the counts drawn over it.
+#
+# Three nested credible bands, as R's `plot_obs` draws by default.
 
-
-for name in ("deaths", "cases"):
-    frame = series_frame(idata, panel, f"E_{name}",
-                         series[name]["y"], series[name]["mask"])
-    p = (
-        ggplot(frame, aes("date"))
-        + geom_ribbon(aes(ymin="lower", ymax="upper"), alpha=0.3, fill="#2C5F7C")
-        + geom_line(aes(y="median"), colour="black")
-        + geom_line(aes(y="observed"), colour="#9E4638", alpha=0.8)
-        + facet_wrap("region", scales="free_y")
-        + labs(title=f"Posterior fit: {name}", y=name, x=None)
-        + theme_bw()
-    )
-    p.show()
+# %%
+for name, model in zip(("deaths", "cases"), obs):
+    epidemia.plot_obs(
+        idata, data=panel, obs_model=model, series=name,
+        levels=(30, 60, 90), ylab=name.capitalize(),
+        title=f"Posterior predictive: {name}", save=False,
+    ).show()
 
 # %% [markdown]
 # ## What the susceptibility adjustment does
@@ -259,19 +244,10 @@ for m, region in enumerate(panel.regions):
 # rather than stepping only when a policy changes.
 
 # %%
-rt_frame = series_frame(idata, panel, "Rt",
-                        np.full_like(series["deaths"]["y"], np.nan, dtype=float),
-                        np.zeros_like(series["deaths"]["mask"]))
-p = (
-    ggplot(rt_frame, aes("date"))
-    + geom_ribbon(aes(ymin="lower", ymax="upper"), alpha=0.3, fill="#3F7D5E")
-    + geom_line(aes(y="median"), colour="black")
-    + facet_wrap("region")
-    + labs(title="Reproduction numbers, with a weekly walk per region",
-           y="$R_t$", x=None)
-    + theme_bw()
-)
-p.show()
+epidemia.plot_rt(
+    idata, data=panel, levels=(30, 60, 90),
+    title="Reproduction numbers, with a monthly walk per region", save=False,
+).show()
 
 # %% [markdown]
 # ## Scoring the fit

@@ -45,20 +45,63 @@ from plotnine import (
     theme_minimal,
 )
 
-# single-hue sequential ramps (light -> dark), colour-blind friendly
-_GREENS = {30: "#238b45", 50: "#238b45", 60: "#74c476", 90: "#c7e9c0", 95: "#c7e9c0"}
-_BLUES = {30: "#2171b5", 50: "#2171b5", 60: "#6baed6", 90: "#c6dbef", 95: "#c6dbef"}
+# --------------------------------------------------------------------------
+# Palette
+# --------------------------------------------------------------------------
+#
+# Chosen for print and for colour-vision deficiency rather than for screen
+# punch: a single-hue sequential ramp per quantity, so a wider interval is
+# always lighter, and the four *categorical* roles (observed, fitted,
+# counterfactual, forecast) are separated in both hue and lightness. These are
+# steps from ColorBrewer's Blues/Greens/Purples/Oranges, which are the ramps
+# bayesplot and the R vignettes use.
+
+#: Posterior interval fills, darkest (narrowest) to lightest (widest).
+# Steps are far enough apart in LIGHTNESS that a narrow band reads as distinct
+# from a wide one even at small facet sizes and in greyscale. The previous ramp
+# put 30 and 50 on the SAME hex, so a 50/95 plot showed one visible band.
+# Mid-range steps rather than the extremes of each ramp: the darkest band still
+# has to sit UNDER a black median line, and a near-black innermost band swallows
+# it. These are the ColorBrewer steps R's vignettes use.
+_GREENS = {30: "#238b45", 50: "#238b45", 60: "#74c476", 90: "#c7e9c0", 95: "#e5f5e0"}
+_BLUES = {30: "#2171b5", 50: "#2171b5", 60: "#6baed6", 90: "#c6dbef", 95: "#deebf7"}
+_PURPLES = {30: "#6a51a3", 50: "#6a51a3", 60: "#9e9ac8", 90: "#dadaeb", 95: "#efedf5"}
+_ORANGES = {30: "#d94801", 50: "#d94801", 60: "#fd8d3c", 90: "#fdd0a2", 95: "#fee6ce"}
+
+#: Categorical roles. Distinguishable under deuteranopia and in greyscale.
+COLORS = {
+    "rt": "#238b45",            # green: reproduction numbers
+    "infections": "#2171b5",    # blue: latent infections
+    "observed": "#b2182b",      # red: the data
+    "in_sample": "#b2182b",
+    "out_of_sample": "#2166ac",
+    "counterfactual": "#6a51a3",  # purple: "what if" -- never the same hue as the fit
+    "forecast": "#d94801",      # orange: projection beyond the fit
+    "median": "#252525",
+}
 
 
-def theme_epidemia(base_size: float = 11):
-    """A clean, publication-oriented plotnine theme."""
+def theme_epidemia(base_size: float = 11, rotate_x: float = 45):
+    """A clean, publication-oriented plotnine theme.
+
+    ``rotate_x`` tilts the x tick labels. Dates on a faceted panel are long
+    enough that horizontal labels collide -- in an 11-country facet they overlap
+    into an unreadable smear -- so the default is 45 degrees, as the Financial
+    Times and Our World in Data house styles do.
+    """
     return theme_minimal(base_size=base_size) + theme(
         figure_size=(8, 4.5),
-        dpi=120,
+        dpi=140,
         panel_grid_minor=element_blank(),
-        panel_grid_major=element_line(color="#e9e9e9", size=0.4),
+        panel_grid_major=element_line(color="#ededed", size=0.35),
+        panel_spacing=0.035,
         axis_title=element_text(size=base_size),
-        axis_text=element_text(size=base_size - 1, color="#333333"),
+        axis_text=element_text(size=base_size - 2, color="#4d4d4d"),
+        axis_text_x=element_text(size=base_size - 2, color="#4d4d4d",
+                                 angle=rotate_x,
+                                 ha="right" if rotate_x else "center"),
+        strip_text=element_text(size=base_size - 1, weight="bold",
+                                color="#262626"),
         legend_position="top",
         legend_title=element_text(size=base_size - 1),
         legend_key_size=12,
@@ -409,27 +452,31 @@ def _ribbon_plot(band, med, palette, levels, ylab, xlab, hline=None, facet=0,
     )
     if obs is not None:
         has_period = "period" in getattr(obs, "columns", [])
-        if obs_kind == "col":
-            if has_period:
-                p = (p
-                     + geom_col(obs, aes("x", "obs", fill="period"), alpha=0.55,
-                                width=1.0)
-                     + scale_fill_manual(
-                         values={"In-sample": "#b2182b",
-                                 "Out-of-sample": "#2166ac",
-                                 **{str(lv): c for lv, c in cols.items()}},
-                         name="Credible interval (%)",
-                         breaks=[str(lv) for lv in sorted(levels)]))
+        # Points, not filled columns. A geom_col at daily width over a 3-month
+        # window merges into a solid block that hides the ribbon underneath --
+        # which is exactly what made the England case plot unreadable. Points
+        # keep every observation visible AND let the bands show through, which
+        # is how the FT and Our World in Data draw daily counts.
+        if has_period:
+            pal = {"In-sample": COLORS["in_sample"],
+                   "Out-of-sample": COLORS["out_of_sample"]}
+            if obs_kind == "col":
+                p = p + geom_col(obs, aes("x", "obs", fill="period"),
+                                 alpha=0.55, width=0.75)
+                p = p + scale_fill_manual(
+                    values={**{str(lv): c for lv, c in cols.items()}, **pal},
+                    name="Credible interval (%)",
+                    breaks=[str(lv) for lv in sorted(levels)])
             else:
-                p = p + geom_col(obs, aes("x", "obs"), fill="#b2182b",
-                                 alpha=0.45, width=1.0)
-        else:
-            if has_period:
                 p = p + geom_point(obs, aes("x", "obs", color="period"),
-                                   size=1.2, alpha=0.85)
-            else:
-                p = p + geom_point(obs, aes("x", "obs"), color="#b2182b",
-                                   size=1.1, alpha=0.8)
+                                   size=0.9, alpha=0.75, stroke=0)
+                p = p + scale_color_manual(values=pal, name="")
+        elif obs_kind == "col":
+            p = p + geom_col(obs, aes("x", "obs"), fill=COLORS["observed"],
+                             alpha=0.45, width=0.75)
+        else:
+            p = p + geom_point(obs, aes("x", "obs"), color=COLORS["observed"],
+                               size=0.9, alpha=0.75, stroke=0)
     if step:
         # R's plot_rt(step = TRUE): a covariate-driven R_t is piecewise constant,
         # so a step reads more honestly than an interpolating line.
@@ -580,18 +627,46 @@ def _draw_transform(cumulative=False, smooth=None, by_100k=False, pops=None):
 
 
 
-def _date_axis(p, date_breaks=None, date_format=None):
-    """R's ``date_breaks`` / ``date_format``, applied to a date x axis."""
-    if date_breaks is None and date_format is None:
-        return p
+def _date_axis(p, date_breaks=None, date_format=None, span_days=None,
+               n_panels=1):
+    """R's ``date_breaks`` / ``date_format``, plus a sane automatic default.
+
+    Left to itself plotnine puts full ISO dates at every default break, which on
+    a faceted panel collide into an unreadable smear. When the caller has not
+    asked for something specific, pick a break spacing from the span and a short
+    label, and let the theme's 45-degree tilt do the rest.
+    """
     from plotnine import scale_x_date
 
+    if date_breaks is None and date_format is None and span_days is None:
+        return p
+    if date_breaks is None and span_days is not None:
+        per_panel = 6 if n_panels <= 1 else 4
+        weeks = max(1, int(round(span_days / 7 / per_panel)))
+        date_breaks = ("1 month" if weeks >= 4 else
+                       "2 weeks" if weeks >= 2 else "1 week")
+    if date_format is None:
+        date_format = "%d %b" if (span_days or 0) < 400 else "%b %Y"
     kw = {}
     if date_breaks is not None:
         kw["date_breaks"] = date_breaks
-    if date_format is not None:
-        kw["date_labels"] = date_format
-    return p + scale_x_date(**kw)
+    kw["date_labels"] = date_format
+    try:
+        return p + scale_x_date(**kw)
+    except Exception:      # a non-date x axis (integer days)
+        return p
+
+
+def _span_days(*frames):
+    """Number of days the plotted frames cover, or None if x is not a date."""
+    for df in frames:
+        if df is None or not len(df) or "x" not in getattr(df, "columns", []):
+            continue
+        x = df["x"]
+        if not pd.api.types.is_datetime64_any_dtype(x):
+            return None
+        return int((x.max() - x.min()).days) or 1
+    return None
 
 
 def _is_forecast(obj):
@@ -700,7 +775,8 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                          facet=len(keep) if len(keep) > 1 else 0, title=title,
                          obs=obs_df, obs_kind=obs_kind, step=step)
         p = _log_scale(p, log)
-        p = _date_axis(p, date_breaks, date_format)
+        p = _date_axis(p, date_breaks, date_format,
+                       _span_days(med, band), len(keep))
         return _maybe_save(p, save, default_name, n_panels=len(keep))
 
     if _is_multiregion(idata, var):
@@ -731,7 +807,8 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                          facet=len(keep) if len(keep) > 1 else 0, title=title,
                          obs=obs_df, obs_kind=obs_kind, step=step)
         p = _log_scale(p, log)
-        p = _date_axis(p, date_breaks, date_format)
+        p = _date_axis(p, date_breaks, date_format,
+                       _span_days(med, band), len(keep))
         return _maybe_save(p, save, default_name, n_panels=len(keep))
 
     arr, _ = _draws(idata, var)
@@ -756,7 +833,7 @@ def _series_plot(idata, var, data, group, levels, x, xlab, ylab, palette, hline,
                      facet=False, title=title, obs=obs_df, obs_kind=obs_kind,
                      step=step)
     p = _log_scale(p, log)
-    p = _date_axis(p, date_breaks, date_format)
+    p = _date_axis(p, date_breaks, date_format, _span_days(med, band))
     return _maybe_save(p, save, default_name)
 
 
@@ -795,7 +872,7 @@ def plot_infections(idata, data=None, group=None, groups=None,
 def plot_obs(idata, observed=None, data=None, group=None, groups=None, levels=(30, 60, 90), x=None,
              series=None, xlab=None, ylab="Daily deaths", save=True, title=None,
              dates=None, log=False, cumulative=False, smooth=None,
-             by_100k=False, bar=True, obs_model=None, predictive=True,
+             by_100k=False, bar=False, obs_model=None, predictive=True,
              n_fitted=None, date_breaks=None, date_format=None):
     """Posterior predictive observations with the observed counts overlaid.
 
@@ -878,17 +955,38 @@ def plot_obs(idata, observed=None, data=None, group=None, groups=None, levels=(3
 
 
 def _forest(df, xlab, title, hline=0.0):
-    return (
-        ggplot(df, aes("term", "median"))
-        + geom_hline(yintercept=hline, linetype="dotted", color="#555555")
-        + geom_pointrange(aes(ymin="lo", ymax="hi"))
+    """A bayesplot-style interval plot: thick inner band, thin outer, point median.
+
+    R's ``bayesplot::mcmc_intervals`` draws two nested credible intervals per
+    parameter. A single line with a dot -- what this used to draw -- throws away
+    the shape of the posterior and reads as a frequentist error bar.
+    """
+    has_inner = {"lo_in", "hi_in"} <= set(df.columns)
+    p = ggplot(df, aes("term", "median"))
+    p = p + geom_hline(yintercept=hline, linetype="dotted", color="#999999",
+                       size=0.5)
+    if has_inner:
+        p = p + geom_pointrange(aes(ymin="lo", ymax="hi"), size=0.22,
+                                color=_BLUES[60], fatten=0)
+        p = p + geom_pointrange(aes(ymin="lo_in", ymax="hi_in"), size=0.75,
+                                color=_BLUES[30], fatten=0)
+    else:
+        p = p + geom_pointrange(aes(ymin="lo", ymax="hi"), size=0.45,
+                                color=_BLUES[30], fatten=0)
+    p = (
+        p
+        + geom_point(size=2.4, color="white")
+        + geom_point(size=1.5, color=COLORS["median"])
         + coord_flip()
         + labs(x="", y=xlab, title=title)
-        + theme_epidemia()
+        # No tilt: after coord_flip the x axis carries the VALUE, and tilting a
+        # numeric axis is noise. The 45-degree default exists for dates.
+        + theme_epidemia(rotate_x=0)
     )
+    return p
 
-
-def plot_effects(idata, group=None, labels=None, levels=90, save=True, title=None):
+def plot_effects(idata, group=None, labels=None, levels=(50, 90), save=True,
+                 title=None):
     """Forest plot of the NPI effects on the logit-``R_t`` scale.
 
     ``group=None`` shows the **global** (fixed) effects :math:`\\beta_k` — the
@@ -896,7 +994,10 @@ def plot_effects(idata, group=None, labels=None, levels=90, save=True, title=Non
     effect :math:`\\beta_k + b^{(m)}_k`, which is what actually drives its
     :math:`R_t` and can differ from the global value under partial pooling.
     """
-    lo_q, hi_q = (100 - levels) / 2, 100 - (100 - levels) / 2
+    inner, outer = (sorted(levels)[:2] if isinstance(levels, (list, tuple))
+                    else (levels, levels))
+    lo_q, hi_q = (100 - outer) / 2, 100 - (100 - outer) / 2
+    lo_i, hi_i = (100 - inner) / 2, 100 - (100 - inner) / 2
     beta = np.asarray(idata.posterior["beta"].stack(s=("chain", "draw")))  # (K, S)
     npis = [str(v) for v in idata.posterior.coords["npi"].values]
     mat = beta
@@ -911,6 +1012,8 @@ def plot_effects(idata, group=None, labels=None, levels=90, save=True, title=Non
         "median": np.median(mat, axis=1),
         "lo": np.percentile(mat, lo_q, axis=1),
         "hi": np.percentile(mat, hi_q, axis=1),
+        "lo_in": np.percentile(mat, lo_i, axis=1),
+        "hi_in": np.percentile(mat, hi_i, axis=1),
     })
     if title is None:
         title = ("Global NPI effects $\\beta_k$" if group is None
@@ -983,7 +1086,10 @@ def plot_region_effects(idata, npi, levels=90, save=True, title=None):
     ``beta_k`` alone does not, because partial pooling splits each region's effect
     between the shared ``beta_k`` and its own deviation ``b[m, k]``.
     """
-    lo_q, hi_q = (100 - levels) / 2, 100 - (100 - levels) / 2
+    inner, outer = (sorted(levels)[:2] if isinstance(levels, (list, tuple))
+                    else (levels, levels))
+    lo_q, hi_q = (100 - outer) / 2, 100 - (100 - outer) / 2
+    lo_i, hi_i = (100 - inner) / 2, 100 - (100 - inner) / 2
     post = idata.posterior
     beta = np.asarray(post["beta"].sel(npi=npi).stack(s=("chain", "draw")))
     regions = [str(r) for r in post.coords["region"].values]
@@ -1106,27 +1212,31 @@ def _spaghetti_plot(paths, med, color, alpha, ylab, xlab, hline=None, facet=0,
     )
     if obs is not None:
         has_period = "period" in getattr(obs, "columns", [])
-        if obs_kind == "col":
-            if has_period:
-                p = (p
-                     + geom_col(obs, aes("x", "obs", fill="period"), alpha=0.55,
-                                width=1.0)
-                     + scale_fill_manual(
-                         values={"In-sample": "#b2182b",
-                                 "Out-of-sample": "#2166ac",
-                                 **{str(lv): c for lv, c in cols.items()}},
-                         name="Credible interval (%)",
-                         breaks=[str(lv) for lv in sorted(levels)]))
+        # Points, not filled columns. A geom_col at daily width over a 3-month
+        # window merges into a solid block that hides the ribbon underneath --
+        # which is exactly what made the England case plot unreadable. Points
+        # keep every observation visible AND let the bands show through, which
+        # is how the FT and Our World in Data draw daily counts.
+        if has_period:
+            pal = {"In-sample": COLORS["in_sample"],
+                   "Out-of-sample": COLORS["out_of_sample"]}
+            if obs_kind == "col":
+                p = p + geom_col(obs, aes("x", "obs", fill="period"),
+                                 alpha=0.55, width=0.75)
+                p = p + scale_fill_manual(
+                    values={**{str(lv): c for lv, c in cols.items()}, **pal},
+                    name="Credible interval (%)",
+                    breaks=[str(lv) for lv in sorted(levels)])
             else:
-                p = p + geom_col(obs, aes("x", "obs"), fill="#b2182b",
-                                 alpha=0.45, width=1.0)
-        else:
-            if has_period:
                 p = p + geom_point(obs, aes("x", "obs", color="period"),
-                                   size=1.2, alpha=0.85)
-            else:
-                p = p + geom_point(obs, aes("x", "obs"), color="#b2182b",
-                                   size=1.1, alpha=0.8)
+                                   size=0.9, alpha=0.75, stroke=0)
+                p = p + scale_color_manual(values=pal, name="")
+        elif obs_kind == "col":
+            p = p + geom_col(obs, aes("x", "obs"), fill=COLORS["observed"],
+                             alpha=0.45, width=0.75)
+        else:
+            p = p + geom_point(obs, aes("x", "obs"), color=COLORS["observed"],
+                               size=0.9, alpha=0.75, stroke=0)
     # The median goes on last so it stays readable through the bundle of paths.
     p = p + geom_line(med, aes("x", "median"), color="black", size=0.8) + labs(x=xlab, y=ylab)
     if hline is not None:
@@ -1237,7 +1347,7 @@ def spaghetti_obs(idata, observed=None, data=None, group=None, draws=50, alpha=0
                   seed=0, x=None, xlab=None, ylab="Daily deaths", save=True,
                   title=None, region=None, obs_model=None, predictive=True,
                   groups=None, dates=None, log=False, smooth=None,
-                  cumulative=False, by_100k=False, bar=True):
+                  cumulative=False, by_100k=False, bar=False):
     """Expected observations as individual paths, with the observed counts overlaid.
 
     Reads ``E_obs`` (single-population) or ``E_deaths`` (multilevel), whichever
@@ -1378,7 +1488,7 @@ def plot_coverage(y, draws, group=None, date=None, levels=(50, 95),
                      linetype="dotted", color="#555555")
         + labs(x="Credible interval" if period is None else "Period",
                y="Mean coverage", fill="", title=title)
-        + theme_epidemia()
+        + theme_epidemia(rotate_x=0 if period is None else 45)
     )
     facets = [c for c in ("group", "unseen") if c in cols]
     n_panels = 1
@@ -1479,7 +1589,7 @@ def plot_intervals(idata, pars=None, regex=None, series=None, par_types=None,
                           color="#2171b5")
         + coord_flip()
         + labs(x="", y="Value", title=title)
-        + theme_epidemia()
+        + theme_epidemia(rotate_x=0)
     )
     n = max(1, int(np.ceil(len(df) / 6)))
     p = p + theme(figure_size=(8.0, 1.2 + 0.32 * len(df)))

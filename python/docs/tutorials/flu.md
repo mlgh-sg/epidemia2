@@ -211,17 +211,17 @@ print(epidemia.sampler_diagnostics(idata_latent))
     4 chains x 1000 post-warmup draws = 4000
     
      chain  divergent  max_treedepth  ebfmi
-         1          0              0  0.561
-         2          0              0  0.558
-         3          0              0  0.469
-         4          0              0  0.436
+         1          0              0  0.917
+         2          0              0  1.003
+         3          0              0  0.942
+         4          0              0  0.897
     
     Divergent transitions: 0 (0.0%)
     Hit max treedepth:     0 (0.0%)
-    Lowest E-BFMI:         0.44
-    Worst R-hat:           1.010  (rw_noise[0, 35])
-    Lowest bulk ESS:       402  (inf_aux)
-    Lowest tail ESS:       213
+    Lowest E-BFMI:         0.90
+    Worst R-hat:           1.010  (rw_noise[0, 4])
+    Lowest bulk ESS:       1377  (infections_raw[0, 7])
+    Lowest tail ESS:       473
     
     No problems detected.
 
@@ -328,10 +328,10 @@ print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
 ```
 
     mean 95% R_t width, deterministic : 0.251
-    mean 95% R_t width, latent        : 0.398
+    mean 95% R_t width, latent        : 0.426
     
-              mean     sd  r_hat  ess_bulk
-    inf_aux  5.852  2.092   1.01     402.0
+               mean     sd  r_hat  ess_bulk
+    inf_aux  10.818  0.737    1.0    3898.0
 
 
 The dispersion `inf_aux` is estimated rather than assumed, so the data get a

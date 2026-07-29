@@ -17,7 +17,8 @@ PyMC model (`epidemia.multilevel`). This notebook explains the mapping and then
 import numpy as np
 import pandas as pd
 import arviz as az
-from plotnine import aes, geom_hline, geom_pointrange, ggplot, labs, coord_flip, position_dodge
+from plotnine import (aes, coord_flip, geom_hline, geom_pointrange, ggplot,
+                      labs, position_dodge, scale_color_manual)
 
 import epidemia as epi
 from epidemia.plots import save_plot, theme_epidemia
@@ -332,15 +333,15 @@ az.summary(idata_pp, var_names=["beta", "sd"])
 
 
 
-    [epidemia] sampled in 52.4s
+    [epidemia] sampled in 48.1s
 
 
     divergences: 8
 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: 8 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.050 for sd[0] exceeds 1.01, so the chains have not mixed.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 64 for sd[0] is 16 per chain, below the 100 per chain that keeps posterior summaries stable.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: 8 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: R-hat of 1.050 for sd[0] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: Bulk ESS of 64 for sd[0] is 16 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 
@@ -432,9 +433,6 @@ epi.plots.plot_obs(idata_pp, data=fit, save="pp-deaths-ppc",
                    title="Posterior predictive: deaths")
 ```
 
-    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_97016/4267129354.py:1: UserWarning: cannot draw the posterior predictive for 'deaths': the observation family is not recorded on this fit and no obs_model= was given. Falling back to banding the expected count, whose interval excludes observation noise and is therefore too narrow to compare against the plotted data. Pass obs_model=<the ObsModel> or predictive=False to silence.
-
-
     [epidemia] saved figures/pp-deaths-ppc.png
 
 
@@ -442,7 +440,7 @@ epi.plots.plot_obs(idata_pp, data=fit, save="pp-deaths-ppc",
 
 
     
-![png](partial-pooling_files/partial-pooling_8_2.png)
+![png](partial-pooling_files/partial-pooling_8_1.png)
     
 
 
@@ -523,7 +521,7 @@ eff = {
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    done in 19.8s
+    done in 19.9s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -712,17 +710,17 @@ eff = {
 
 
 
-    [epidemia] sampled in 76.8s
+    [epidemia] sampled in 76.2s
 
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: 18 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.020 for g_beta[lockdown] exceeds 1.01, so the chains have not mixed.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 213 for sd_intercept is 53 per chain, below the 100 per chain that keeps posterior summaries stable.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: 18 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: R-hat of 1.020 for g_beta[lockdown] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: Bulk ESS of 213 for sd_intercept is 53 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
-    done in 20.1s
+    done in 20.2s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -911,12 +909,12 @@ eff = {
 
 
 
-    [epidemia] sampled in 18.5s
+    [epidemia] sampled in 18.2s
 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: 34 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: R-hat of 1.120 for z0[Denmark] exceeds 1.01, so the chains have not mixed.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:602: UserWarning: Bulk ESS of 24 for z0[Denmark] is 6 per chain, below the 100 per chain that keeps posterior summaries stable.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: 34 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: R-hat of 1.120 for z0[Denmark] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:628: UserWarning: Bulk ESS of 24 for z0[Denmark] is 6 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 ### Comparison
@@ -950,6 +948,11 @@ p = (
     + geom_hline(yintercept=0.0, linetype="dotted", color="#555555")
     + geom_pointrange(aes(ymin="lo", ymax="hi"), position=position_dodge(width=0.5))
     + coord_flip()
+    # Sequential, not a hue wheel: the three regimes are ordered (none ->
+    # partial -> full), so they should read as an ordered ramp.
+    + scale_color_manual(
+        values={"no pooling": "#9ecae1", "partial pooling": "#4292c6",
+                "full pooling": "#08306b"}, name="")
     + labs(x="", y="Lockdown effect on logit $R_t$  ($\\beta + b^{(m)}$)",
            title="Three pooling regimes: country-specific lockdown effect")
     + theme_epidemia()

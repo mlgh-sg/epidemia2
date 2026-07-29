@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import json
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 
@@ -150,7 +150,9 @@ class ObsModel:
     prior: object = None
     prior_aux: object = None
     prior_intercept_scale: float = 0.2
-    prior_coef_scale: float = 0.5
+    # R's epiobs() defaults prior = normal(scale = 0.2) (R/epiobs.R:55); this
+    # was 0.5, i.e. 2.5x wider than the model being ported.
+    prior_coef_scale: float = 0.2
     prior_aux_loc: float = 10.0
     prior_aux_scale: float = 5.0
 
@@ -369,6 +371,28 @@ def _region_effects(pm, pt, config, M, K):
         return b0, b
 
     # Independent (R's `||`): one SD per term, no covariance.
+    #
+    # R honours decov() for BOTH forms -- standata_reg.R:141-148 writes
+    # shape/scale/concentration into the Stan data whenever the formula has a
+    # grouping factor, single- or double-bar. Reading prior_covariance only in
+    # the correlated branch meant a user porting `(1 + x || region)` with
+    # decov(...) silently got the hard-coded scalar defaults, while
+    # prior_summary printed the spec they had asked for as though it were in
+    # force.
+    if config.prior_covariance is not None:
+        spec = config.prior_covariance
+        shp = getattr(spec, "shape", None)
+        scl = getattr(spec, "scale", None)
+        if scl is not None:
+            config = replace(config, sd_scale=float(scl))
+        if shp is not None:
+            shp = np.atleast_1d(np.asarray(shp, dtype=float))
+            # decov(shape = c(2, rep(0.5, K))): first entry is the intercept
+            # term, the rest are slopes.
+            config = replace(config, sd_intercept_shape=float(shp[0]),
+                             sd_slope_shape=float(shp[1] if shp.size > 1
+                                                  else shp[0]))
+
     if K == 0:
         sd0 = pm.Gamma("sd_intercept", alpha=config.sd_intercept_shape,
                        beta=1.0 / config.sd_scale)
@@ -763,11 +787,22 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 else:
                     from . import priors as _pr
 
-                    # R allows only a normal here (R/epiinf.R:99-102).
-                    veps = _pr.build(config.prior_rm_noise, "veps",
-                                     allowed=frozenset({"normal"}),
-                                     shape=M, positive=True)
-                    rm_seq = pt.clip(rm_t * veps[None, :], 0.0, 1.0)
+                    # R allows only a normal here (R/epiinf.R:99-102) and
+                    # declares `vector<lower=0, upper=1> veps`
+                    # (parameters_inf.stan:6), so the prior is a normal
+                    # truncated to [0, 1] -- not merely bounded below and then
+                    # clipped, which changes both the density and the geometry.
+                    import pymc as _pm
+
+                    spec = _pr.resolve(config.prior_rm_noise,
+                                       allowed=frozenset({"normal"}),
+                                       what="veps")
+                    veps = _pm.Truncated(
+                        "veps",
+                        _pm.Normal.dist(mu=float(spec.location),
+                                        sigma=float(spec.scale)),
+                        lower=0.0, upper=1.0, shape=M)
+                    rm_seq = rm_t * veps[None, :]
 
             # 1 on the seeding days. The buffer starts empty, so the renewal term
             # is 0 there anyway; the flag selects the seed instead of branching.
@@ -1104,7 +1139,7 @@ def prepare_panel(df, npis=(), responses=("deaths",), group="country",
 def fit_epidemia(data: PanelData, obs_models, config: EpiModelConfig,
                  draws=1000, tune=1000, chains=4, seed=0,
                  adaptation="low_rank", backend="numba", target_accept=0.95,
-                 progress_bar=True, **kwargs):
+                 progress_bar=True, algorithm="sampling", **kwargs):
     """Build and fit the model with nutpie, returning an ``InferenceData``.
 
     The counterpart of R's ``epim()`` for :func:`build_epidemia_model`.
@@ -1123,9 +1158,17 @@ def fit_epidemia(data: PanelData, obs_models, config: EpiModelConfig,
     Parameters mirror :func:`epidemia.multilevel.fit_multilevel`; extra keyword
     arguments are passed through to ``nutpie.sample``.
     """
-    from .multilevel import _compile, _warn_on_divergences
+    from .multilevel import _compile, _record_families, _warn_on_divergences
+    from .variational import run_algorithm
 
     model = build_epidemia_model(data, obs_models, config)
+    if algorithm != "sampling":
+        # R's epim(algorithm = "meanfield" | "fullrank"). "pathfinder" has no R
+        # counterpart and needs the `approx` extra.
+        idata = run_algorithm(model, algorithm, draws=draws, seed=seed,
+                              progress_bar=progress_bar, **kwargs)
+        _record_families(idata, {o.name: o.family for o in obs_models})
+        return idata
     idata = _compile(model, backend=backend, draws=draws, tune=tune,
                      chains=chains, seed=seed, adaptation=adaptation,
                      progress_bar=progress_bar, target_accept=target_accept,

@@ -281,3 +281,86 @@ def _attach_elbo(idata, elbo, algorithm: str, method: str, iter: int,
         # np.nan -> False: an unknowable convergence status is not convergence.
         "elbo_converged": bool(not np.isnan(rel) and rel <= rtol),
     })
+
+
+# ---------------------------------------------------------------------------
+# Pathfinder
+# ---------------------------------------------------------------------------
+
+
+def fit_pathfinder(model, draws=1000, seed=0, **kwargs):
+    """Approximate the posterior with Pathfinder.
+
+    Pathfinder runs a quasi-Newton optimisation from several starting points and
+    builds a normal approximation at the point along each path where the
+    evidence lower bound is best. For this model class it is a better
+    approximation than ADVI and far cheaper than NUTS, which makes it the right
+    tool for iterating on a specification before committing to a full fit.
+    Stan added it for the same reason.
+
+    Requires the optional dependency::
+
+        uv sync --extra approx
+
+    Parameters
+    ----------
+    model : pymc.Model
+    draws : int
+        Draws to take from the fitted approximation.
+    seed : int
+    **kwargs
+        Forwarded to ``pymc_extras.fit(method="pathfinder", ...)``.
+
+    Returns
+    -------
+    arviz.InferenceData
+
+    Notes
+    -----
+    Like ADVI this is an *approximation*: it understates tail uncertainty and
+    should not be the basis of a reported interval. Use it to iterate, then
+    refit with NUTS.
+    """
+    import warnings
+
+    try:
+        import pymc_extras as pmx
+    except ImportError as exc:  # pragma: no cover - depends on optional extra
+        raise ImportError(
+            "algorithm='pathfinder' needs pymc-extras, which is an optional "
+            "dependency. Install it with `uv sync --extra approx` (or "
+            "`pip install pymc-extras`)."
+        ) from exc
+
+    warnings.warn(
+        "Pathfinder gives an APPROXIMATE posterior: it is far quicker than NUTS "
+        "and better than ADVI, but it still understates tail uncertainty. Use it "
+        "to iterate on a model, then refit with NUTS for anything you report.",
+        stacklevel=2,
+    )
+    with model:
+        return pmx.fit(method="pathfinder", num_draws=int(draws),
+                       random_seed=seed, **kwargs)
+
+
+#: Inference algorithms accepted by the ``algorithm=`` argument of the fit
+#: functions. ``"sampling"``, ``"meanfield"`` and ``"fullrank"`` are R's three
+#: (``epim(algorithm =)``); ``"pathfinder"`` has no R counterpart.
+ALGORITHMS = ("sampling", "meanfield", "fullrank", "pathfinder")
+
+
+def run_algorithm(model, algorithm, draws, seed, progress_bar=True, **kwargs):
+    """Dispatch a built model to the requested inference algorithm.
+
+    Shared by :func:`epidemia.fit`, :func:`epidemia.fit_multilevel` and
+    :func:`epidemia.fit_epidemia` so that ``algorithm=`` means the same thing on
+    all three, as R's ``epim(algorithm =)`` does.
+    """
+    if algorithm not in ALGORITHMS:
+        raise ValueError(
+            f"algorithm must be one of {', '.join(ALGORITHMS)}; got {algorithm!r}"
+        )
+    if algorithm == "pathfinder":
+        return fit_pathfinder(model, draws=draws, seed=seed, **kwargs)
+    return fit_variational(model, algorithm=algorithm, draws=draws, seed=seed,
+                           progress_bar=progress_bar, **kwargs)

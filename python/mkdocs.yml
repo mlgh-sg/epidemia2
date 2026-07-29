@@ -61,6 +61,14 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.snippets:
       base_path: [docs]
+  # Renders $...$ / $$...$$ through MathJax. Without it every equation in the
+  # tutorials showed as raw LaTeX.
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
 
 nav:
   - Home: index.md
