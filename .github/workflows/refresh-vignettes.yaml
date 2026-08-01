@@ -15,6 +15,7 @@ on:
     paths:
       - 'R/**'
       - 'inst/stan/**'
+      - 'data/**'          # the shipped delay kernels live here and move every fit
       - 'vignettes/*.Rmd.orig'
       - 'vignettes/precompute.R'
   workflow_dispatch:
@@ -81,9 +82,21 @@ jobs:
           cmdstanr::install_cmdstan(version = "2.36.0", cores = parallel::detectCores())
         shell: Rscript {0}
 
+      # --force is required, not optional. precompute.R skips a tutorial whose
+      # baked output is newer than its sources, but git does not preserve
+      # mtimes, so on a fresh checkout every file has essentially the same
+      # timestamp and the comparison is meaningless -- it would skip or bake
+      # arbitrarily. This job exists to detect drift by actually refitting, so
+      # it always rebuilds (which also drops the knitr cache).
       - name: Re-bake the tutorial vignettes
-        run: Rscript vignettes/precompute.R
+        run: Rscript vignettes/precompute.R --force
 
+      # Needs "Allow GitHub Actions to create and approve pull requests" under
+      # Settings -> Actions -> General -> Workflow permissions (and the same at
+      # org level if the org enforces it). Without it this step fails with
+      # "GitHub Actions is not permitted to create or approve pull requests"
+      # AFTER pushing the branch, so the refreshed output is still available on
+      # auto/refresh-vignettes even when the PR cannot be opened.
       - name: Open a PR if the baked vignettes changed
         uses: peter-evans/create-pull-request@v6
         with:
