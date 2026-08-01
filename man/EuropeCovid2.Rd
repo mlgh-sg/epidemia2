@@ -8,7 +8,17 @@
 A named list. The fields are:
 \describe{
 \item{data}{A data frame giving indicators of certain non-pharmaceutical interventions in each country, along with death data and populations.}
-\item{inf2death}{A numeric vector representing the time distribution from infection to death.}
+\item{inf2death}{A numeric vector giving the time from infection to death:
+infection-to-onset \eqn{\sim} Gamma(mean 5.1, cv 0.86) plus onset-to-death
+\eqn{\sim} Gamma(mean 18.8, cv 0.45), as in
+\insertCite{Flaxman2020;textual}{epidemia}. Entry \eqn{k} carries the mass
+in \eqn{(k-1, k]}, so the kernel places no mass at lag zero and its mean lag
+is 24.4 days, half a day above the distribution's own 23.9. This matches the
+convention of \code{si} and epidemia's lag-1-first convolution, in which
+entry 1 weights infections one day earlier. Note this is NOT how
+\insertCite{Flaxman2020;textual}{epidemia} discretises it -- the paper uses
+the midpoint rule -- so the reproduction vignette builds its own kernel.
+Regenerate with \code{data-raw/inf2death.R}.}
 \item{si}{The serial interval of covid-19 assumed in \insertCite{Flaxman2020;textual}{epidemia}.}
 }
 }
