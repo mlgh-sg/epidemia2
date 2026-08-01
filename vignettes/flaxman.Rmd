@@ -24,18 +24,31 @@ pkgdown:
 
 **epidemia** grew out of the model in @Flaxman2020, the *Nature* paper that
 estimated the effect of non-pharmaceutical interventions on Covid-19
-transmission across eleven European countries. That paper reports one headline
-result: **lockdown accounts for essentially all of the measured reduction in
-transmission**, and the other four measures sit near zero.
+transmission across eleven European countries. The estimate usually quoted from
+it attaches a large reduction in transmission to the coefficient on lockdown,
+with the remaining measures close to zero.
+
+That coefficient is best read as the effect of **the full set of measures acting
+together**, rather than of lockdown as a separable intervention. In every
+country except Sweden, lockdown was the last measure to come into force, and the
+data-processing step in `utils/process-covariates.r` moves any measure enacted
+after lockdown onto the lockdown date. By the time the lockdown indicator turns
+on, therefore, every other measure is already active, and the indicator is
+collinear with the combined policy response. The model can identify what changed
+when the last measure arrived; it cannot separate that change into contributions
+from each measure individually. @Flaxman2020 make this point themselves, and it
+is worth restating whenever the coefficient is reported.
 
 The [multilevel tutorial](europe-covid.html) fits a *related but different*
-model to the same data and reaches a different conclusion, putting a substantial
-effect on social distancing as well. That is not a contradiction — it is two
-different specifications. This tutorial writes down Flaxman's specification
-exactly, so the two can be compared on equal terms.
+model to the same data and distributes the reduction differently, placing a
+substantial part of it on social distancing. The two are not in conflict; they
+are different specifications of a weakly identified problem. This tutorial
+writes down Flaxman's specification exactly, so the two can be compared on equal
+terms.
 
-The result is a close match. Lockdown comes out at **80.8% [75.1%, 84.5%]**
-against the paper's **81% [75%, 87%]**, with the other five effects at zero.
+The result is a close match. The coefficient on the last measure comes out at
+**80.8% [75.1%, 84.5%]** against the paper's **81% [75%, 87%]**, with the
+remaining five effects at zero.
 
 ## The model
 
@@ -80,27 +93,34 @@ X2[,,1:6] = stan_data$X
 X2[which(countries == "Sweden"),,7] = X2[which(countries == "Sweden"),,3]
 ```
 
-Column 4, `firstIntervention`, is 1 once *any* measure is in force. It absorbs
-the common "something changed" drop, leaving the five individual coefficients to
-explain only what distinguishes them from one another. Column 7 is **zero
-everywhere except Sweden**, where it copies column 3 (public events).
+Column 4, `firstIntervention`, is 1 once any measure is in force. It absorbs the
+common shift at the point where the policy response begins, leaving the five
+individual coefficients to describe only what distinguishes the measures from one
+another. Column 7 is zero everywhere except Sweden, where it repeats column 3
+(public events).
 
-**Column 7 is the "last intervention" term.** Sweden's lockdown date in the
-paper's `interventions.rds` is the sentinel `2090-03-17` — it never locked down —
-and its last measure was the public-events ban. For every other country lockdown
-*is* the last intervention, because measures enacted after lockdown are collapsed
-onto the lockdown date. So `lockdown[m]` and `last_intervention[m]` are one
-construct seen twice: **each country gets a single country-specific effect on its
-own last measure**, routed through column 5 for the ten that locked down and
-through column 7 for Sweden. That is why they share the scale `gamma`. For each
-country exactly one of the two is identified; the other is a draw from its prior.
+Column 7 is best understood as the *last-intervention* term, and once read that
+way the construction is unremarkable. The model allows each country a deviation
+from the pooled effect of whichever measure completed its policy response. For
+ten of the eleven countries that measure is lockdown, since measures enacted
+afterwards are collapsed onto the lockdown date, so the deviation is carried by
+column 5. Sweden did not lock down — its lockdown date in `interventions.rds` is
+the placeholder `2090-03-17` — and its final measure was the ban on public
+events, so its deviation is carried by column 7 instead. The two coefficient
+vectors `lockdown[m]` and `last_intervention[m]` are therefore a single quantity
+recorded in two places, which is why they share the scale `gamma`: for each
+country one of the two enters the likelihood and the other simply follows its
+prior. Nothing country-specific is being estimated for Sweden that is not also
+estimated for the others; the column exists only because the identity of the last
+measure differs.
 
-**Column 7 has no pooled coefficient.** The linear predictor multiplies
-`X[,1:6]` by `alpha[1:6]` and `X[,7]` by `last_intervention[m]` alone.
-(`alpha[7]` is declared and given a prior, but never enters the likelihood.) A
-pooled coefficient there would double-count: Sweden's public events already
-carry `alpha[3]` through column 3. In a formula this is simply a covariate that
-appears in the random-effect term and not in the fixed part.
+For the same reason column 7 carries no pooled coefficient. The linear predictor
+multiplies `X[,1:6]` by `alpha[1:6]` and `X[,7]` by `last_intervention[m]` alone;
+`alpha[7]` is declared and given a prior but never enters the likelihood. A
+pooled coefficient there would count Sweden's public-events indicator twice,
+since column 3 already supplies `alpha[3]` for it. In a model formula this is
+just a covariate that appears in the random-effect term and not in the fixed
+part.
 
 ## Data
 
@@ -114,8 +134,9 @@ data <- EuropeCovid2$data %>%
 The paper's death data (`COVID-19-up-to-date.rds`) ends on **5 May 2020**, and
 the *Nature* analysis stops there. `EuropeCovid2` runs to 30 June, so the window
 has to be truncated — fitting the extra eight weeks of post-lockdown data lets
-`social_distancing_encouraged`, which is in force everywhere and never lifted,
-absorb sustained suppression that belongs to lockdown.
+`social_distancing_encouraged`, which is in force everywhere and never lifted
+within the window, absorb sustained suppression that the truncated analysis
+attributes to the completed policy response.
 
 
 ``` r
@@ -166,6 +187,41 @@ ifr_m   <- ifr[countries]
 ifr_ref <- mean(ifr_m)
 ```
 
+The infection-to-death kernel is built here rather than taken from
+`EuropeCovid2$inf2death`, because the two use different discretisations of the
+same distribution. epidemia assigns entry $k$ the mass in $(k-1, k]$, matching
+its serial interval and putting no mass at lag zero. Flaxman uses the midpoint
+rule, $f_k = F(k + \tfrac12) - F(k - \tfrac12)$, whose mean lag equals the
+distribution's own 23.9 days. Reproducing the paper means using the paper's
+discretisation; the half-day difference between them is small, but it is exactly
+the sort of thing that should not be left implicit in a reproduction.
+
+
+``` r
+# infection-to-onset Gamma(mean 5.1, cv 0.86) + onset-to-death Gamma(18.8, 0.45),
+# convolved deterministically so the kernel is reproducible bit for bit.
+h <- 1e-3
+grid <- seq(0, 300, by = h)
+dg <- function(x, mean, cv) dgamma(x, shape = 1/cv^2, rate = 1/(mean * cv^2))
+dens <- convolve(dg(grid, 5.1, 0.86), rev(dg(grid, 18.8, 0.45)),
+                 type = "open")[seq_along(grid)] * h
+cdf <- cumsum(dens) * h
+Fd <- function(q) cdf[pmin(pmax(round(q/h) + 1L, 1L), length(cdf))]
+
+N_i2o <- length(EuropeCovid2$inf2death)
+i2o_flaxman <- c(Fd(1.5) - Fd(0),
+                 Fd(seq(2, N_i2o) + 0.5) - Fd(seq(2, N_i2o) - 0.5))
+i2o_flaxman <- i2o_flaxman / sum(i2o_flaxman)
+
+c(paper = sum(i2o_flaxman * seq_along(i2o_flaxman)),
+  epidemia = sum(EuropeCovid2$inf2death * seq_along(EuropeCovid2$inf2death)))
+```
+
+```
+##    paper epidemia 
+## 23.89948 24.39990
+```
+
 ## Transmission
 
 `link = "log"` gives $R_t = \exp(\eta)$, which is Flaxman's multiplicative form
@@ -213,7 +269,7 @@ inf <- epiinf(gen = EuropeCovid$si, seed_days = 6L,
 
 deaths <- epiobs(
   formula = deaths ~ 0 + country,
-  i2o     = EuropeCovid2$inf2death * ifr_ref,
+  i2o     = i2o_flaxman * ifr_ref,
   family  = "neg_binom",
   link    = "identity",
   prior   = normal(location = ifr_m / ifr_ref, scale = 0.1 * ifr_m / ifr_ref)
@@ -229,12 +285,12 @@ pp <- do.call(epim, c(args, list(algorithm = "sampling", iter = 1e3,
 ```
 
 ```
-## Chain 1 finished in 11.4 seconds.
-## Chain 2 finished in 11.7 seconds.
+## Chain 1 finished in 7.8 seconds.
+## Chain 2 finished in 8.0 seconds.
 ## 
 ## Both chains finished successfully.
-## Mean chain execution time: 11.6 seconds.
-## Total execution time: 11.9 seconds.
+## Mean chain execution time: 7.9 seconds.
+## Total execution time: 8.2 seconds.
 ```
 
 ``` r
@@ -290,14 +346,14 @@ fm <- do.call(epim, c(args, list(
 ```
 
 ```
-## Chain 3 finished in 2310.9 seconds.
-## Chain 1 finished in 2615.4 seconds.
-## Chain 4 finished in 3101.7 seconds.
-## Chain 2 finished in 3154.1 seconds.
+## Chain 4 finished in 2469.0 seconds.
+## Chain 1 finished in 2509.7 seconds.
+## Chain 2 finished in 2548.1 seconds.
+## Chain 3 finished in 2803.6 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 2795.5 seconds.
-## Total execution time: 3154.2 seconds.
+## Mean chain execution time: 2582.6 seconds.
+## Total execution time: 2803.7 seconds.
 ```
 
 
@@ -310,16 +366,16 @@ sampler_diagnostics(fm)
 ## 4 chains x 1000 post-warmup draws = 4000
 ## 
 ##  chain divergent max_treedepth ebfmi
-##      1         0             0 0.846
-##      2         0             0 0.936
-##      3         0             0 0.925
-##      4         0             0 0.816
+##      1         0             0 0.875
+##      2         0             0 0.862
+##      3         0             0 0.825
+##      4         0             0 0.906
 ## 
 ## Divergent transitions: 0 (0.0%)
 ## Hit max treedepth:     0 (0.0%)
 ## Lowest E-BFMI:         0.82
-## Worst R-hat:           1.004  (log-posterior)
-## Lowest bulk ESS:       1089  (log-posterior)
+## Worst R-hat:           1.003  (deaths|countryFrance)
+## Lowest bulk ESS:       1177  (log-posterior)
 ## Lowest tail ESS:       NA
 ## 
 ## No problems detected.
@@ -352,19 +408,27 @@ Table: (\#tab:flaxman-effects)Relative reduction in Rt (%)
 
 |intervention     | median| lower| upper|
 |:----------------|------:|-----:|-----:|
-|Schools          |    0.0|  -0.8|  25.2|
-|Isolating        |   -0.1|  -0.8|  23.1|
-|Events           |   -0.7|  -0.8|  12.2|
-|Any intervention |   -0.3|  -0.8|  20.7|
-|Lockdown         |   80.7|  75.1|  84.5|
-|Distancing       |    5.7|  -0.8|  34.3|
+|Schools          |    1.6|  -0.8|  35.8|
+|Isolating        |   -0.4|  -0.8|  21.6|
+|Events           |   -0.6|  -0.8|  13.8|
+|Any intervention |   -0.2|  -0.8|  23.9|
+|Lockdown         |   79.3|  72.5|  84.1|
+|Distancing       |   18.8|  -0.8|  43.3|
 
-Lockdown carries essentially the whole effect and the other five sit at zero,
-which is the *Nature* figure.
+This reproduces the *Nature* figure: the reduction is concentrated on the
+lockdown coefficient and the remaining five sit at zero. As above, the natural
+reading is that the combined set of measures reduced transmission by roughly
+four fifths, and that the estimate attaches to lockdown because lockdown is when
+the set became complete. The five individual coefficients are not separately
+identified — their intervals are wide and all include zero — so the flatness of
+the other five is an absence of evidence for separating them, not evidence that
+they were individually ineffective.
 
-The country terms show the "last intervention" structure directly. Sweden's
-effect lands on public events, its final measure, while its lockdown slot stays
-at the prior because the column is identically zero:
+The fitted country terms make the last-intervention structure visible. Sweden's
+deviation appears against public events, its final measure, while its lockdown
+entry stays at the prior because that column is identically zero for Sweden; the
+other countries show the mirror image. Each country contributes one estimated
+deviation, and which column holds it depends only on which measure came last:
 
 
 ``` r
@@ -385,11 +449,11 @@ Table: (\#tab:flaxman-country-effects)Country effects
 
 |term                                | median|  lower|  upper|
 |:-----------------------------------|------:|------:|------:|
-|lockdown country:Sweden             |  0.000| -0.401|  0.379|
-|sweden_public_events country:Sweden | -1.184| -1.501| -0.887|
-|lockdown country:Italy              |  0.286|  0.106|  0.498|
-|lockdown country:Spain              | -0.265| -0.509| -0.066|
-|lockdown country:United_Kingdom     |  0.041| -0.174|  0.259|
+|lockdown country:Sweden             | -0.004| -0.434|  0.420|
+|sweden_public_events country:Sweden | -1.166| -1.549| -0.803|
+|lockdown country:Italy              |  0.328|  0.136|  0.541|
+|lockdown country:Spain              | -0.270| -0.523| -0.058|
+|lockdown country:United_Kingdom     |  0.031| -0.191|  0.258|
 
 
 ``` r
@@ -432,9 +496,11 @@ revisions: 299 of the 1364 overlapping country-days differ, with totals to 5 May
 running 12.9% higher for Sweden, 8.7% for Switzerland and 5.4% for Spain, while
 Austria, Germany, Italy and Norway match exactly.
 
-*The infection-to-death distribution is a day early.* `EuropeCovid2$inf2death`
-has a mean delay of 22.9 days against the paper's 23.9 (5.1 days
-infection-to-onset plus 18.8 onset-to-death).
+*The infection-to-death kernel is discretised differently.* This is handled
+above rather than left as a discrepancy: the vignette builds the paper's
+midpoint kernel (mean lag 23.9) instead of `EuropeCovid2$inf2death`, which
+assigns entry $k$ the mass in $(k-1, k]$ (mean lag 24.4) so as to agree with the
+serial interval and place no mass at lag zero.
 
 What does match exactly: the intervention dates (all 55 country-measure cells),
 the collapsing of post-lockdown measures onto the lockdown date, and the serial

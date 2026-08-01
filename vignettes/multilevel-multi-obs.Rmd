@@ -148,10 +148,6 @@ deaths <- epiobs(
 )
 ```
 
-```
-## Warning: i2o does not sum to one. Please ensure this is intentional.
-```
-
 ### Cases
 
 It is worth being explicit about what this observation model does, because it is
@@ -220,14 +216,14 @@ fm <- epim(
 ```
 
 ```
-## Chain 1 finished in 436.9 seconds.
-## Chain 3 finished in 440.2 seconds.
-## Chain 4 finished in 453.4 seconds.
-## Chain 2 finished in 465.1 seconds.
+## Chain 2 finished in 435.4 seconds.
+## Chain 1 finished in 438.5 seconds.
+## Chain 4 finished in 455.8 seconds.
+## Chain 3 finished in 497.7 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 448.9 seconds.
-## Total execution time: 465.2 seconds.
+## Mean chain execution time: 456.9 seconds.
+## Total execution time: 497.9 seconds.
 ```
 
 `all_obs_types()` confirms both series are in the model, and each carries its
@@ -261,22 +257,21 @@ sampler_diagnostics(fm)
 ## 4 chains x 500 post-warmup draws = 2000
 ## 
 ##  chain divergent max_treedepth ebfmi
-##      1         0             0 0.867
-##      2         0             0 0.943
-##      3         0             0 0.810
-##      4         0             0 0.929
+##      1         0             0 0.840
+##      2         0             0 0.812
+##      3         0             0 0.755
+##      4         0             0 0.999
 ## 
 ## Divergent transitions: 0 (0.0%)
 ## Hit max treedepth:     0 (0.0%)
-## Lowest E-BFMI:         0.81
-## Worst R-hat:           1.010  (R|lockdown)
-## Lowest bulk ESS:       380  (R|Sigma[country:(Intercept),(Intercept)])
-## Lowest tail ESS:       491
+## Lowest E-BFMI:         0.76
+## Worst R-hat:           1.010  (seeds_aux)
+## Lowest bulk ESS:       342  (R|lockdown)
+## Lowest tail ESS:       266
 ## 
 ## Warnings:
-## * Bulk ESS of 380 for R|Sigma[country:(Intercept),(Intercept)] is 95
-##   per chain, below the 100 per chain that keeps posterior summaries
-##   stable.
+## * Bulk ESS of 342 for R|lockdown is 86 per chain, below the 100 per
+##   chain that keeps posterior summaries stable.
 ```
 
 The three quantities answer different questions. **Divergent transitions** mean
@@ -349,17 +344,17 @@ round(t(apply(total, 2, quantile, probs = c(0.05, 0.5, 0.95))), 2)
 
 ```
 ##                   5%   50%   95%
-## Austria        -4.20 -3.74 -3.39
-## Belgium        -2.84 -2.66 -2.49
-## Denmark        -1.80 -1.62 -1.45
-## France         -3.10 -2.91 -2.76
+## Austria        -4.15 -3.72 -3.38
+## Belgium        -2.81 -2.63 -2.46
+## Denmark        -1.79 -1.60 -1.42
+## France         -3.05 -2.86 -2.71
 ## Germany        -2.63 -2.50 -2.37
-## Italy          -2.51 -2.40 -2.29
-## Norway         -1.45 -1.33 -1.20
-## Spain          -5.76 -5.02 -4.48
-## Sweden         -4.26 -2.51 -0.77
-## Switzerland    -2.46 -2.35 -2.23
-## United_Kingdom -2.12 -2.01 -1.90
+## Italy          -2.42 -2.31 -2.21
+## Norway         -1.45 -1.31 -1.18
+## Spain          -5.39 -4.70 -4.26
+## Sweden         -4.11 -2.48 -0.77
+## Switzerland    -2.42 -2.30 -2.19
+## United_Kingdom -2.08 -1.97 -1.86
 ```
 
 The country-specific case ascertainment intercepts, by contrast, are ordinary
@@ -403,11 +398,11 @@ round(iar_by_country, 3)
 
 ```
 ##        Austria        Belgium        Denmark         France        Germany 
-##          0.265          0.069          0.186          0.059          0.268 
+##          0.269          0.066          0.182          0.056          0.260 
 ##          Italy         Norway          Spain         Sweden    Switzerland 
-##          0.057          0.317          0.081          0.045          0.197 
+##          0.051          0.316          0.074          0.042          0.188 
 ## United_Kingdom 
-##          0.051
+##          0.045
 ```
 
 Now compare the implied totals. If the model were fitting infections directly,
@@ -443,11 +438,11 @@ round(ratio, 3)
 
 ```
 ##        Austria        Belgium        Denmark         France        Germany 
-##          0.260          0.065          0.168          0.056          0.256 
+##          0.263          0.062          0.165          0.053          0.250 
 ##          Italy         Norway          Spain         Sweden    Switzerland 
-##          0.054          0.307          0.077          0.027          0.195 
+##          0.049          0.306          0.072          0.026          0.186 
 ## United_Kingdom 
-##          0.044
+##          0.040
 ```
 
 The two agree: only a fraction of infections becomes a recorded case, and that
@@ -505,13 +500,13 @@ head(ev$error)
 ```
 
 ```
-##     group       date     crps mean_abs_error median_abs_error
-## 1 Austria 2020-02-23 0.00e+00         0.0000                0
-## 2 Austria 2020-02-24 0.00e+00         0.0000                0
-## 3 Austria 2020-02-25 0.00e+00         0.0000                0
-## 4 Austria 2020-02-26 0.00e+00         0.0000                0
-## 5 Austria 2020-02-27 0.00e+00         0.0000                0
-## 6 Austria 2020-02-28 2.25e-06         0.0015                0
+##     group       date    crps mean_abs_error median_abs_error
+## 1 Austria 2020-02-23 0.0e+00          0e+00                0
+## 2 Austria 2020-02-24 0.0e+00          0e+00                0
+## 3 Austria 2020-02-25 0.0e+00          0e+00                0
+## 4 Austria 2020-02-26 0.0e+00          0e+00                0
+## 5 Austria 2020-02-27 2.5e-07          5e-04                0
+## 6 Austria 2020-02-28 2.5e-07          5e-04                0
 ```
 
 
