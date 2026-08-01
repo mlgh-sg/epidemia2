@@ -17,7 +17,10 @@
 # Requires a working CmdStan installation (cmdstanr::install_cmdstan()).
 
 args <- commandArgs(trailingOnly = TRUE)
-all_vigs <- c("flu", "europe-covid", "multiple-obs", "multilevel-multi-obs")
+force <- "--force" %in% args
+args <- setdiff(args, "--force")
+all_vigs <- c("flu", "europe-covid", "multiple-obs", "multilevel-multi-obs",
+              "flaxman")
 vigs <- if (length(args)) intersect(args, all_vigs) else all_vigs
 if (!length(vigs)) stop("No known tutorial requested. Choose from: ",
                         paste(all_vigs, collapse = ", "))
@@ -42,10 +45,31 @@ library(knitr)
 # keep bookdown figure labels/anchors so \@ref(fig:...) cross-references survive
 opts_knit$set(bookdown.internal.label = TRUE)
 
+# A tutorial is stale when its baked .Rmd is older than its source, or older
+# than anything in R/ or inst/stan/ that could change the numbers. Everything
+# else is skipped, so re-running this after an unrelated edit costs nothing.
+# `--force` bakes regardless.
+model_mtime <- suppressWarnings(max(file.mtime(c(
+  list.files(file.path(root, "R"), full.names = TRUE, pattern = "\\.[Rr]$"),
+  list.files(file.path(root, "inst", "stan"), full.names = TRUE,
+             recursive = TRUE)
+)), -Inf))
+
+is_stale <- function(src, out) {
+  if (force || !file.exists(out)) return(TRUE)
+  file.mtime(out) < max(file.mtime(src), model_mtime)
+}
+
+skipped <- character()
 for (v in vigs) {
   src <- paste0(v, ".Rmd.orig")
   out <- paste0(v, ".Rmd")
   if (!file.exists(src)) { warning("missing ", src); next }
+  if (!is_stale(src, out)) {
+    message("== Skipping ", v, " (up to date; --force to rebake) ==")
+    skipped <- c(skipped, v)
+    next
+  }
   message("== Baking ", v, " ==")
   # namespace each vignette's figures so they do not collide
   opts_chunk$set(fig.path = file.path("figure", paste0(v, "-")))
@@ -53,4 +77,9 @@ for (v in vigs) {
   message("   wrote ", out)
 }
 
-message("Done. Commit the regenerated .Rmd files and vignettes/figure/*.png")
+baked <- setdiff(vigs, skipped)
+if (length(baked)) {
+  message("Done. Commit the regenerated .Rmd files and vignettes/figure/*.png")
+} else {
+  message("Nothing to do -- all requested tutorials are up to date.")
+}

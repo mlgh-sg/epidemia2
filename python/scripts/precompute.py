@@ -128,6 +128,34 @@ def _prepend_title(path: Path, title: str) -> None:
     path.write_text(f"# {title}\n\n{text}")
 
 
+def _newest(*paths) -> float:
+    """Newest mtime among the given files and directory trees."""
+    best = 0.0
+    for p in paths:
+        p = Path(p)
+        if p.is_dir():
+            best = max([best] + [f.stat().st_mtime for f in p.rglob("*")
+                                 if f.is_file()])
+        elif p.is_file():
+            best = max(best, p.stat().st_mtime)
+    return best
+
+
+def is_stale(name: str) -> bool:
+    """Does this tutorial need rebaking?
+
+    Stale when the published page is missing, or older than its notebook source
+    or than anything in the package that could change the numbers. Skipping the
+    rest means re-running this after an unrelated edit costs nothing -- these
+    notebooks fit real models and take minutes to hours.
+    """
+    out = OUT / f"{name}.md"
+    if not out.exists():
+        return True
+    return out.stat().st_mtime < _newest(NOTEBOOKS / f"{name}.py",
+                                         ROOT / "src" / "epidemia")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("tutorials", nargs="*", default=None,
@@ -136,6 +164,8 @@ def main() -> None:
                     help="per-notebook execution timeout in seconds")
     ap.add_argument("--clean", action="store_true",
                     help="remove docs/tutorials before baking")
+    ap.add_argument("--force", action="store_true",
+                    help="rebake even when the output is already up to date")
     args = ap.parse_args()
 
     for tool in ("jupytext", "jupyter"):
@@ -155,9 +185,17 @@ def main() -> None:
     if args.clean and OUT.exists():
         shutil.rmtree(OUT)
 
+    stale = [n for n in wanted if args.clean or args.force or is_stale(n)]
+    for name in wanted:
+        if name not in stale:
+            print(f"== Skipping {name} (up to date; --force to rebake) ==")
+    if not stale:
+        print("\nNothing to do -- all requested tutorials are up to date.")
+        return
+
     with project_kernel() as env:
-        ok = [bake(name, args.timeout, env) for name in wanted]
-    failed = [n for n, good in zip(wanted, ok) if not good]
+        ok = [bake(name, args.timeout, env) for name in stale]
+    failed = [n for n, good in zip(stale, ok) if not good]
     if failed:
         raise SystemExit(f"failed: {', '.join(failed)}")
     print("\nDone. Commit docs/tutorials/ and its *_files/ directories.")
