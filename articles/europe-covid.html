@@ -378,15 +378,14 @@ distribution for the time from infection to death as that used in
 <span class="header-section-number">1.2</span> Model Fitting<a class="anchor" aria-label="anchor" href="#model-fitting"></a>
 </h3>
 <hr>
-<p>In general, <strong>epidemia</strong>’s models should be fit using Hamiltonian
-Monte Carlo. For this example, however, we use Variational Bayes (VB) as
-opposed to full MCMC sampling. This is because full MCMC sampling of a
-joint model of this size is computationally demanding, due in part to
-renewal equation having to be evaluated for each region and for each
-evaluation of the likelihood and its derivatives. Nonetheless, VB allows
-rapid iteration of models and may lead to reasonable estimates of effect
-sizes. For this example, we have also run full MCMC, and the inferences
-reported here are not substantially different.</p>
+<p><strong>epidemia</strong>’s models are fit using Hamiltonian Monte Carlo, and this example
+is no exception. Sampling a joint model of this size is computationally
+demanding – the renewal equation is evaluated for every region at every
+evaluation of the likelihood and its derivatives – so it is slower than a
+variational approximation by a wide margin. It is nonetheless what the results
+below are based on, because the quantities of interest here are effect sizes
+and their uncertainty, and a variational approximation reports those with
+intervals that are too narrow to compare honestly.</p>
 <div class="section level4" number="1.2.1">
 <h4 id="prior-check">
 <span class="header-section-number">1.2.1</span> Prior Check<a class="anchor" aria-label="anchor" href="#prior-check"></a>
@@ -409,14 +408,14 @@ poorly approximated by VB.</p>
 <span><span class="va">fm_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">epim</span>, <span class="va">pr_args</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running MCMC with 4 parallel chains...</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## Chain 1 finished in 10.2 seconds.</span></span>
-<span><span class="co">## Chain 3 finished in 10.3 seconds.</span></span>
-<span><span class="co">## Chain 2 finished in 10.6 seconds.</span></span>
-<span><span class="co">## Chain 4 finished in 10.6 seconds.</span></span>
+<span><span class="co">## Chain 1 finished in 9.2 seconds.</span></span>
+<span><span class="co">## Chain 3 finished in 9.2 seconds.</span></span>
+<span><span class="co">## Chain 2 finished in 9.5 seconds.</span></span>
+<span><span class="co">## Chain 4 finished in 9.5 seconds.</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## All 4 chains finished successfully.</span></span>
-<span><span class="co">## Mean chain execution time: 10.4 seconds.</span></span>
-<span><span class="co">## Total execution time: 10.7 seconds.</span></span></code></pre>
+<span><span class="co">## Mean chain execution time: 9.4 seconds.</span></span>
+<span><span class="co">## Total execution time: 9.6 seconds.</span></span></code></pre>
 <p>Figure <a href="#fig:multilevel-prior">1.1</a> shows approximate samples of <span class="math inline">\(R_{t,m}\)</span>
 from the prior distribution. This confirms that reproduction numbers
 follow a step function, and that rates can both increase and decrease as
@@ -432,535 +431,203 @@ Figure 1.1: A prior predictive check for reproduction numbers <span class="math 
 </div>
 </div>
 <div class="section level4" number="1.2.2">
-<h4 id="approximating-the-posterior">
-<span class="header-section-number">1.2.2</span> Approximating the Posterior<a class="anchor" aria-label="anchor" href="#approximating-the-posterior"></a>
+<h4 id="fitting-the-posterior">
+<span class="header-section-number">1.2.2</span> Fitting the Posterior<a class="anchor" aria-label="anchor" href="#fitting-the-posterior"></a>
 </h4>
-<p>The model will be fit using Variational Bayes by using
-<code>algorithm = "fullrank"</code> in the call to <code><a href="../reference/epim.html">epim()</a></code>. This is
-generally preferable to <code>"meanfield"</code> for these models, largely
-because <code>"meanfield"</code> ignores posterior correlations. We decrease
-the parameter <code>tol_rel_obj</code> from its default value, and increase
-the number of iterations to aid convergence.</p>
+<p>The model is fit with the NUTS sampler (<code>algorithm = "sampling"</code>, the
+default). Earlier versions of this tutorial used Variational Bayes
+(<code>algorithm = "fullrank"</code>) because it is much faster, but a variational
+approximation understates posterior uncertainty and CmdStan declined to
+certify the fit as converged. Since the interest here is in comparing effect
+sizes between measures, and those are exactly the quantities a variational
+approximation reports too confidently, the extra cost of MCMC is worth paying.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">args</span><span class="op">$</span><span class="va">algorithm</span> <span class="op">&lt;-</span> <span class="st">"fullrank"</span>; <span class="va">args</span><span class="op">$</span><span class="va">iter</span> <span class="op">&lt;-</span> <span class="fl">5e4</span>; <span class="va">args</span><span class="op">$</span><span class="va">tol_rel_obj</span> <span class="op">&lt;-</span> <span class="fl">1e-3</span></span>
+<code class="sourceCode R"><span><span class="va">args</span><span class="op">$</span><span class="va">algorithm</span> <span class="op">&lt;-</span> <span class="st">"sampling"</span></span>
+<span><span class="va">args</span><span class="op">$</span><span class="va">iter</span> <span class="op">&lt;-</span> <span class="fl">2e3</span></span>
+<span><span class="va">args</span><span class="op">$</span><span class="va">chains</span> <span class="op">&lt;-</span> <span class="fl">4</span></span>
+<span><span class="va">args</span><span class="op">$</span><span class="va">control</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.99</span>, max_treedepth <span class="op">=</span> <span class="fl">14</span><span class="op">)</span></span>
 <span><span class="va">fm</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">epim</span>, <span class="va">args</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## ------------------------------------------------------------ </span></span>
-<span><span class="co">## EXPERIMENTAL ALGORITHM: </span></span>
-<span><span class="co">##   This procedure has not been thoroughly tested and may be unstable </span></span>
-<span><span class="co">##   or buggy. The interface is subject to change. </span></span>
-<span><span class="co">## ------------------------------------------------------------ </span></span>
-<span><span class="co">## Gradient evaluation took 0.000493 seconds </span></span>
-<span><span class="co">## 1000 transitions using 10 leapfrog steps per transition would take 4.93 seconds. </span></span>
-<span><span class="co">## Adjust your expectations accordingly! </span></span>
-<span><span class="co">## Begin eta adaptation. </span></span>
-<span><span class="co">## Iteration:   1 / 250 [  0%]  (Adaptation) </span></span>
-<span><span class="co">## Iteration:  50 / 250 [ 20%]  (Adaptation) </span></span>
-<span><span class="co">## Iteration: 100 / 250 [ 40%]  (Adaptation) </span></span>
-<span><span class="co">## Iteration: 150 / 250 [ 60%]  (Adaptation) </span></span>
-<span><span class="co">## Iteration: 200 / 250 [ 80%]  (Adaptation) </span></span>
-<span><span class="co">## Iteration: 250 / 250 [100%]  (Adaptation) </span></span>
-<span><span class="co">## Success! Found best value [eta = 0.1]. </span></span>
-<span><span class="co">## Begin stochastic gradient ascent. </span></span>
-<span><span class="co">##   iter             ELBO   delta_ELBO_mean   delta_ELBO_med   notes  </span></span>
-<span><span class="co">##    100       -57908.903             1.000            1.000 </span></span>
-<span><span class="co">##    200       -39250.428             0.738            1.000 </span></span>
-<span><span class="co">##    300       -27067.018             0.642            0.475 </span></span>
-<span><span class="co">##    400       -21001.106             0.554            0.475 </span></span>
-<span><span class="co">##    500       -20776.065             0.445            0.450 </span></span>
-<span><span class="co">##    600       -13904.897             0.453            0.475 </span></span>
-<span><span class="co">##    700       -11528.425             0.418            0.450 </span></span>
-<span><span class="co">##    800       -11848.260             0.369            0.450 </span></span>
-<span><span class="co">##    900       -10386.297             0.344            0.289 </span></span>
-<span><span class="co">##   1000       -10593.268             0.311            0.289 </span></span>
-<span><span class="co">##   1100        -8919.502             0.300            0.206 </span></span>
-<span><span class="co">##   1200        -7778.443             0.287            0.206 </span></span>
-<span><span class="co">##   1300        -8333.420             0.270            0.188 </span></span>
-<span><span class="co">##   1400        -7211.653             0.262            0.188 </span></span>
-<span><span class="co">##   1500        -7939.601             0.251            0.156 </span></span>
-<span><span class="co">##   1600        -6336.869             0.251            0.188 </span></span>
-<span><span class="co">##   1700        -6937.493             0.241            0.156 </span></span>
-<span><span class="co">##   1800        -5571.608             0.241            0.188 </span></span>
-<span><span class="co">##   1900        -5914.443             0.232            0.156 </span></span>
-<span><span class="co">##   2000        -5342.435             0.226            0.156 </span></span>
-<span><span class="co">##   2100        -4903.363             0.219            0.147 </span></span>
-<span><span class="co">##   2200        -5134.326             0.211            0.147 </span></span>
-<span><span class="co">##   2300        -4636.908             0.207            0.141 </span></span>
-<span><span class="co">##   2400        -4337.379             0.201            0.141 </span></span>
-<span><span class="co">##   2500        -4290.535             0.193            0.107 </span></span>
-<span><span class="co">##   2600        -4193.963             0.187            0.107 </span></span>
-<span><span class="co">##   2700        -4077.909             0.181            0.107 </span></span>
-<span><span class="co">##   2800        -3817.003             0.177            0.107 </span></span>
-<span><span class="co">##   2900        -3740.874             0.171            0.092 </span></span>
-<span><span class="co">##   3000        -3743.988             0.166            0.092 </span></span>
-<span><span class="co">##   3100        -3774.024             0.161            0.090 </span></span>
-<span><span class="co">##   3200        -3661.228             0.157            0.090 </span></span>
-<span><span class="co">##   3300        -3532.468             0.153            0.087 </span></span>
-<span><span class="co">##   3400        -3504.074             0.149            0.087 </span></span>
-<span><span class="co">##   3500        -3483.710             0.145            0.069 </span></span>
-<span><span class="co">##   3600        -3505.858             0.141            0.069 </span></span>
-<span><span class="co">##   3700        -3483.158             0.137            0.068 </span></span>
-<span><span class="co">##   3800        -3388.614             0.134            0.068 </span></span>
-<span><span class="co">##   3900        -3410.137             0.131            0.067 </span></span>
-<span><span class="co">##   4000        -3335.441             0.128            0.067 </span></span>
-<span><span class="co">##   4100        -3320.006             0.125            0.058 </span></span>
-<span><span class="co">##   4200        -3314.163             0.122            0.058 </span></span>
-<span><span class="co">##   4300        -3302.985             0.120            0.045 </span></span>
-<span><span class="co">##   4400        -3321.056             0.117            0.045 </span></span>
-<span><span class="co">##   4500        -3271.171             0.115            0.036 </span></span>
-<span><span class="co">##   4600        -3272.423             0.112            0.036 </span></span>
-<span><span class="co">##   4700        -3255.177             0.110            0.031 </span></span>
-<span><span class="co">##   4800        -3299.459             0.108            0.031 </span></span>
-<span><span class="co">##   4900        -3251.951             0.106            0.028 </span></span>
-<span><span class="co">##   5000        -3219.849             0.104            0.028 </span></span>
-<span><span class="co">##   5100        -3230.463             0.084            0.028 </span></span>
-<span><span class="co">##   5200        -3219.060             0.075            0.027 </span></span>
-<span><span class="co">##   5300        -3226.791             0.066            0.023 </span></span>
-<span><span class="co">##   5400        -3194.262             0.060            0.022 </span></span>
-<span><span class="co">##   5500        -3195.095             0.060            0.022 </span></span>
-<span><span class="co">##   5600        -3197.063             0.050            0.020 </span></span>
-<span><span class="co">##   5700        -3217.846             0.046            0.020 </span></span>
-<span><span class="co">##   5800        -3172.186             0.046            0.015 </span></span>
-<span><span class="co">##   5900        -3173.049             0.043            0.015 </span></span>
-<span><span class="co">##   6000        -3182.213             0.043            0.014 </span></span>
-<span><span class="co">##   6100        -3192.116             0.039            0.013 </span></span>
-<span><span class="co">##   6200        -3170.284             0.036            0.011 </span></span>
-<span><span class="co">##   6300        -3137.775             0.035            0.010 </span></span>
-<span><span class="co">##   6400        -3149.240             0.032            0.010 </span></span>
-<span><span class="co">##   6500        -3149.661             0.030            0.010 </span></span>
-<span><span class="co">##   6600        -3151.779             0.025            0.008 </span></span>
-<span><span class="co">##   6700        -3139.330             0.024            0.008 </span></span>
-<span><span class="co">##   6800        -3128.803             0.019            0.007 </span></span>
-<span><span class="co">##   6900        -3128.603             0.018            0.007 </span></span>
-<span><span class="co">##   7000        -3143.917             0.016            0.006 </span></span>
-<span><span class="co">##   7100        -3128.846             0.014            0.006 </span></span>
-<span><span class="co">##   7200        -3135.705             0.013            0.006 </span></span>
-<span><span class="co">##   7300        -3117.296             0.011            0.006 </span></span>
-<span><span class="co">##   7400        -3107.655             0.010            0.006 </span></span>
-<span><span class="co">##   7500        -3120.109             0.010            0.005 </span></span>
-<span><span class="co">##   7600        -3118.254             0.009            0.005 </span></span>
-<span><span class="co">##   7700        -3106.159             0.009            0.005 </span></span>
-<span><span class="co">##   7800        -3110.765             0.007            0.005 </span></span>
-<span><span class="co">##   7900        -3113.798             0.007            0.005 </span></span>
-<span><span class="co">##   8000        -3086.799             0.007            0.005 </span></span>
-<span><span class="co">##   8100        -3116.670             0.007            0.005 </span></span>
-<span><span class="co">##   8200        -3096.689             0.007            0.005 </span></span>
-<span><span class="co">##   8300        -3089.434             0.006            0.005 </span></span>
-<span><span class="co">##   8400        -3084.830             0.006            0.004 </span></span>
-<span><span class="co">##   8500        -3094.767             0.006            0.004 </span></span>
-<span><span class="co">##   8600        -3072.218             0.006            0.004 </span></span>
-<span><span class="co">##   8700        -3077.164             0.006            0.004 </span></span>
-<span><span class="co">##   8800        -3081.671             0.005            0.004 </span></span>
-<span><span class="co">##   8900        -3089.917             0.005            0.004 </span></span>
-<span><span class="co">##   9000        -3076.435             0.005            0.004 </span></span>
-<span><span class="co">##   9100        -3078.507             0.005            0.003 </span></span>
-<span><span class="co">##   9200        -3084.436             0.005            0.003 </span></span>
-<span><span class="co">##   9300        -3073.222             0.005            0.004 </span></span>
-<span><span class="co">##   9400        -3072.617             0.004            0.003 </span></span>
-<span><span class="co">##   9500        -3070.392             0.004            0.003 </span></span>
-<span><span class="co">##   9600        -3059.806             0.004            0.003 </span></span>
-<span><span class="co">##   9700        -3057.519             0.004            0.003 </span></span>
-<span><span class="co">##   9800        -3063.911             0.004            0.003 </span></span>
-<span><span class="co">##   9900        -3057.141             0.004            0.003 </span></span>
-<span><span class="co">##   10000        -3057.039             0.003            0.003 </span></span>
-<span><span class="co">##   10100        -3059.059             0.003            0.003 </span></span>
-<span><span class="co">##   10200        -3057.189             0.003            0.003 </span></span>
-<span><span class="co">##   10300        -3057.448             0.003            0.003 </span></span>
-<span><span class="co">##   10400        -3045.507             0.003            0.003 </span></span>
-<span><span class="co">##   10500        -3064.526             0.003            0.003 </span></span>
-<span><span class="co">##   10600        -3062.571             0.003            0.003 </span></span>
-<span><span class="co">##   10700        -3059.818             0.003            0.003 </span></span>
-<span><span class="co">##   10800        -3049.302             0.003            0.003 </span></span>
-<span><span class="co">##   10900        -3039.674             0.003            0.003 </span></span>
-<span><span class="co">##   11000        -3034.226             0.003            0.003 </span></span>
-<span><span class="co">##   11100        -3034.358             0.003            0.002 </span></span>
-<span><span class="co">##   11200        -3030.285             0.003            0.002 </span></span>
-<span><span class="co">##   11300        -3030.924             0.003            0.002 </span></span>
-<span><span class="co">##   11400        -3061.601             0.003            0.002 </span></span>
-<span><span class="co">##   11500        -3045.035             0.003            0.002 </span></span>
-<span><span class="co">##   11600        -3036.415             0.003            0.002 </span></span>
-<span><span class="co">##   11700        -3040.893             0.003            0.002 </span></span>
-<span><span class="co">##   11800        -3033.716             0.003            0.002 </span></span>
-<span><span class="co">##   11900        -3027.205             0.003            0.002 </span></span>
-<span><span class="co">##   12000        -3042.912             0.003            0.002 </span></span>
-<span><span class="co">##   12100        -3050.352             0.003            0.002 </span></span>
-<span><span class="co">##   12200        -3031.733             0.003            0.002 </span></span>
-<span><span class="co">##   12300        -3014.458             0.003            0.002 </span></span>
-<span><span class="co">##   12400        -3026.359             0.003            0.002 </span></span>
-<span><span class="co">##   12500        -3027.877             0.003            0.002 </span></span>
-<span><span class="co">##   12600        -3014.960             0.003            0.002 </span></span>
-<span><span class="co">##   12700        -3018.081             0.003            0.002 </span></span>
-<span><span class="co">##   12800        -3017.974             0.003            0.002 </span></span>
-<span><span class="co">##   12900        -3011.937             0.003            0.002 </span></span>
-<span><span class="co">##   13000        -3024.129             0.003            0.002 </span></span>
-<span><span class="co">##   13100        -3009.441             0.003            0.002 </span></span>
-<span><span class="co">##   13200        -3002.384             0.003            0.002 </span></span>
-<span><span class="co">##   13300        -3028.731             0.003            0.002 </span></span>
-<span><span class="co">##   13400        -3011.275             0.003            0.002 </span></span>
-<span><span class="co">##   13500        -3005.421             0.003            0.002 </span></span>
-<span><span class="co">##   13600        -3005.716             0.003            0.002 </span></span>
-<span><span class="co">##   13700        -3001.761             0.003            0.002 </span></span>
-<span><span class="co">##   13800        -3012.588             0.003            0.002 </span></span>
-<span><span class="co">##   13900        -3010.246             0.003            0.002 </span></span>
-<span><span class="co">##   14000        -3009.999             0.003            0.002 </span></span>
-<span><span class="co">##   14100        -2989.505             0.003            0.002 </span></span>
-<span><span class="co">##   14200        -3018.527             0.003            0.002 </span></span>
-<span><span class="co">##   14300        -3012.466             0.003            0.002 </span></span>
-<span><span class="co">##   14400        -2997.042             0.003            0.002 </span></span>
-<span><span class="co">##   14500        -2994.056             0.003            0.002 </span></span>
-<span><span class="co">##   14600        -3001.562             0.003            0.002 </span></span>
-<span><span class="co">##   14700        -3002.516             0.003            0.002 </span></span>
-<span><span class="co">##   14800        -2992.508             0.003            0.002 </span></span>
-<span><span class="co">##   14900        -2994.197             0.003            0.002 </span></span>
-<span><span class="co">##   15000        -2993.782             0.003            0.002 </span></span>
-<span><span class="co">##   15100        -2990.024             0.003            0.002 </span></span>
-<span><span class="co">##   15200        -2990.245             0.003            0.002 </span></span>
-<span><span class="co">##   15300        -2991.644             0.003            0.002 </span></span>
-<span><span class="co">##   15400        -2995.190             0.003            0.002 </span></span>
-<span><span class="co">##   15500        -2995.146             0.003            0.002 </span></span>
-<span><span class="co">##   15600        -2984.070             0.003            0.002 </span></span>
-<span><span class="co">##   15700        -2991.986             0.003            0.002 </span></span>
-<span><span class="co">##   15800        -2993.943             0.003            0.002 </span></span>
-<span><span class="co">##   15900        -2994.658             0.003            0.002 </span></span>
-<span><span class="co">##   16000        -2997.078             0.003            0.002 </span></span>
-<span><span class="co">##   16100        -2991.348             0.003            0.002 </span></span>
-<span><span class="co">##   16200        -3001.008             0.003            0.002 </span></span>
-<span><span class="co">##   16300        -3000.267             0.003            0.002 </span></span>
-<span><span class="co">##   16400        -3000.490             0.003            0.002 </span></span>
-<span><span class="co">##   16500        -2989.082             0.003            0.002 </span></span>
-<span><span class="co">##   16600        -2993.424             0.002            0.002 </span></span>
-<span><span class="co">##   16700        -2982.580             0.003            0.002 </span></span>
-<span><span class="co">##   16800        -3000.516             0.003            0.002 </span></span>
-<span><span class="co">##   16900        -2995.389             0.003            0.002 </span></span>
-<span><span class="co">##   17000        -2988.706             0.003            0.002 </span></span>
-<span><span class="co">##   17100        -2985.628             0.003            0.002 </span></span>
-<span><span class="co">##   17200        -2980.801             0.002            0.002 </span></span>
-<span><span class="co">##   17300        -2983.211             0.002            0.002 </span></span>
-<span><span class="co">##   17400        -2998.911             0.002            0.002 </span></span>
-<span><span class="co">##   17500        -2982.923             0.002            0.002 </span></span>
-<span><span class="co">##   17600        -2981.807             0.002            0.002 </span></span>
-<span><span class="co">##   17700        -2970.609             0.002            0.002 </span></span>
-<span><span class="co">##   17800        -2981.725             0.002            0.002 </span></span>
-<span><span class="co">##   17900        -2969.802             0.003            0.002 </span></span>
-<span><span class="co">##   18000        -2974.322             0.002            0.002 </span></span>
-<span><span class="co">##   18100        -2977.517             0.002            0.002 </span></span>
-<span><span class="co">##   18200        -2980.762             0.002            0.002 </span></span>
-<span><span class="co">##   18300        -2976.546             0.002            0.002 </span></span>
-<span><span class="co">##   18400        -2972.217             0.002            0.001 </span></span>
-<span><span class="co">##   18500        -2967.866             0.002            0.001 </span></span>
-<span><span class="co">##   18600        -2981.392             0.002            0.001 </span></span>
-<span><span class="co">##   18700        -2962.560             0.002            0.002 </span></span>
-<span><span class="co">##   18800        -2963.216             0.002            0.001 </span></span>
-<span><span class="co">##   18900        -2968.241             0.002            0.002 </span></span>
-<span><span class="co">##   19000        -2972.943             0.002            0.002 </span></span>
-<span><span class="co">##   19100        -2982.113             0.002            0.002 </span></span>
-<span><span class="co">##   19200        -2969.917             0.002            0.002 </span></span>
-<span><span class="co">##   19300        -2969.885             0.002            0.002 </span></span>
-<span><span class="co">##   19400        -2975.718             0.002            0.002 </span></span>
-<span><span class="co">##   19500        -2974.668             0.002            0.002 </span></span>
-<span><span class="co">##   19600        -2955.774             0.002            0.002 </span></span>
-<span><span class="co">##   19700        -2969.085             0.002            0.002 </span></span>
-<span><span class="co">##   19800        -2972.556             0.002            0.002 </span></span>
-<span><span class="co">##   19900        -2962.268             0.002            0.002 </span></span>
-<span><span class="co">##   20000        -2960.961             0.002            0.002 </span></span>
-<span><span class="co">##   20100        -2979.541             0.002            0.002 </span></span>
-<span><span class="co">##   20200        -2967.157             0.002            0.002 </span></span>
-<span><span class="co">##   20300        -2960.209             0.002            0.002 </span></span>
-<span><span class="co">##   20400        -2970.636             0.002            0.002 </span></span>
-<span><span class="co">##   20500        -2970.702             0.002            0.002 </span></span>
-<span><span class="co">##   20600        -2956.529             0.002            0.002 </span></span>
-<span><span class="co">##   20700        -2972.382             0.003            0.002 </span></span>
-<span><span class="co">##   20800        -2956.556             0.003            0.002 </span></span>
-<span><span class="co">##   20900        -2965.236             0.003            0.002 </span></span>
-<span><span class="co">##   21000        -2959.042             0.003            0.002 </span></span>
-<span><span class="co">##   21100        -2956.993             0.003            0.002 </span></span>
-<span><span class="co">##   21200        -2970.643             0.003            0.002 </span></span>
-<span><span class="co">##   21300        -2959.356             0.003            0.002 </span></span>
-<span><span class="co">##   21400        -2961.803             0.003            0.002 </span></span>
-<span><span class="co">##   21500        -2964.502             0.003            0.002 </span></span>
-<span><span class="co">##   21600        -2963.922             0.003            0.002 </span></span>
-<span><span class="co">##   21700        -2959.059             0.003            0.002 </span></span>
-<span><span class="co">##   21800        -2971.137             0.003            0.002 </span></span>
-<span><span class="co">##   21900        -2953.881             0.003            0.002 </span></span>
-<span><span class="co">##   22000        -2966.320             0.003            0.002 </span></span>
-<span><span class="co">##   22100        -2960.764             0.003            0.002 </span></span>
-<span><span class="co">##   22200        -2956.232             0.003            0.002 </span></span>
-<span><span class="co">##   22300        -2956.703             0.003            0.002 </span></span>
-<span><span class="co">##   22400        -2951.341             0.003            0.002 </span></span>
-<span><span class="co">##   22500        -2959.071             0.003            0.002 </span></span>
-<span><span class="co">##   22600        -2956.947             0.003            0.002 </span></span>
-<span><span class="co">##   22700        -2953.975             0.003            0.002 </span></span>
-<span><span class="co">##   22800        -2965.759             0.003            0.002 </span></span>
-<span><span class="co">##   22900        -2947.299             0.003            0.002 </span></span>
-<span><span class="co">##   23000        -2965.137             0.003            0.002 </span></span>
-<span><span class="co">##   23100        -2954.590             0.003            0.002 </span></span>
-<span><span class="co">##   23200        -2957.769             0.003            0.002 </span></span>
-<span><span class="co">##   23300        -2968.786             0.003            0.003 </span></span>
-<span><span class="co">##   23400        -2953.313             0.003            0.003 </span></span>
-<span><span class="co">##   23500        -2966.380             0.003            0.003 </span></span>
-<span><span class="co">##   23600        -2956.580             0.003            0.003 </span></span>
-<span><span class="co">##   23700        -2950.943             0.003            0.003 </span></span>
-<span><span class="co">##   23800        -2956.714             0.003            0.003 </span></span>
-<span><span class="co">##   23900        -2950.307             0.003            0.003 </span></span>
-<span><span class="co">##   24000        -2962.283             0.003            0.003 </span></span>
-<span><span class="co">##   24100        -2962.036             0.003            0.003 </span></span>
-<span><span class="co">##   24200        -2964.063             0.003            0.003 </span></span>
-<span><span class="co">##   24300        -2959.572             0.003            0.003 </span></span>
-<span><span class="co">##   24400        -2957.476             0.003            0.003 </span></span>
-<span><span class="co">##   24500        -2956.031             0.003            0.003 </span></span>
-<span><span class="co">##   24600        -2957.541             0.003            0.002 </span></span>
-<span><span class="co">##   24700        -2956.578             0.003            0.002 </span></span>
-<span><span class="co">##   24800        -2955.812             0.003            0.002 </span></span>
-<span><span class="co">##   24900        -2964.465             0.003            0.002 </span></span>
-<span><span class="co">##   25000        -2955.545             0.003            0.002 </span></span>
-<span><span class="co">##   25100        -2958.358             0.003            0.002 </span></span>
-<span><span class="co">##   25200        -2959.748             0.002            0.002 </span></span>
-<span><span class="co">##   25300        -2954.182             0.002            0.002 </span></span>
-<span><span class="co">##   25400        -2943.227             0.002            0.002 </span></span>
-<span><span class="co">##   25500        -2953.440             0.003            0.002 </span></span>
-<span><span class="co">##   25600        -2954.170             0.002            0.002 </span></span>
-<span><span class="co">##   25700        -2963.304             0.002            0.002 </span></span>
-<span><span class="co">##   25800        -2951.992             0.002            0.002 </span></span>
-<span><span class="co">##   25900        -2958.263             0.002            0.002 </span></span>
-<span><span class="co">##   26000        -2935.812             0.002            0.002 </span></span>
-<span><span class="co">##   26100        -2942.313             0.002            0.002 </span></span>
-<span><span class="co">##   26200        -2948.080             0.002            0.002 </span></span>
-<span><span class="co">##   26300        -2959.254             0.002            0.002 </span></span>
-<span><span class="co">##   26400        -2955.126             0.002            0.002 </span></span>
-<span><span class="co">##   26500        -2947.071             0.002            0.002 </span></span>
-<span><span class="co">##   26600        -2952.724             0.003            0.002 </span></span>
-<span><span class="co">##   26700        -2955.162             0.002            0.002 </span></span>
-<span><span class="co">##   26800        -2949.767             0.002            0.002 </span></span>
-<span><span class="co">##   26900        -2945.827             0.002            0.002 </span></span>
-<span><span class="co">##   27000        -2949.649             0.002            0.002 </span></span>
-<span><span class="co">##   27100        -2946.146             0.002            0.002 </span></span>
-<span><span class="co">##   27200        -2956.766             0.002            0.002 </span></span>
-<span><span class="co">##   27300        -2947.941             0.002            0.002 </span></span>
-<span><span class="co">##   27400        -2939.388             0.002            0.002 </span></span>
-<span><span class="co">##   27500        -2952.170             0.002            0.002 </span></span>
-<span><span class="co">##   27600        -2941.877             0.002            0.002 </span></span>
-<span><span class="co">##   27700        -2942.949             0.002            0.002 </span></span>
-<span><span class="co">##   27800        -2949.989             0.002            0.002 </span></span>
-<span><span class="co">##   27900        -2947.740             0.002            0.002 </span></span>
-<span><span class="co">##   28000        -2950.673             0.002            0.002 </span></span>
-<span><span class="co">##   28100        -2951.127             0.002            0.002 </span></span>
-<span><span class="co">##   28200        -2954.920             0.002            0.002 </span></span>
-<span><span class="co">##   28300        -2945.715             0.002            0.002 </span></span>
-<span><span class="co">##   28400        -2942.271             0.002            0.002 </span></span>
-<span><span class="co">##   28500        -2942.031             0.002            0.002 </span></span>
-<span><span class="co">##   28600        -2948.877             0.002            0.002 </span></span>
-<span><span class="co">##   28700        -2942.102             0.002            0.002 </span></span>
-<span><span class="co">##   28800        -2942.979             0.002            0.002 </span></span>
-<span><span class="co">##   28900        -2940.914             0.002            0.002 </span></span>
-<span><span class="co">##   29000        -2952.811             0.002            0.002 </span></span>
-<span><span class="co">##   29100        -2938.330             0.002            0.002 </span></span>
-<span><span class="co">##   29200        -2946.682             0.002            0.002 </span></span>
-<span><span class="co">##   29300        -2941.103             0.002            0.002 </span></span>
-<span><span class="co">##   29400        -2947.587             0.002            0.002 </span></span>
-<span><span class="co">##   29500        -2942.838             0.002            0.002 </span></span>
-<span><span class="co">##   29600        -2956.888             0.002            0.002 </span></span>
-<span><span class="co">##   29700        -2943.657             0.002            0.002 </span></span>
-<span><span class="co">##   29800        -2943.609             0.002            0.002 </span></span>
-<span><span class="co">##   29900        -2942.646             0.002            0.002 </span></span>
-<span><span class="co">##   30000        -2939.611             0.002            0.002 </span></span>
-<span><span class="co">##   30100        -2939.724             0.002            0.002 </span></span>
-<span><span class="co">##   30200        -2946.244             0.002            0.002 </span></span>
-<span><span class="co">##   30300        -2935.966             0.002            0.002 </span></span>
-<span><span class="co">##   30400        -2940.670             0.002            0.002 </span></span>
-<span><span class="co">##   30500        -2940.333             0.002            0.002 </span></span>
-<span><span class="co">##   30600        -2939.517             0.002            0.002 </span></span>
-<span><span class="co">##   30700        -2936.684             0.002            0.002 </span></span>
-<span><span class="co">##   30800        -2944.158             0.002            0.002 </span></span>
-<span><span class="co">##   30900        -2937.578             0.002            0.002 </span></span>
-<span><span class="co">##   31000        -2942.432             0.002            0.002 </span></span>
-<span><span class="co">##   31100        -2933.073             0.002            0.002 </span></span>
-<span><span class="co">##   31200        -2940.231             0.002            0.002 </span></span>
-<span><span class="co">##   31300        -2933.203             0.002            0.002 </span></span>
-<span><span class="co">##   31400        -2937.219             0.002            0.002 </span></span>
-<span><span class="co">##   31500        -2949.306             0.002            0.002 </span></span>
-<span><span class="co">##   31600        -2943.900             0.002            0.002 </span></span>
-<span><span class="co">##   31700        -2947.419             0.002            0.002 </span></span>
-<span><span class="co">##   31800        -2937.926             0.002            0.002 </span></span>
-<span><span class="co">##   31900        -2938.173             0.002            0.002 </span></span>
-<span><span class="co">##   32000        -2931.772             0.002            0.002 </span></span>
-<span><span class="co">##   32100        -2932.257             0.002            0.002 </span></span>
-<span><span class="co">##   32200        -2946.204             0.002            0.002 </span></span>
-<span><span class="co">##   32300        -2935.480             0.002            0.002 </span></span>
-<span><span class="co">##   32400        -2936.485             0.002            0.002 </span></span>
-<span><span class="co">##   32500        -2945.892             0.002            0.002 </span></span>
-<span><span class="co">##   32600        -2946.205             0.002            0.002 </span></span>
-<span><span class="co">##   32700        -2946.026             0.002            0.002 </span></span>
-<span><span class="co">##   32800        -2941.116             0.002            0.002 </span></span>
-<span><span class="co">##   32900        -2932.333             0.002            0.002 </span></span>
-<span><span class="co">##   33000        -2936.448             0.002            0.002 </span></span>
-<span><span class="co">##   33100        -2940.641             0.002            0.002 </span></span>
-<span><span class="co">##   33200        -2943.056             0.002            0.002 </span></span>
-<span><span class="co">##   33300        -2943.411             0.002            0.002 </span></span>
-<span><span class="co">##   33400        -2929.442             0.002            0.002 </span></span>
-<span><span class="co">##   33500        -2933.691             0.002            0.002 </span></span>
-<span><span class="co">##   33600        -2931.509             0.002            0.002 </span></span>
-<span><span class="co">##   33700        -2941.449             0.002            0.002 </span></span>
-<span><span class="co">##   33800        -2951.447             0.002            0.002 </span></span>
-<span><span class="co">##   33900        -2934.170             0.002            0.002 </span></span>
-<span><span class="co">##   34000        -2936.697             0.002            0.002 </span></span>
-<span><span class="co">##   34100        -2944.183             0.002            0.002 </span></span>
-<span><span class="co">##   34200        -2944.399             0.002            0.002 </span></span>
-<span><span class="co">##   34300        -2942.633             0.002            0.002 </span></span>
-<span><span class="co">##   34400        -2939.722             0.002            0.002 </span></span>
-<span><span class="co">##   34500        -2938.761             0.002            0.002 </span></span>
-<span><span class="co">##   34600        -2937.495             0.002            0.001 </span></span>
-<span><span class="co">##   34700        -2937.200             0.002            0.001 </span></span>
-<span><span class="co">##   34800        -2936.169             0.002            0.001 </span></span>
-<span><span class="co">##   34900        -2942.376             0.002            0.001 </span></span>
-<span><span class="co">##   35000        -2949.699             0.002            0.002 </span></span>
-<span><span class="co">##   35100        -2943.750             0.002            0.002 </span></span>
-<span><span class="co">##   35200        -2930.375             0.002            0.002 </span></span>
-<span><span class="co">##   35300        -2929.653             0.002            0.002 </span></span>
-<span><span class="co">##   35400        -2940.868             0.002            0.002 </span></span>
-<span><span class="co">##   35500        -2929.308             0.002            0.002 </span></span>
-<span><span class="co">##   35600        -2937.054             0.002            0.002 </span></span>
-<span><span class="co">##   35700        -2930.896             0.002            0.002 </span></span>
-<span><span class="co">##   35800        -2931.725             0.002            0.002 </span></span>
-<span><span class="co">##   35900        -2943.538             0.002            0.002 </span></span>
-<span><span class="co">##   36000        -2931.939             0.002            0.002 </span></span>
-<span><span class="co">##   36100        -2935.792             0.002            0.002 </span></span>
-<span><span class="co">##   36200        -2931.217             0.002            0.002 </span></span>
-<span><span class="co">##   36300        -2933.432             0.002            0.002 </span></span>
-<span><span class="co">##   36400        -2933.864             0.002            0.002 </span></span>
-<span><span class="co">##   36500        -2940.671             0.002            0.002 </span></span>
-<span><span class="co">##   36600        -2939.215             0.002            0.001 </span></span>
-<span><span class="co">##   36700        -2926.340             0.002            0.002 </span></span>
-<span><span class="co">##   36800        -2934.881             0.002            0.002 </span></span>
-<span><span class="co">##   36900        -2934.528             0.002            0.002 </span></span>
-<span><span class="co">##   37000        -2932.798             0.002            0.001 </span></span>
-<span><span class="co">##   37100        -2933.873             0.002            0.001 </span></span>
-<span><span class="co">##   37200        -2938.753             0.002            0.001 </span></span>
-<span><span class="co">##   37300        -2941.579             0.002            0.001 </span></span>
-<span><span class="co">##   37400        -2929.228             0.002            0.001 </span></span>
-<span><span class="co">##   37500        -2931.988             0.002            0.001 </span></span>
-<span><span class="co">##   37600        -2934.062             0.002            0.001 </span></span>
-<span><span class="co">##   37700        -2933.935             0.002            0.001 </span></span>
-<span><span class="co">##   37800        -2929.691             0.002            0.001 </span></span>
-<span><span class="co">##   37900        -2939.969             0.002            0.001 </span></span>
-<span><span class="co">##   38000        -2936.169             0.002            0.001 </span></span>
-<span><span class="co">##   38100        -2929.956             0.002            0.001 </span></span>
-<span><span class="co">##   38200        -2931.481             0.002            0.001 </span></span>
-<span><span class="co">##   38300        -2943.806             0.002            0.001 </span></span>
-<span><span class="co">##   38400        -2929.541             0.002            0.001 </span></span>
-<span><span class="co">##   38500        -2931.746             0.002            0.001 </span></span>
-<span><span class="co">##   38600        -2945.444             0.002            0.002 </span></span>
-<span><span class="co">##   38700        -2932.316             0.002            0.002 </span></span>
-<span><span class="co">##   38800        -2930.777             0.002            0.001 </span></span>
-<span><span class="co">##   38900        -2926.677             0.002            0.001 </span></span>
-<span><span class="co">##   39000        -2933.206             0.002            0.001 </span></span>
-<span><span class="co">##   39100        -2931.435             0.002            0.001 </span></span>
-<span><span class="co">##   39200        -2930.413             0.002            0.001 </span></span>
-<span><span class="co">##   39300        -2923.670             0.002            0.001 </span></span>
-<span><span class="co">##   39400        -2944.115             0.002            0.002 </span></span>
-<span><span class="co">##   39500        -2925.329             0.002            0.002 </span></span>
-<span><span class="co">##   39600        -2927.548             0.002            0.002 </span></span>
-<span><span class="co">##   39700        -2929.296             0.002            0.002 </span></span>
-<span><span class="co">##   39800        -2932.568             0.002            0.002 </span></span>
-<span><span class="co">##   39900        -2927.201             0.002            0.002 </span></span>
-<span><span class="co">##   40000        -2930.985             0.002            0.002 </span></span>
-<span><span class="co">##   40100        -2933.167             0.002            0.001 </span></span>
-<span><span class="co">##   40200        -2934.013             0.002            0.001 </span></span>
-<span><span class="co">##   40300        -2930.993             0.002            0.001 </span></span>
-<span><span class="co">##   40400        -2930.671             0.002            0.001 </span></span>
-<span><span class="co">##   40500        -2936.757             0.002            0.001 </span></span>
-<span><span class="co">##   40600        -2925.484             0.002            0.001 </span></span>
-<span><span class="co">##   40700        -2926.476             0.002            0.001 </span></span>
-<span><span class="co">##   40800        -2926.892             0.002            0.001 </span></span>
-<span><span class="co">##   40900        -2934.625             0.002            0.001 </span></span>
-<span><span class="co">##   41000        -2930.603             0.002            0.001 </span></span>
-<span><span class="co">##   41100        -2925.400             0.002            0.001 </span></span>
-<span><span class="co">##   41200        -2929.424             0.002            0.001 </span></span>
-<span><span class="co">##   41300        -2930.503             0.002            0.001 </span></span>
-<span><span class="co">##   41400        -2929.603             0.002            0.001 </span></span>
-<span><span class="co">##   41500        -2927.358             0.002            0.001 </span></span>
-<span><span class="co">##   41600        -2927.869             0.002            0.001 </span></span>
-<span><span class="co">##   41700        -2936.188             0.002            0.001 </span></span>
-<span><span class="co">##   41800        -2927.807             0.002            0.001 </span></span>
-<span><span class="co">##   41900        -2928.348             0.002            0.001 </span></span>
-<span><span class="co">##   42000        -2932.029             0.002            0.001 </span></span>
-<span><span class="co">##   42100        -2928.582             0.002            0.001 </span></span>
-<span><span class="co">##   42200        -2920.316             0.002            0.001 </span></span>
-<span><span class="co">##   42300        -2931.675             0.002            0.001 </span></span>
-<span><span class="co">##   42400        -2923.259             0.002            0.001 </span></span>
-<span><span class="co">##   42500        -2925.476             0.002            0.001 </span></span>
-<span><span class="co">##   42600        -2928.966             0.002            0.001 </span></span>
-<span><span class="co">##   42700        -2926.697             0.002            0.001 </span></span>
-<span><span class="co">##   42800        -2932.683             0.002            0.001 </span></span>
-<span><span class="co">##   42900        -2923.709             0.002            0.001 </span></span>
-<span><span class="co">##   43000        -2923.560             0.002            0.001 </span></span>
-<span><span class="co">##   43100        -2926.891             0.002            0.001 </span></span>
-<span><span class="co">##   43200        -2931.504             0.002            0.001 </span></span>
-<span><span class="co">##   43300        -2926.428             0.002            0.001 </span></span>
-<span><span class="co">##   43400        -2928.672             0.002            0.001 </span></span>
-<span><span class="co">##   43500        -2932.567             0.002            0.001 </span></span>
-<span><span class="co">##   43600        -2929.645             0.002            0.001 </span></span>
-<span><span class="co">##   43700        -2926.301             0.002            0.001 </span></span>
-<span><span class="co">##   43800        -2928.150             0.002            0.001 </span></span>
-<span><span class="co">##   43900        -2924.375             0.002            0.001 </span></span>
-<span><span class="co">##   44000        -2927.389             0.002            0.001 </span></span>
-<span><span class="co">##   44100        -2931.410             0.002            0.001 </span></span>
-<span><span class="co">##   44200        -2940.256             0.002            0.001 </span></span>
-<span><span class="co">##   44300        -2923.674             0.002            0.001 </span></span>
-<span><span class="co">##   44400        -2927.838             0.002            0.001 </span></span>
-<span><span class="co">##   44500        -2933.115             0.001            0.001 </span></span>
-<span><span class="co">##   44600        -2924.875             0.002            0.001 </span></span>
-<span><span class="co">##   44700        -2928.056             0.002            0.001 </span></span>
-<span><span class="co">##   44800        -2926.169             0.002            0.001 </span></span>
-<span><span class="co">##   44900        -2927.135             0.001            0.001 </span></span>
-<span><span class="co">##   45000        -2928.271             0.001            0.001 </span></span>
-<span><span class="co">##   45100        -2926.836             0.001            0.001 </span></span>
-<span><span class="co">##   45200        -2926.458             0.001            0.001 </span></span>
-<span><span class="co">##   45300        -2930.783             0.001            0.001 </span></span>
-<span><span class="co">##   45400        -2927.863             0.001            0.001 </span></span>
-<span><span class="co">##   45500        -2924.438             0.001            0.001 </span></span>
-<span><span class="co">##   45600        -2927.343             0.001            0.001 </span></span>
-<span><span class="co">##   45700        -2928.678             0.001            0.001 </span></span>
-<span><span class="co">##   45800        -2927.861             0.001            0.001 </span></span>
-<span><span class="co">##   45900        -2923.983             0.001            0.001 </span></span>
-<span><span class="co">##   46000        -2930.068             0.001            0.001 </span></span>
-<span><span class="co">##   46100        -2926.606             0.001            0.001 </span></span>
-<span><span class="co">##   46200        -2925.526             0.001            0.001 </span></span>
-<span><span class="co">##   46300        -2931.551             0.001            0.001 </span></span>
-<span><span class="co">##   46400        -2917.838             0.001            0.001 </span></span>
-<span><span class="co">##   46500        -2928.138             0.002            0.001 </span></span>
-<span><span class="co">##   46600        -2925.451             0.002            0.001 </span></span>
-<span><span class="co">##   46700        -2924.899             0.002            0.001 </span></span>
-<span><span class="co">##   46800        -2930.089             0.001            0.001 </span></span>
-<span><span class="co">##   46900        -2929.045             0.001            0.001 </span></span>
-<span><span class="co">##   47000        -2926.190             0.001            0.001 </span></span>
-<span><span class="co">##   47100        -2922.340             0.001            0.001 </span></span>
-<span><span class="co">##   47200        -2927.289             0.001            0.001 </span></span>
-<span><span class="co">##   47300        -2924.716             0.001            0.001 </span></span>
-<span><span class="co">##   47400        -2923.397             0.001            0.001 </span></span>
-<span><span class="co">##   47500        -2924.871             0.001            0.001 </span></span>
-<span><span class="co">##   47600        -2919.152             0.001            0.001 </span></span>
-<span><span class="co">##   47700        -2929.165             0.001            0.001 </span></span>
-<span><span class="co">##   47800        -2927.990             0.001            0.001 </span></span>
-<span><span class="co">##   47900        -2922.643             0.001            0.001 </span></span>
-<span><span class="co">##   48000        -2919.950             0.001            0.001 </span></span>
-<span><span class="co">##   48100        -2924.570             0.001            0.001 </span></span>
-<span><span class="co">##   48200        -2922.028             0.001            0.001 </span></span>
-<span><span class="co">##   48300        -2919.068             0.001            0.001 </span></span>
-<span><span class="co">##   48400        -2922.525             0.001            0.001 </span></span>
-<span><span class="co">##   48500        -2922.025             0.001            0.001 </span></span>
-<span><span class="co">##   48600        -2918.976             0.001            0.001 </span></span>
-<span><span class="co">##   48700        -2927.942             0.001            0.001 </span></span>
-<span><span class="co">##   48800        -2923.523             0.001            0.001 </span></span>
-<span><span class="co">##   48900        -2924.750             0.001            0.001 </span></span>
-<span><span class="co">##   49000        -2921.169             0.001            0.001 </span></span>
-<span><span class="co">##   49100        -2919.845             0.001            0.001 </span></span>
-<span><span class="co">##   49200        -2929.288             0.001            0.001 </span></span>
-<span><span class="co">##   49300        -2925.963             0.001            0.001 </span></span>
-<span><span class="co">##   49400        -2924.679             0.001            0.001 </span></span>
-<span><span class="co">##   49500        -2926.856             0.001            0.001 </span></span>
-<span><span class="co">##   49600        -2924.698             0.001            0.001   MEDIAN ELBO CONVERGED </span></span>
-<span><span class="co">## Drawing a sample of size 1000 from the approximate posterior...  </span></span>
-<span><span class="co">## COMPLETED. </span></span>
-<span><span class="co">## Finished in  22.1 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## Running MCMC with 4 parallel chains...</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: gamma_lpdf: Random variable[3] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[280] is inf, but must be positive finite! (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: epidemia_base_model_namespace::log_prob: seeds[2] is nan, but must be greater than or equal to 0.000000 (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 60, column 2 to column 39)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Exception: gamma_lpdf: Random variable[3] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Exception: neg_binomial_2_lpmf: Location parameter[278] is inf, but must be positive finite! (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 Exception: epidemia_base_model_namespace::log_prob: seeds[2] is nan, but must be greater than or equal to 0.000000 (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 60, column 2 to column 39)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 2</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Exception: gamma_lpdf: Random variable[3] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Exception: neg_binomial_2_lpmf: Location parameter[279] is inf, but must be positive finite! (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 Exception: epidemia_base_model_namespace::log_prob: seeds[2] is nan, but must be greater than or equal to 0.000000 (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 60, column 2 to column 39)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 3</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Exception: gamma_lpdf: Random variable[3] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Exception: neg_binomial_2_lpmf: Location parameter[279] is inf, but must be positive finite! (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Exception: epidemia_base_model_namespace::log_prob: seeds[2] is nan, but must be greater than or equal to 0.000000 (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 60, column 2 to column 39)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 finished in 7034.2 seconds.</span></span>
+<span><span class="co">## Chain 2 finished in 7853.1 seconds.</span></span>
+<span><span class="co">## Chain 1 finished in 8024.6 seconds.</span></span>
+<span><span class="co">## Chain 3 finished in 8388.3 seconds.</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## All 4 chains finished successfully.</span></span>
+<span><span class="co">## Mean chain execution time: 7825.0 seconds.</span></span>
+<span><span class="co">## Total execution time: 8388.4 seconds.</span></span></code></pre>
+<pre><code><span><span class="co">## Warning: 1 of 4000 (0.0%) transitions ended with a divergence.</span></span>
+<span><span class="co">## See https://mc-stan.org/misc/warnings for details.</span></span></code></pre>
+<pre><code><span><span class="co">## Warning: 1 of 4000 (0.0%) transitions hit the maximum treedepth limit of 14.</span></span>
+<span><span class="co">## See https://mc-stan.org/misc/warnings for details.</span></span></code></pre>
+<div class="sourceCode" id="cb155"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sampler_diagnostics.html">sampler_diagnostics</a></span><span class="op">(</span><span class="va">fm</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## Sampler diagnostics</span></span>
+<span><span class="co">## 4 chains x 1000 post-warmup draws = 4000</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">##  chain divergent max_treedepth ebfmi</span></span>
+<span><span class="co">##      1         0             0 0.987</span></span>
+<span><span class="co">##      2         0             1 0.849</span></span>
+<span><span class="co">##      3         0             0 0.925</span></span>
+<span><span class="co">##      4         1             0 0.867</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## Divergent transitions: 1 (0.0%)</span></span>
+<span><span class="co">## Hit max treedepth:     1 (0.0%)</span></span>
+<span><span class="co">## Lowest E-BFMI:         0.85</span></span>
+<span><span class="co">## Worst R-hat:           1.017  (R|lockdown)</span></span>
+<span><span class="co">## Lowest bulk ESS:       242  (R|lockdown)</span></span>
+<span><span class="co">## Lowest tail ESS:       93</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## Warnings:</span></span>
+<span><span class="co">## * 1 divergent transition. These bias the posterior and more draws will</span></span>
+<span><span class="co">##   not help; raise adapt_delta above its current value or</span></span>
+<span><span class="co">##   reparameterise.</span></span>
+<span><span class="co">## * 1 iteration saturated max_treedepth. This costs efficiency rather</span></span>
+<span><span class="co">##   than correctness; raise max_treedepth.</span></span>
+<span><span class="co">## * R-hat of 1.017 for R|lockdown exceeds 1.01, so the chains have not</span></span>
+<span><span class="co">##   mixed.</span></span>
+<span><span class="co">## * Bulk ESS of 242 for R|lockdown is 61 per chain, below the 100 per</span></span>
+<span><span class="co">##   chain that keeps posterior summaries stable.</span></span></code></pre>
+<p><code>adapt_delta</code> and <code>max_treedepth</code> are both raised above their defaults. This
+posterior has the funnel geometry that hierarchical models with several
+partially pooled slopes tend to have, and at the defaults it produces divergent
+transitions – which bias the posterior rather than merely slowing it down.</p>
 <p>A first step in evaluating the model fit is to perform posterior
 predictive checks. This is to confirm that the model adequately explains
 the observed daily deaths in each region. This can be done using the
@@ -1019,7 +686,7 @@ coefficients, and does not show inferred effects in any given country.
 To assess the latter, one must instead consider the quantities
 <span class="math inline">\(\beta_i + b^{(m)}_i\)</span>. We do this by extracting the underlying draws
 using <code>as.matrix.epimodel</code>, as is done below for Italy.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb159"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fm</span>, par_models <span class="op">=</span> <span class="st">"R"</span>, par_types <span class="op">=</span> <span class="st">"fixed"</span><span class="op">)</span></span>
 <span><span class="va">b</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fm</span>, regex_pars <span class="op">=</span> <span class="st">"^R\\|b"</span>, par_groups <span class="op">=</span> <span class="st">"Italy"</span><span class="op">)</span></span>
 <span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">b</span><span class="op">[</span>,<span class="fl">1</span><span class="op">]</span>, <span class="va">beta</span> <span class="op">+</span> <span class="va">b</span><span class="op">[</span>,<span class="fl">2</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span><span class="op">)</span></span>
@@ -1033,11 +700,13 @@ Figure 1.4: <strong>Left</strong>: Global Effect sizes for the five policy measu
 </div>
 <p>Calling <code>bayesplot::mcmc_intervals(mat)</code> leads to the results shown
 in the right panel of Figure <a href="#fig:multilevel-effects-plots">1.4</a>.</p>
-<p>Figure <a href="#fig:multilevel-effects-plots">1.4</a> has relatively narrow
-intervals for many of the effect sizes. This appears to be an artifact
-of using Variational Bayes. In particular, when repeating this analysis
-with full MCMC, we observe that the intervals for all policies other
-than lockdown overlap with zero.</p>
+<p>The intervals in Figure <a href="#fig:multilevel-effects-plots">1.4</a> are wide for every
+measure other than lockdown, and all of them overlap zero. That is the honest
+picture: the five measures were enacted within days of each other, so the
+design columns are close to collinear and the individual coefficients are only
+weakly identified. An earlier version of this tutorial fit the model by
+Variational Bayes and reported visibly narrower intervals, which was an
+artefact of the approximation rather than evidence about the measures.</p>
 <p>Consider now the role of partial pooling in this analysis. Figure
 <a href="#fig:multilevel-rt-plots">1.3</a> shows that Sweden did enough to reduce <span class="math inline">\(R\)</span>
 below one. However, it did so without a full lockdown. Given the small
@@ -1081,7 +750,7 @@ of June 2020, however we only fitted the model up until the <span class="math in
 The following constructs a data frame <code>newdata</code> which contains the
 additional observations. Note that we are careful to select the same
 start dates as in the original data frame.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb160"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">newdata</span> <span class="op">&lt;-</span> <span class="va">EuropeCovid2</span><span class="op">$</span><span class="va">data</span></span>
 <span><span class="va">newdata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">newdata</span>, <span class="va">date</span> <span class="op">&gt;</span> <span class="va">date</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">deaths</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">10</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">30</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p>This data frame can be passed to plotting functions <code><a href="../reference/plot_rt.html">plot_rt()</a></code>,
@@ -1104,7 +773,7 @@ the forecast.</p>
 <p>Counterfactual scenarios are also easy. Again, one simply has to modify
 the data frame used. In this case we shift all policy measures back
 three days.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb162"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shift</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">k</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">x</span><span class="op">[</span><span class="op">-</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">k</span><span class="op">)</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>,<span class="va">k</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">days</span> <span class="op">&lt;-</span> <span class="fl">3</span></span>
 <span></span>
