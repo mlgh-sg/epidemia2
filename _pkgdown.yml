@@ -39,6 +39,8 @@ navbar:
         href: articles/multiple-obs.html
       - text: Multilevel + Multiple Observations
         href: articles/multilevel-multi-obs.html
+      - text: Reproducing Flaxman et al. (2020)
+        href: articles/flaxman.html
     news:
       text: News
       href: news/index.html
