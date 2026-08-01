@@ -216,8 +216,8 @@ for name, model in zip(("deaths", "cases"), obs):
     epidemia.plot_obs(
         idata, data=panel, obs_model=model, series=name,
         levels=(30, 60, 90), ylab=name.capitalize(),
-        title=f"Posterior predictive: {name}", save=False,
-    ).show()
+        title=f"Posterior predictive: {name}", save=f"multilevel-obs-{name}",
+    )
 
 # %% [markdown]
 # ## What the susceptibility adjustment does
@@ -246,8 +246,9 @@ for m, region in enumerate(panel.regions):
 # %%
 epidemia.plot_rt(
     idata, data=panel, levels=(30, 60, 90),
-    title="Reproduction numbers, with a monthly walk per region", save=False,
-).show()
+    title="Reproduction numbers, with a monthly walk per region",
+    save="multilevel-rt",
+)
 
 # %% [markdown]
 # ## Scoring the fit
