@@ -244,7 +244,6 @@ prior on the intercept centres it at <span class="math inline">\(1\%\)</span>.</
 <span>  prior_intercept <span class="op">=</span> <span class="fu"><a href="../reference/priors.html">normal</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.2</span><span class="op">)</span>,</span>
 <span>  link <span class="op">=</span> <span class="fu"><a href="../reference/scaled_logit.html">scaled_logit</a></span><span class="op">(</span><span class="fl">0.02</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning: i2o does not sum to one. Please ensure this is intentional.</span></span></code></pre>
 </div>
 <div class="section level4">
 <h4 id="cases">Cases<a class="anchor" aria-label="anchor" href="#cases"></a>
@@ -278,7 +277,7 @@ vary by country. Because <code><a href="../reference/epiobs.html">epiobs()</a></
 <em>fixed</em> effect per country — <code>0 + country</code> — not a partially pooled one.
 <code>scaled_logit(0.4)</code> confines the IAR to <span class="math inline">\([0\%, 40\%]\)</span>.</li>
 </ul>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/epiobs.html">epiobs</a></span><span class="op">(</span></span>
 <span>  formula <span class="op">=</span> <span class="va">cases</span> <span class="op">~</span> <span class="fl">0</span> <span class="op">+</span> <span class="va">country</span>,</span>
 <span>  i2o <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">4</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="fl">7</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -297,7 +296,7 @@ The delay distribution you supplied still sums to one.</p>
 <hr>
 <p>Both series are passed together as a list. Everything else is unchanged from a
 single-series fit.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/epim.html">epim</a></span><span class="op">(</span></span>
 <span>  rt <span class="op">=</span> <span class="va">rt</span>, inf <span class="op">=</span> <span class="va">inf</span>, obs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">deaths</span>, <span class="va">cases</span><span class="op">)</span>,</span>
 <span>  data <span class="op">=</span> <span class="va">fit_data</span>, group_subset <span class="op">=</span> <span class="va">groups</span>,</span>
@@ -305,17 +304,17 @@ single-series fit.</p>
 <span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>max_treedepth <span class="op">=</span> <span class="fl">12</span>, adapt_delta <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running MCMC with 4 parallel chains...</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 finished in 436.9 seconds.</span></span>
-<span><span class="co">## Chain 3 finished in 440.2 seconds.</span></span>
-<span><span class="co">## Chain 4 finished in 453.4 seconds.</span></span>
-<span><span class="co">## Chain 2 finished in 465.1 seconds.</span></span>
+<pre><code><span><span class="co">## Chain 2 finished in 435.4 seconds.</span></span>
+<span><span class="co">## Chain 1 finished in 438.5 seconds.</span></span>
+<span><span class="co">## Chain 4 finished in 455.8 seconds.</span></span>
+<span><span class="co">## Chain 3 finished in 497.7 seconds.</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## All 4 chains finished successfully.</span></span>
-<span><span class="co">## Mean chain execution time: 448.9 seconds.</span></span>
-<span><span class="co">## Total execution time: 465.2 seconds.</span></span></code></pre>
+<span><span class="co">## Mean chain execution time: 456.9 seconds.</span></span>
+<span><span class="co">## Total execution time: 497.9 seconds.</span></span></code></pre>
 <p><code><a href="../reference/all_obs_types.html">all_obs_types()</a></code> confirms both series are in the model, and each carries its
 own parameters.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/all_obs_types.html">all_obs_types</a></span><span class="op">(</span><span class="va">fm</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] "deaths" "cases"</span></span></code></pre>
 </div>
@@ -328,28 +327,27 @@ posterior. CmdStan prints its warnings to the console while it runs, but those
 warnings are not part of the draws — scroll past them, or reload a saved model
 in a new session, and they are gone. <code><a href="../reference/sampler_diagnostics.html">sampler_diagnostics()</a></code> keeps them with the
 fit.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sampler_diagnostics.html">sampler_diagnostics</a></span><span class="op">(</span><span class="va">fm</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Sampler diagnostics</span></span>
 <span><span class="co">## 4 chains x 500 post-warmup draws = 2000</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##  chain divergent max_treedepth ebfmi</span></span>
-<span><span class="co">##      1         0             0 0.867</span></span>
-<span><span class="co">##      2         0             0 0.943</span></span>
-<span><span class="co">##      3         0             0 0.810</span></span>
-<span><span class="co">##      4         0             0 0.929</span></span>
+<span><span class="co">##      1         0             0 0.840</span></span>
+<span><span class="co">##      2         0             0 0.812</span></span>
+<span><span class="co">##      3         0             0 0.755</span></span>
+<span><span class="co">##      4         0             0 0.999</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Divergent transitions: 0 (0.0%)</span></span>
 <span><span class="co">## Hit max treedepth:     0 (0.0%)</span></span>
-<span><span class="co">## Lowest E-BFMI:         0.81</span></span>
-<span><span class="co">## Worst R-hat:           1.010  (R|lockdown)</span></span>
-<span><span class="co">## Lowest bulk ESS:       380  (R|Sigma[country:(Intercept),(Intercept)])</span></span>
-<span><span class="co">## Lowest tail ESS:       491</span></span>
+<span><span class="co">## Lowest E-BFMI:         0.76</span></span>
+<span><span class="co">## Worst R-hat:           1.010  (seeds_aux)</span></span>
+<span><span class="co">## Lowest bulk ESS:       342  (R|lockdown)</span></span>
+<span><span class="co">## Lowest tail ESS:       266</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Warnings:</span></span>
-<span><span class="co">## * Bulk ESS of 380 for R|Sigma[country:(Intercept),(Intercept)] is 95</span></span>
-<span><span class="co">##   per chain, below the 100 per chain that keeps posterior summaries</span></span>
-<span><span class="co">##   stable.</span></span></code></pre>
+<span><span class="co">## * Bulk ESS of 342 for R|lockdown is 86 per chain, below the 100 per</span></span>
+<span><span class="co">##   chain that keeps posterior summaries stable.</span></span></code></pre>
 <p>The three quantities answer different questions. <strong>Divergent transitions</strong> mean
 the sampler could not follow the posterior’s curvature; they bias the result and
 drawing more samples does not help, so they have to be fixed by raising
@@ -399,27 +397,27 @@ Figure 2: Inferred reproduction numbers in each country, plotted as a step funct
 <p>The global lockdown effect <span class="math inline">\(\beta\)</span> and the country deviations <span class="math inline">\(b^{(m)}\)</span> are
 separate parameters. As in the multilevel tutorial, a country’s total effect is
 <span class="math inline">\(\beta + b^{(m)}\)</span>, recovered from the draws with <code><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix()</a></code>.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fm</span>, par_models <span class="op">=</span> <span class="st">"R"</span>, par_types <span class="op">=</span> <span class="st">"fixed"</span><span class="op">)</span></span>
 <span><span class="va">b</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fm</span>, regex_pars <span class="op">=</span> <span class="st">"^R\\|b\\[lockdown"</span>, par_groups <span class="op">=</span> <span class="va">groups</span><span class="op">)</span></span>
 <span><span class="va">total</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sweep.html" class="external-link">sweep</a></span><span class="op">(</span><span class="va">b</span>, MARGIN <span class="op">=</span> <span class="fl">1</span>, STATS <span class="op">=</span> <span class="va">beta</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span>, FUN <span class="op">=</span> <span class="st">"+"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">total</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">groups</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">total</span>, <span class="fl">2</span>, <span class="va">quantile</span>, probs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.05</span>, <span class="fl">0.5</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##                   5%   50%   95%</span></span>
-<span><span class="co">## Austria        -4.20 -3.74 -3.39</span></span>
-<span><span class="co">## Belgium        -2.84 -2.66 -2.49</span></span>
-<span><span class="co">## Denmark        -1.80 -1.62 -1.45</span></span>
-<span><span class="co">## France         -3.10 -2.91 -2.76</span></span>
+<span><span class="co">## Austria        -4.15 -3.72 -3.38</span></span>
+<span><span class="co">## Belgium        -2.81 -2.63 -2.46</span></span>
+<span><span class="co">## Denmark        -1.79 -1.60 -1.42</span></span>
+<span><span class="co">## France         -3.05 -2.86 -2.71</span></span>
 <span><span class="co">## Germany        -2.63 -2.50 -2.37</span></span>
-<span><span class="co">## Italy          -2.51 -2.40 -2.29</span></span>
-<span><span class="co">## Norway         -1.45 -1.33 -1.20</span></span>
-<span><span class="co">## Spain          -5.76 -5.02 -4.48</span></span>
-<span><span class="co">## Sweden         -4.26 -2.51 -0.77</span></span>
-<span><span class="co">## Switzerland    -2.46 -2.35 -2.23</span></span>
-<span><span class="co">## United_Kingdom -2.12 -2.01 -1.90</span></span></code></pre>
+<span><span class="co">## Italy          -2.42 -2.31 -2.21</span></span>
+<span><span class="co">## Norway         -1.45 -1.31 -1.18</span></span>
+<span><span class="co">## Spain          -5.39 -4.70 -4.26</span></span>
+<span><span class="co">## Sweden         -4.11 -2.48 -0.77</span></span>
+<span><span class="co">## Switzerland    -2.42 -2.30 -2.19</span></span>
+<span><span class="co">## United_Kingdom -2.08 -1.97 -1.86</span></span></code></pre>
 <p>The country-specific case ascertainment intercepts, by contrast, are ordinary
 fixed effects and can be read straight off the parameter names.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span><span class="st">"^cases\\|"</span>, <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fm</span><span class="op">)</span><span class="op">)</span>, value <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##  [1] "cases|countryAustria"        "cases|countryBelgium"       </span></span>
 <span><span class="co">##  [3] "cases|countryDenmark"        "cases|countryFrance"        </span></span>
@@ -439,7 +437,7 @@ infections rather than the infections themselves.</p>
 which — because <code>scaled_logit(K)</code> is stored as a plain logit with <span class="math inline">\(K\)</span> folded into
 <code>i2o</code> — returns <span class="math inline">\(\text{logit}^{-1}(\eta)\)</span> and <strong>not</strong> the rate itself. Multiply
 by <span class="math inline">\(K\)</span> to recover the ascertainment ratio.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">K_cases</span> <span class="op">&lt;-</span> <span class="fl">0.4</span></span>
 <span><span class="va">iar</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_linpred.html">posterior_linpred</a></span><span class="op">(</span><span class="va">fm</span>, type <span class="op">=</span> <span class="st">"cases"</span>, transform <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
@@ -447,34 +445,34 @@ by <span class="math inline">\(K\)</span> to recover the ascertainment ratio.</p
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">iar</span><span class="op">$</span><span class="va">draws</span><span class="op">[</span>, <span class="va">iar</span><span class="op">$</span><span class="va">group</span> <span class="op">==</span> <span class="va">g</span><span class="op">]</span><span class="op">)</span> <span class="op">*</span> <span class="va">K_cases</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">iar_by_country</span>, <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##        Austria        Belgium        Denmark         France        Germany </span></span>
-<span><span class="co">##          0.265          0.069          0.186          0.059          0.268 </span></span>
+<span><span class="co">##          0.269          0.066          0.182          0.056          0.260 </span></span>
 <span><span class="co">##          Italy         Norway          Spain         Sweden    Switzerland </span></span>
-<span><span class="co">##          0.057          0.317          0.081          0.045          0.197 </span></span>
+<span><span class="co">##          0.051          0.316          0.074          0.042          0.188 </span></span>
 <span><span class="co">## United_Kingdom </span></span>
-<span><span class="co">##          0.051</span></span></code></pre>
+<span><span class="co">##          0.045</span></span></code></pre>
 <p>Now compare the implied totals. If the model were fitting infections directly,
 these ratios would sit at one.</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">infections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_infections.html">posterior_infections</a></span><span class="op">(</span><span class="va">fm</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running standalone generated quantities after 1 MCMC chain...</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Chain 1 finished in 0.0 seconds.</span></span></code></pre>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">predicted</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://mc-stan.org/rstantools/reference/posterior_predict.html" class="external-link">posterior_predict</a></span><span class="op">(</span><span class="va">fm</span>, types <span class="op">=</span> <span class="st">"cases"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running standalone generated quantities after 1 MCMC chain...</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Chain 1 finished in 0.0 seconds.</span></span></code></pre>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ratio</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">groups</span>, <span class="kw">function</span><span class="op">(</span><span class="va">g</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">predicted</span><span class="op">$</span><span class="va">draws</span><span class="op">[</span>, <span class="va">predicted</span><span class="op">$</span><span class="va">group</span> <span class="op">==</span> <span class="va">g</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">infections</span><span class="op">$</span><span class="va">draws</span><span class="op">[</span>, <span class="va">infections</span><span class="op">$</span><span class="va">group</span> <span class="op">==</span> <span class="va">g</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">ratio</span>, <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">##        Austria        Belgium        Denmark         France        Germany </span></span>
-<span><span class="co">##          0.260          0.065          0.168          0.056          0.256 </span></span>
+<span><span class="co">##          0.263          0.062          0.165          0.053          0.250 </span></span>
 <span><span class="co">##          Italy         Norway          Spain         Sweden    Switzerland </span></span>
-<span><span class="co">##          0.054          0.307          0.077          0.027          0.195 </span></span>
+<span><span class="co">##          0.049          0.306          0.072          0.026          0.186 </span></span>
 <span><span class="co">## United_Kingdom </span></span>
-<span><span class="co">##          0.044</span></span></code></pre>
+<span><span class="co">##          0.040</span></span></code></pre>
 <p>The two agree: only a fraction of infections becomes a recorded case, and that
 fraction is a fitted quantity that differs by country. Italy’s much lower
 ascertainment is the model’s way of reconciling a large inferred epidemic with a
@@ -487,7 +485,7 @@ comparatively small number of confirmed cases.</p>
 <p>Forecasting works exactly as in the single-series case: build a data frame
 covering the longer period and pass it as <code>newdata</code>. Every observation series is
 projected forward.</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">newdata</span> <span class="op">&lt;-</span> <span class="va">data</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running standalone generated quantities after 1 MCMC chain...</span></span>
 <span><span class="co">## </span></span>
@@ -503,21 +501,21 @@ Figure 3: Out-of-sample forecasts for both series. The model was fitted only up 
 </div>
 <p>Forecasts can also be scored. <code><a href="../reference/evaluate_forecast.html">evaluate_forecast()</a></code> returns daily error metrics
 and credible-interval coverage, for one series at a time.</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ev</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/evaluate_forecast.html">evaluate_forecast</a></span><span class="op">(</span><span class="va">fm</span>, newdata <span class="op">=</span> <span class="va">newdata</span>, type <span class="op">=</span> <span class="st">"deaths"</span>,</span>
 <span>                        levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">95</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running standalone generated quantities after 1 MCMC chain...</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Chain 1 finished in 0.0 seconds.</span></span></code></pre>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ev</span><span class="op">$</span><span class="va">error</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##     group       date     crps mean_abs_error median_abs_error</span></span>
-<span><span class="co">## 1 Austria 2020-02-23 0.00e+00         0.0000                0</span></span>
-<span><span class="co">## 2 Austria 2020-02-24 0.00e+00         0.0000                0</span></span>
-<span><span class="co">## 3 Austria 2020-02-25 0.00e+00         0.0000                0</span></span>
-<span><span class="co">## 4 Austria 2020-02-26 0.00e+00         0.0000                0</span></span>
-<span><span class="co">## 5 Austria 2020-02-27 0.00e+00         0.0000                0</span></span>
-<span><span class="co">## 6 Austria 2020-02-28 2.25e-06         0.0015                0</span></span></code></pre>
+<pre><code><span><span class="co">##     group       date    crps mean_abs_error median_abs_error</span></span>
+<span><span class="co">## 1 Austria 2020-02-23 0.0e+00          0e+00                0</span></span>
+<span><span class="co">## 2 Austria 2020-02-24 0.0e+00          0e+00                0</span></span>
+<span><span class="co">## 3 Austria 2020-02-25 0.0e+00          0e+00                0</span></span>
+<span><span class="co">## 4 Austria 2020-02-26 0.0e+00          0e+00                0</span></span>
+<span><span class="co">## 5 Austria 2020-02-27 2.5e-07          5e-04                0</span></span>
+<span><span class="co">## 6 Austria 2020-02-28 2.5e-07          5e-04                0</span></span></code></pre>
 <pre><code><span><span class="co">## Running standalone generated quantities after 1 MCMC chain...</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Chain 1 finished in 0.0 seconds.</span></span></code></pre>

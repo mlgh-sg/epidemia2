@@ -274,8 +274,8 @@ default is <code>1</code>, which corresponds to no smoothing.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   This procedure has not been thoroughly tested and may be unstable </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   or buggy. The interface is subject to change. </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------ </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Gradient evaluation took 0.000621 seconds </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1000 transitions using 10 leapfrog steps per transition would take 6.21 seconds. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Gradient evaluation took 0.00064 seconds </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1000 transitions using 10 leapfrog steps per transition would take 6.4 seconds. </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Adjust your expectations accordingly! </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Begin eta adaptation. </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Iteration:   1 / 250 [  0%]  (Adaptation) </span>
@@ -287,111 +287,111 @@ default is <code>1</code>, which corresponds to no smoothing.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Success! Found best value [eta = 0.1]. </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Begin stochastic gradient ascent. </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   iter             ELBO   delta_ELBO_mean   delta_ELBO_med   notes  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    100       -12564.656             1.000            1.000 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    200        -7616.279             0.825            1.000 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    300        -4418.754             0.791            0.724 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    400        -3482.389             0.661            0.724 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    500        -3286.507             0.540            0.650 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    600        -2748.405             0.483            0.650 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    700        -2429.817             0.433            0.269 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    800        -2466.154             0.380            0.269 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    900        -1858.797             0.374            0.269 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1000        -1783.876             0.341            0.269 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1100        -1606.415             0.252            0.196 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1200        -1608.129             0.187            0.131 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1300        -1412.967             0.129            0.131 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1400        -1418.648             0.102            0.110 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1500        -1239.419             0.111            0.131 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1600        -1187.959             0.096            0.110 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1700        -1188.581             0.083            0.043 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1800        -1136.147             0.086            0.046 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1900        -1161.259             0.055            0.043 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2000        -1086.384             0.058            0.046 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2100        -1102.434             0.048            0.043 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2200        -1028.861             0.055            0.046 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2300        -1029.647             0.042            0.043 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2400        -1015.375             0.043            0.043 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2500         -991.992             0.030            0.024 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2600         -987.169             0.027            0.022 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2700         -985.940             0.027            0.022 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2800         -998.150             0.023            0.015 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2900         -959.803             0.025            0.015 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3000         -984.480             0.021            0.015 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3100         -972.671             0.021            0.014 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3200         -958.460             0.015            0.014 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3300         -961.169             0.015            0.014 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3400         -947.345             0.015            0.015 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3500         -956.334             0.014            0.012 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3600         -956.851             0.013            0.012 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3700         -946.955             0.014            0.012 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3800         -944.959             0.013            0.012 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3900         -950.063             0.010            0.010 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4000         -951.692             0.007            0.009 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4100         -945.356             0.007            0.007 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4200         -935.736             0.006            0.007 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4300         -946.324             0.007            0.009 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4400         -936.581             0.007            0.009 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4500         -929.176             0.007            0.008 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4600         -935.461             0.007            0.008 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4700         -939.771             0.007            0.007 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4800         -930.044             0.008            0.008 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4900         -929.907             0.007            0.008 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5000         -925.010             0.007            0.008 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5100         -930.120             0.007            0.008 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5200         -934.518             0.007            0.007 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5300         -928.864             0.006            0.006 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5400         -926.138             0.005            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5500         -924.682             0.005            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5600         -923.552             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5700         -925.678             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5800         -930.174             0.003            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5900         -920.703             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   6000         -923.863             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   6100         -915.439             0.005            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   6200         -917.973             0.004            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   6300         -925.978             0.005            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   6400         -917.889             0.005            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   6500         -921.228             0.006            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   6600         -916.181             0.006            0.006 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   6700         -915.070             0.006            0.006 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   6800         -919.995             0.006            0.006 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   6900         -919.765             0.005            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   7000         -914.784             0.005            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   7100         -922.327             0.005            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   7200         -917.651             0.005            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   7300         -911.132             0.005            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   7400         -909.527             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   7500         -912.507             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   7600         -912.139             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   7700         -912.779             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   7800         -912.633             0.003            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   7900         -908.169             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   8000         -917.951             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   8100         -910.985             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   8200         -913.086             0.004            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   8300         -907.917             0.004            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   8400         -909.226             0.004            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   8500         -912.256             0.004            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   8600         -909.347             0.004            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   8700         -909.429             0.004            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   8800         -914.688             0.005            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   8900         -907.193             0.005            0.006 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   9000         -912.019             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   9100         -909.071             0.004            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   9200         -910.826             0.004            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   9300         -906.600             0.004            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   9400         -912.381             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   9500         -907.631             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   9600         -906.583             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   9700         -905.301             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   9800         -905.782             0.004            0.005 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   9900         -903.136             0.003            0.003 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   10000         -904.283             0.003            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    100       -12292.457             1.000            1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    200        -7639.668             0.805            1.000 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    300        -4116.047             0.822            0.856 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    400        -3519.440             0.659            0.856 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    500        -3162.763             0.549            0.609 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    600        -2486.302             0.503            0.609 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    700        -2219.272             0.449            0.272 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    800        -2151.122             0.396            0.272 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    900        -1765.129             0.377            0.219 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1000        -1739.218             0.341            0.219 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1100        -1591.421             0.250            0.170 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1200        -1598.828             0.189            0.120 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1300        -1426.693             0.116            0.120 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1400        -1389.314             0.102            0.113 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1500        -1262.350             0.100            0.101 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1600        -1220.042             0.077            0.093 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1700        -1263.856             0.068            0.035 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1800        -1170.681             0.073            0.080 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1900        -1186.729             0.052            0.035 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2000        -1114.438             0.057            0.065 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2100        -1188.079             0.054            0.062 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2200        -1027.057             0.069            0.065 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2300        -1037.020             0.058            0.062 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2400        -1027.416             0.057            0.062 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2500         -997.922             0.049            0.035 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2600         -982.403             0.048            0.035 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2700         -967.794             0.046            0.030 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2800         -986.083             0.040            0.019 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2900         -956.184             0.041            0.030 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3000         -962.656             0.035            0.019 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3100         -952.237             0.030            0.016 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3200         -948.886             0.015            0.015 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3300         -948.041             0.014            0.015 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3400         -946.852             0.013            0.015 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3500         -943.183             0.011            0.011 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3600         -942.610             0.009            0.007 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3700         -929.727             0.009            0.007 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3800         -932.210             0.008            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3900         -940.104             0.005            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4000         -936.347             0.005            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4100         -931.769             0.004            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4200         -923.217             0.005            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4300         -930.049             0.006            0.005 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4400         -922.827             0.006            0.007 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4500         -913.623             0.007            0.008 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4600         -920.880             0.008            0.008 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4700         -925.816             0.007            0.008 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4800         -918.190             0.007            0.008 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4900         -917.420             0.007            0.008 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5000         -914.291             0.007            0.008 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5100         -916.690             0.006            0.008 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5200         -922.115             0.006            0.007 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5300         -918.645             0.006            0.006 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5400         -914.726             0.005            0.005 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5500         -911.682             0.005            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5600         -913.647             0.004            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5700         -911.353             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5800         -918.608             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5900         -911.167             0.004            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6000         -912.343             0.004            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6100         -905.920             0.005            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6200         -907.900             0.004            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6300         -911.157             0.004            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6400         -907.124             0.004            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6500         -912.731             0.005            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6600         -906.482             0.005            0.006 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6700         -907.547             0.005            0.006 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6800         -909.254             0.004            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6900         -909.510             0.003            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   7000         -907.486             0.004            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   7100         -912.386             0.003            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   7200         -909.789             0.003            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   7300         -902.626             0.004            0.004 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   7400         -902.052             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   7500         -903.911             0.003            0.002 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   7600         -903.709             0.002            0.002 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   7700         -904.331             0.002            0.002 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   7800         -905.874             0.002            0.002 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   7900         -899.795             0.003            0.002 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   8000         -907.901             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   8100         -903.503             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   8200         -905.967             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   8300         -900.675             0.003            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   8400         -902.355             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   8500         -904.378             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   8600         -901.777             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   8700         -902.558             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   8800         -906.790             0.004            0.005 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   8900         -900.076             0.004            0.005 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   9000         -904.375             0.004            0.005 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   9100         -902.486             0.004            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   9200         -903.736             0.003            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   9300         -899.524             0.003            0.003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   9400         -905.213             0.004            0.005 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   9500         -900.806             0.004            0.005 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   9600         -900.676             0.004            0.005 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   9700         -899.428             0.004            0.005 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   9800         -899.306             0.003            0.005 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   9900         -898.560             0.003            0.002 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   10000         -898.397             0.002            0.001 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Informational Message: The maximum number of iterations is reached! The algorithm may not have converged. </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> This variational approximation is not guaranteed to be meaningful. </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Drawing a sample of size 1000 from the approximate posterior...  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> COMPLETED. </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Finished in  3.0 seconds.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Finished in  2.9 seconds.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># different ways of using plot_rt</span></span></span>
 <span class="r-in"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="plot_rt.html">plot_rt</a></span><span class="op">(</span><span class="va">fm</span><span class="op">)</span> <span class="co"># default, plots all groups and dates</span></span></span>

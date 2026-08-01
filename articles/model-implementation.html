@@ -682,28 +682,28 @@ not generally be used as such output is useful.</p>
 <span>           seed <span class="op">=</span> <span class="fl">12345</span>, refresh <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running MCMC with 4 parallel chains...</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpKedsGp/model-688950a100be.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/Rtmpu2fdEk/model-68bf7785ddce.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpKedsGp/model-688950a100be.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/Rtmpu2fdEk/model-68bf7785ddce.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 1</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 4 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/RtmpKedsGp/model-688950a100be.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
+<pre><code><span><span class="co">## Chain 4 Exception: neg_binomial_2_lpmf: Location parameter[1] is inf, but must be positive finite! (in '/tmp/Rtmpu2fdEk/model-68bf7785ddce.stan', line 157, column 8 to line 158, column 61)</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.</span></span></code></pre>
 <pre><code><span><span class="co">## Chain 4</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 finished in 11.5 seconds.</span></span>
-<span><span class="co">## Chain 2 finished in 12.3 seconds.</span></span>
-<span><span class="co">## Chain 4 finished in 12.2 seconds.</span></span>
-<span><span class="co">## Chain 3 finished in 12.7 seconds.</span></span>
+<pre><code><span><span class="co">## Chain 4 finished in 10.6 seconds.</span></span>
+<span><span class="co">## Chain 2 finished in 11.2 seconds.</span></span>
+<span><span class="co">## Chain 3 finished in 11.2 seconds.</span></span>
+<span><span class="co">## Chain 1 finished in 11.7 seconds.</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## All 4 chains finished successfully.</span></span>
-<span><span class="co">## Mean chain execution time: 12.2 seconds.</span></span>
-<span><span class="co">## Total execution time: 12.8 seconds.</span></span></code></pre>
+<span><span class="co">## Mean chain execution time: 11.2 seconds.</span></span>
+<span><span class="co">## Total execution time: 11.8 seconds.</span></span></code></pre>
 <p>The print method for <code>epimodel</code> objects prints summary statistics for
 model parameters. These are obtained from the sampled posterior distribution.
 Parameter are displayed
@@ -719,9 +719,9 @@ distributions.</p>
 <span><span class="co">## ==========</span></span>
 <span><span class="co">## coefficients:</span></span>
 <span><span class="co">##                 Median MAD_SD</span></span>
-<span><span class="co">## R|(Intercept)    0.7    0.1  </span></span>
-<span><span class="co">## R|lockdown      -2.4    0.3  </span></span>
-<span><span class="co">## R|public_events -0.4    0.3  </span></span>
+<span><span class="co">## R|(Intercept)    0.6    0.2  </span></span>
+<span><span class="co">## R|lockdown      -2.3    0.3  </span></span>
+<span><span class="co">## R|public_events -0.5    0.3  </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">##  deaths  regression parameters:</span></span>
 <span><span class="co">## ==========</span></span>
@@ -733,8 +733,8 @@ distributions.</p>
 <span><span class="co">## Infection model parameters:</span></span>
 <span><span class="co">## ==========</span></span>
 <span><span class="co">##               Median MAD_SD</span></span>
-<span><span class="co">## seeds[France] 15.0    4.9  </span></span>
-<span><span class="co">## seeds_aux     27.7   22.1</span></span></code></pre>
+<span><span class="co">## seeds[France] 21.8    7.4  </span></span>
+<span><span class="co">## seeds_aux     32.4   23.6</span></span></code></pre>
 <p>Alternatively, the summary method can be used. This gives quantiles of the
 posterior draws, and also displays some MCMC diagnostics.</p>
 <div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
@@ -743,24 +743,24 @@ posterior draws, and also displays some MCMC diagnostics.</p>
 <span><span class="co">## </span></span>
 <span><span class="co">## Estimates:</span></span>
 <span><span class="co">##                                mean   sd   10%   50%   90%</span></span>
-<span><span class="co">## R|(Intercept)                 0.7    0.1  0.5   0.7   0.9 </span></span>
-<span><span class="co">## R|lockdown                   -2.4    0.3 -2.8  -2.4  -2.1 </span></span>
-<span><span class="co">## R|public_events              -0.4    0.3 -0.8  -0.4   0.0 </span></span>
+<span><span class="co">## R|(Intercept)                 0.6    0.2  0.4   0.6   0.8 </span></span>
+<span><span class="co">## R|lockdown                   -2.3    0.3 -2.7  -2.3  -2.0 </span></span>
+<span><span class="co">## R|public_events              -0.5    0.3 -0.9  -0.5  -0.1 </span></span>
 <span><span class="co">## deaths|(Intercept)            0.0    0.2 -0.3   0.0   0.3 </span></span>
-<span><span class="co">## seeds[France]                15.8    5.2  9.9  15.0  22.7 </span></span>
-<span><span class="co">## seeds_aux                    38.9   35.3  9.2  27.7  82.2 </span></span>
-<span><span class="co">## deaths|reciprocal dispersion 10.5    0.5 10.1  10.4  11.1 </span></span>
+<span><span class="co">## seeds[France]                23.0    7.8 14.2  21.8  32.9 </span></span>
+<span><span class="co">## seeds_aux                    43.4   36.7 11.6  32.4  89.5 </span></span>
+<span><span class="co">## deaths|reciprocal dispersion 10.6    0.6 10.1  10.4  11.3 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## MCMC diagnostics</span></span>
 <span><span class="co">##                              mcse Rhat n_eff</span></span>
-<span><span class="co">## R|(Intercept)                0.0  1.0  1194 </span></span>
-<span><span class="co">## R|lockdown                   0.0  1.0  1402 </span></span>
-<span><span class="co">## R|public_events              0.0  1.0  1066 </span></span>
-<span><span class="co">## deaths|(Intercept)           0.0  1.0  1939 </span></span>
-<span><span class="co">## seeds[France]                0.1  1.0  1317 </span></span>
-<span><span class="co">## seeds_aux                    1.0  1.0  1175 </span></span>
-<span><span class="co">## deaths|reciprocal dispersion 0.0  1.0  1266 </span></span>
-<span><span class="co">## log-posterior                0.1  1.0   813</span></span></code></pre>
+<span><span class="co">## R|(Intercept)                0.0  1.0  1375 </span></span>
+<span><span class="co">## R|lockdown                   0.0  1.0  1138 </span></span>
+<span><span class="co">## R|public_events              0.0  1.0  1001 </span></span>
+<span><span class="co">## deaths|(Intercept)           0.0  1.0  1657 </span></span>
+<span><span class="co">## seeds[France]                0.2  1.0  1477 </span></span>
+<span><span class="co">## seeds_aux                    1.0  1.0  1183 </span></span>
+<span><span class="co">## deaths|reciprocal dispersion 0.0  1.0  1117 </span></span>
+<span><span class="co">## log-posterior                0.1  1.0   777</span></span></code></pre>
 </div>
 </div>
 <div class="section level2" number="2">

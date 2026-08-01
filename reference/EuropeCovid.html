@@ -121,8 +121,19 @@ includes empirical distributions for the serial interval and the time from infec
 The earliest date for each country in the dataframe is exactly 30 days before 10 cumulative deaths were observed in the country.</p></dd>
 
 <dt>inf2death</dt>
-<dd><p>A numeric vector representing the time distribution from infection to death assumed in Flaxman et al. (2020)
-.</p></dd>
+<dd><p>A numeric vector giving the time from infection to death:
+infection-to-onset \(\sim\) Gamma(mean 5.1, cv 0.86) plus onset-to-death
+\(\sim\) Gamma(mean 18.8, cv 0.45), as in
+Flaxman et al. (2020)
+. Entry \(k\) carries the mass
+in \((k-1, k]\), so the kernel places no mass at lag zero and its mean lag
+is 24.4 days, half a day above the distribution's own 23.9. This matches the
+convention of <code>si</code> and epidemia's lag-1-first convolution, in which
+entry 1 weights infections one day earlier. Note this is NOT how
+Flaxman et al. (2020)
+ discretises it – the paper uses
+the midpoint rule – so the reproduction vignette builds its own kernel.
+Regenerate with <code>data-raw/inf2death.R</code>.</p></dd>
 
 <dt>si</dt>
 <dd><p>The serial interval of covid-19 assumed in Flaxman et al. (2020)
