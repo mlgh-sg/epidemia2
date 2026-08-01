@@ -833,3 +833,176 @@ def test_centring_uses_modelled_rows_not_padding():
     modelled = _modelled_rows(X, lengths)
     assert modelled.shape[0] == int(lengths.sum())
     assert modelled.mean() > X.reshape(-1, 1).mean() + 1.0   # padding drags it down
+
+
+def test_linear_pop_adjust_cannot_drive_susceptibles_negative():
+    """(S/P)*pre is not self-limiting; without a floor S goes negative -> NaN.
+
+    Flaxman's Rt_adj = (S/P)*Rt has no guard because his populations dwarf his
+    infection counts. Ours must, or a small-population fit produces NaN.
+    """
+    from epidemia.core import (EpiModelConfig, ObsModel, PanelData,
+                               build_epidemia_model)
+
+    rng = np.random.default_rng(0)
+    Mr, Tt, POP = 2, 40, 1e4          # small pool: real depletion
+    pan = PanelData(X=np.zeros((Mr, Tt, 0)), lengths=np.full(Mr, Tt),
+                    regions=["A", "B"], npis=[],
+                    dates=[pd.date_range("2020-03-01", periods=Tt).values] * Mr,
+                    pops=np.full(Mr, POP))
+    gen = np.ones(5) / 5
+    om = ObsModel("d", rng.poisson(50, (Mr, Tt)).astype(float),
+                  np.ones((Mr, Tt), bool), gen)
+    m = build_epidemia_model(pan, [om], EpiModelConfig(
+        gen=gen, region_effects=True, pop_adjust="linear",
+        seed_prior_mean=200.0))
+    assert np.isfinite(m.compile_logp()(m.initial_point()))
+
+
+def test_linear_and_saturating_agree_to_first_order():
+    """The two depletion forms coincide when i'/P is small, and diverge when not."""
+    import pytensor.tensor as pt
+    from epidemia.core import _depletion
+
+    POP = 1e6
+    for pre, tol in [(1e2, 1e-3), (1e4, 1e-2)]:
+        lin = float(_depletion(pt, pt.as_tensor(POP), pt.as_tensor(float(pre)),
+                               pt.as_tensor(POP), "linear").eval())
+        sat = float(_depletion(pt, pt.as_tensor(POP), pt.as_tensor(float(pre)),
+                               pt.as_tensor(POP), "saturating").eval())
+        assert abs(lin / sat - 1.0) < tol
+    # at heavy depletion they must NOT agree
+    lin = float(_depletion(pt, pt.as_tensor(POP), pt.as_tensor(5e5),
+                           pt.as_tensor(POP), "linear").eval())
+    sat = float(_depletion(pt, pt.as_tensor(POP), pt.as_tensor(5e5),
+                           pt.as_tensor(POP), "saturating").eval())
+    assert lin / sat > 1.2
+
+
+def test_true_and_saturating_are_the_same_mode():
+    """pop_adjust=True must keep meaning exactly what it did before."""
+    from epidemia.core import (EpiModelConfig, ObsModel, PanelData,
+                               build_epidemia_model)
+
+    rng = np.random.default_rng(0)
+    Mr, Tt = 2, 30
+    pan = PanelData(X=np.zeros((Mr, Tt, 0)), lengths=np.full(Mr, Tt),
+                    regions=["A", "B"], npis=[],
+                    dates=[pd.date_range("2020-03-01", periods=Tt).values] * Mr,
+                    pops=np.full(Mr, 1e6))
+    gen = np.ones(5) / 5
+    om = ObsModel("d", rng.poisson(20, (Mr, Tt)).astype(float),
+                  np.ones((Mr, Tt), bool), gen)
+    lps = []
+    for mode in (True, "saturating"):
+        m = build_epidemia_model(pan, [om], EpiModelConfig(
+            gen=gen, region_effects=True, pop_adjust=mode))
+        lps.append(float(m.compile_logp()(m.initial_point())))
+    assert lps[0] == pytest.approx(lps[1])
+
+
+# --------------------------------------------------------------------------
+# fixed_effects: a covariate can be random-only, as R's formula allows
+# --------------------------------------------------------------------------
+
+
+def _mask_panel(K=3):
+    """Panel whose last covariate is non-zero for ONE region only.
+
+    That is the shape of Flaxman's column 7 -- a Sweden-only copy of public
+    events, carrying a country effect and no pooled coefficient.
+    """
+    from epidemia.core import ObsModel, PanelData
+
+    rng = np.random.default_rng(0)
+    Mr, Tt = 3, 40
+    X = np.zeros((Mr, Tt, K))
+    X[:, 20:, 0] = 1.0
+    X[:, 25:, 1] = 1.0
+    X[2, 30:, 2] = 1.0
+    pan = PanelData(X=X, lengths=np.full(Mr, Tt), regions=["A", "B", "C"],
+                    npis=["a", "b", "swe"][:K],
+                    dates=[pd.date_range("2020-03-01", periods=Tt).values] * Mr,
+                    pops=np.full(Mr, 1e7))
+    om = ObsModel("d", rng.poisson(20, (Mr, Tt)).astype(float),
+                  np.ones((Mr, Tt), bool), np.ones(5) / 5)
+    return pan, om
+
+
+def test_fixed_effects_masks_the_pooled_coefficient():
+    """A masked covariate gets no beta but keeps its country effect."""
+    from epidemia.core import EpiModelConfig, build_epidemia_model
+
+    pan, om = _mask_panel()
+    gen = np.ones(5) / 5
+    m = build_epidemia_model(pan, [om], EpiModelConfig(
+        gen=gen, region_effects=True, fixed_effects=[True, True, False]))
+    assert m["beta"].eval().shape == (2,)
+    assert list(m.coords["npi_fixed"]) == ["a", "b"]
+    # the random slopes still span every covariate
+    assert m["b"].eval().shape == (3, 3)
+
+
+def test_fixed_effects_accepts_names_and_defaults_to_all():
+    from epidemia.core import EpiModelConfig, build_epidemia_model
+
+    pan, om = _mask_panel()
+    gen = np.ones(5) / 5
+    by_name = build_epidemia_model(pan, [om], EpiModelConfig(
+        gen=gen, region_effects=True, fixed_effects=["a", "b"]))
+    by_mask = build_epidemia_model(pan, [om], EpiModelConfig(
+        gen=gen, region_effects=True, fixed_effects=[True, True, False]))
+    assert list(by_name.coords["npi_fixed"]) == list(by_mask.coords["npi_fixed"])
+
+    full = build_epidemia_model(pan, [om], EpiModelConfig(
+        gen=gen, region_effects=True))
+    assert full["beta"].eval().shape == (3,)
+
+
+def test_fixed_effects_rejects_bad_specs():
+    from epidemia.core import EpiModelConfig, build_epidemia_model
+
+    pan, om = _mask_panel()
+    gen = np.ones(5) / 5
+    with pytest.raises(ValueError, match="not covariates"):
+        build_epidemia_model(pan, [om], EpiModelConfig(
+            gen=gen, fixed_effects=["nope"]))
+    with pytest.raises(ValueError, match="one entry per covariate"):
+        build_epidemia_model(pan, [om], EpiModelConfig(
+            gen=gen, fixed_effects=[True, False]))
+    with pytest.raises(ValueError, match="excludes every covariate"):
+        build_epidemia_model(pan, [om], EpiModelConfig(
+            gen=gen, fixed_effects=[False, False, False]))
+
+
+def test_masked_beta_lands_in_the_right_columns():
+    """Masking the MIDDLE covariate must not shift the others' coefficients.
+
+    The scatter-back is the part that can silently misalign: if beta were
+    written into the first n_fe slots instead of the unmasked ones, the last
+    covariate would quietly pick up the second coefficient. Pinning beta to
+    known values and comparing the predictor catches that; comparing at the
+    models' own initial points would not, since the two models draw different
+    numbers of parameters and so start from different points.
+    """
+    from epidemia.core import EpiModelConfig, build_epidemia_model
+    from epidemia.priors import normal
+
+    pan, om = _mask_panel()
+    gen = np.ones(5) / 5
+    common = dict(gen=gen, region_effects=False, intercept=False,
+                  prior_covariates=normal(0.0, 1.0))
+
+    full = build_epidemia_model(pan, [om], EpiModelConfig(**common))
+    masked = build_epidemia_model(pan, [om], EpiModelConfig(
+        fixed_effects=[True, False, True], **common))
+
+    # zeroing the middle coefficient of the full model == dropping it
+    rt_full = full["Rt_unadj"].eval({full["beta"]: np.array([1.0, 0.0, 3.0])})
+    rt_mask = masked["Rt_unadj"].eval({masked["beta"]: np.array([1.0, 3.0])})
+    np.testing.assert_allclose(rt_full, rt_mask, rtol=1e-12)
+    assert list(masked.coords["npi_fixed"]) == ["a", "swe"]
+
+    # and it is genuinely sensitive: the dropped column must not absorb b's slot
+    rt_wrong = full["Rt_unadj"].eval({full["beta"]: np.array([1.0, 3.0, 0.0])})
+    assert not np.allclose(rt_wrong, rt_mask)

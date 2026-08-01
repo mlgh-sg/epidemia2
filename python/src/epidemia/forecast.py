@@ -65,7 +65,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .core import EpiModelConfig, ObsModel, PanelData
+from .core import EpiModelConfig, ObsModel, PanelData, _fixed_mask
 from .predict import expected_observations, posterior_predict
 
 __all__ = ["Forecast", "forecast"]
@@ -855,15 +855,20 @@ def forecast(idata, panel: PanelData, obs_models, config: EpiModelConfig,
         eta += np.asarray(b0_all, dtype=float)[idx][:, :, None]  # (S, M)
 
     if K:
-        coef = take("beta").reshape(S, 1, K)
+        # beta spans only the columns carrying a pooled coefficient; b spans all
+        # of them. They are no longer the same width, so accumulate separately.
+        fe = _fixed_mask(getattr(config, "fixed_effects", None), K, panel.npis)
+        n_fe = int(fe.sum())
+        beta = np.asarray(take("beta"), dtype=float).reshape(S, 1, n_fe)
+        eta += np.einsum("smk,mtk->smt",
+                         np.broadcast_to(beta, (S, M, n_fe)), X_ext[:, :, fe])
         # region_effects=False builds no per-region slope deviations, so `b` is
         # absent -- a fully pooled fit with covariates could not be forecast at
         # all while this was required.
         b = take("b", required=False)
         if b is not None:
-            coef = coef + np.asarray(b, dtype=float).reshape(S, M, K)
-        eta += np.einsum("smk,mtk->smt",
-                         np.broadcast_to(coef, (S, M, K)), X_ext)
+            eta += np.einsum("smk,mtk->smt",
+                             np.asarray(b, dtype=float).reshape(S, M, K), X_ext)
 
     if config.rw is not None:
         eta += _walk_eta(config.rw, "", take, rng, M, T_fit, T_ext, lengths,

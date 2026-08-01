@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from .core import _fixed_mask
+
 __all__ = [
     "posterior_linpred",
     "posterior_infectious",
@@ -78,8 +80,12 @@ def posterior_linpred(idata, panel, config, series=None, obs_models=None,
             if "intercept" in post:
                 eta += _flat(post["intercept"])[:, None, None]
             if K and "beta" in post:
-                beta = _flat(post["beta"])                  # (S, K)
-                eta += np.einsum("mtk,sk->smt", X, beta)
+                beta = _flat(post["beta"])                  # (S, n_fe)
+                # beta spans only the columns carrying a pooled coefficient,
+                # which is a strict subset when fixed_effects masks any out.
+                fe = _fixed_mask(getattr(config, "fixed_effects", None),
+                                 K, panel.npis)
+                eta += np.einsum("mtk,sk->smt", X[:, :, fe], beta)
         if random:
             if "b0" in post:
                 eta += _flat(post["b0"])[:, :, None]

@@ -223,6 +223,14 @@ class EpiModelConfig:
     sd_slope_fixed : object
         Hold the slope SDs fixed instead of estimating them, selecting the
         no-pooling / full-pooling regimes. Ignored when ``correlated``.
+    fixed_effects : object
+        Which covariates carry a POOLED coefficient. ``None`` (the default)
+        means all of them. Otherwise a boolean mask of length ``K``, or a list
+        of covariate names to keep. Columns left out still get a country
+        effect through ``region_effects``, so this is Python's spelling of R's
+        ``R(g, d) ~ x + (0 + x + z || g)``, where ``z`` appears only inside the
+        random-effect term and so has no fixed effect. Flaxman et al. (2020)
+        need exactly that for their Sweden-only column.
     rw : RandomWalk | list[RandomWalk] | None
         One or more random walks on the ``R_t`` linear predictor; a list is
         summed, as R does with several ``rw()`` terms in one formula.
@@ -296,6 +304,7 @@ class EpiModelConfig:
     #: this one", which is how Flaxman's model gives a country deviation to
     #: lockdown alone.
     sd_slope_fixed: object = None
+    fixed_effects: object = None
     rw: RandomWalk | list[RandomWalk] | None = None
     seed_days: int = 6
     seed_pooling: bool = True
@@ -305,7 +314,10 @@ class EpiModelConfig:
     latent_aux_loc: float = 10.0
     latent_aux_scale: float = 5.0
     fixed_vtm: bool = True
-    pop_adjust: bool = False
+    #: ``False``, ``True``/``"saturating"`` for epidemia's own
+    #: ``S(1 - exp(-i'/P))``, or ``"linear"`` for Flaxman et al.'s
+    #: ``(S/P) * R_t``. The two agree to first order in ``i'/P``.
+    pop_adjust: object = False
     prior_susc_mean: float | None = None
     prior_susc_sd: float = 0.1
     _extra: dict = field(default_factory=dict, repr=False)
@@ -585,6 +597,52 @@ def _likelihood(pm, pt, obs: ObsModel, E, aux_name, prior_PD=False):
 
 
 
+
+def _depletion(pt, S, pre, pops, mode):
+    """Infections from the unadjusted renewal term, given the susceptible pool.
+
+    ``"saturating"`` (epidemia's own, and R's ``gen_infections.stan``) is
+    ``S * (1 - exp(-pre / P))``: a Poisson-style thinning that cannot exceed the
+    pool no matter how large ``pre`` gets.
+
+    ``"linear"`` is Flaxman et al.'s ``Rt_adj = (S / P) * Rt``, i.e.
+    ``(S / P) * pre`` -- a first-order approximation to the same thing. It agrees
+    with the saturating form to first order in ``pre / P`` and diverges as the
+    epidemic depletes a meaningful share of the population.
+    """
+    if mode == "linear":
+        # The saturating form is self-limiting; the linear one is NOT. Without a
+        # floor, S goes negative once infections accumulate, infections follow it
+        # negative, and the whole trajectory becomes NaN. Flaxman gets away with
+        # an unguarded (pop - cumsum)/pop only because his populations dwarf his
+        # infection counts.
+        return pt.maximum(S, 0.0) / pops * pre
+    return S * (1.0 - pt.exp(-pre / pops))
+
+
+def _fixed_mask(spec, K, npis):
+    """Boolean mask of the covariates that carry a pooled coefficient."""
+    if spec is None:
+        return np.ones(K, dtype=bool)
+    spec = list(spec)
+    if spec and all(isinstance(s, str) for s in spec):
+        unknown = [s for s in spec if s not in npis]
+        if unknown:
+            raise ValueError(
+                f"fixed_effects names {unknown} are not covariates; "
+                f"have {list(npis)}")
+        return np.array([n in set(spec) for n in npis], dtype=bool)
+    mask = np.asarray(spec, dtype=bool)
+    if mask.shape != (K,):
+        raise ValueError(
+            f"fixed_effects must have one entry per covariate ({K}), got "
+            f"{mask.shape[0]}")
+    if not mask.any():
+        raise ValueError("fixed_effects excludes every covariate; use npis=[] "
+                         "instead if no covariates are wanted")
+    return mask
+
+
 def _modelled_rows(X, lengths):
     """The design restricted to genuine days, dropping each region's padding."""
     Xa = np.asarray(X, dtype=float)
@@ -675,9 +733,18 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
     if config.pop_adjust and data.pops is None:
         raise ValueError("pop_adjust=True requires PanelData.pops")
 
+    # Which columns carry a POOLED coefficient. R writes this in the formula --
+    # a covariate named only inside `(... || group)` gets a country effect and no
+    # fixed effect. Python shares one design matrix between beta and b, so the
+    # split is a mask instead. Flaxman needs it: base-nature.stan multiplies
+    # X[,1:6] by alpha[1:6] but X[,7] by last_intervention[m] alone.
+    fe_mask = _fixed_mask(config.fixed_effects, K, data.npis)
+    fe_npis = [n for n, keep in zip(data.npis, fe_mask) if keep]
+
     coords = {
         "region": list(data.regions),
         "npi": list(data.npis),
+        "npi_fixed": fe_npis,
         "region_time": np.arange(T),
     }
     with pm.Model(coords=coords) as model:
@@ -707,11 +774,16 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             b0 = b = None
 
         if K:
+            n_fe = int(fe_mask.sum())
+            # Autoscaling reads column SDs, so it must see the SAME columns the
+            # coefficients are built for -- otherwise scales are taken off the
+            # wrong covariate.
+            X_fe = data.X[:, :, fe_mask]
             if config.prior_covariates is not None:
                 beta = _priors.build(
-                    _maybe_autoscale(config.prior_covariates, data.X,
+                    _maybe_autoscale(config.prior_covariates, X_fe,
                                      config.autoscale, data.lengths),
-                    "beta", shape=K, allowed=_priors.OK_DISTS)
+                    "beta", shape=n_fe, allowed=_priors.OK_DISTS)
             else:
                 # The default is a shifted gamma -- effects a priori
                 # non-positive. This is a DELIBERATE departure: R's epirt()
@@ -725,17 +797,26 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 default_beta = _priors.shifted_gamma(
                     shape=config.beta_shape, scale=config.beta_scale,
                     shift=config.beta_shift)
-                scaled = _maybe_autoscale(default_beta, data.X, config.autoscale,
+                scaled = _maybe_autoscale(default_beta, X_fe, config.autoscale,
                                           data.lengths)
                 g_beta = pm.Gamma("g_beta", alpha=scaled.shape,
-                                  beta=1.0 / scaled.scale, dims="npi")
+                                  beta=1.0 / scaled.scale, dims="npi_fixed")
                 beta = pm.Deterministic("beta", scaled.shift - g_beta,
-                                        dims="npi")
+                                        dims="npi_fixed")
+            # beta spans the masked columns; b spans all of them. Scatter beta
+            # back to full width so the two can be added, leaving a hard zero
+            # wherever a column is random-only.
+            if n_fe == K:
+                beta_full = beta
+            else:
+                beta_full = pt.zeros(K)
+                beta_full = pt.set_subtensor(
+                    beta_full[np.flatnonzero(fe_mask)], beta)
             if b is None:
                 eta = eta + (pt.as_tensor_variable(X)
-                             * beta[None, None, :]).sum(axis=2)
+                             * beta_full[None, None, :]).sum(axis=2)
             else:
-                coef = beta[None, :] + b                   # (M, K)
+                coef = beta_full[None, :] + b              # (M, K)
                 eta = eta + (pt.as_tensor_variable(X)
                              * coef[:, None, :]).sum(axis=2)
 
@@ -781,6 +862,9 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             raw = pm.HalfFlat("infections_raw", shape=(M, T - v))
 
         if config.pop_adjust:
+            # True is the historical spelling of "saturating".
+            _adjust_mode = ("linear" if str(config.pop_adjust).lower() == "linear"
+                            else "saturating")
             pops = pt.as_tensor_variable(np.asarray(data.pops, dtype=float))
             if config.prior_susc_mean is None:
                 # pt.specify_shape keeps the scan's recurrent state shape
@@ -876,7 +960,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                     # floor.
                     pre = sflag * seed_t + (1.0 - sflag) * R_t * pt.dot(buf, gen)
                     unsat = sflag * seed_t + (1.0 - sflag) * raw_t
-                    i_t = S * (1.0 - pt.exp(-unsat / pops))
+                    i_t = _depletion(pt, S, unsat, pops, _adjust_mode)
                     return (
                         pt.concatenate([i_t[:, None], buf[:, :-1]], axis=1),
                         (1.0 - v_t) * (S - i_t),
@@ -888,7 +972,7 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
             else:
                 def step(R_t, v_t, sflag, seed_t, buf, S):
                     pre = sflag * seed_t + (1.0 - sflag) * R_t * pt.dot(buf, gen)
-                    i_t = S * (1.0 - pt.exp(-pre / pops))
+                    i_t = _depletion(pt, S, pre, pops, _adjust_mode)
                     return (
                         pt.concatenate([i_t[:, None], buf[:, :-1]], axis=1),
                         (1.0 - v_t) * (S - i_t),
