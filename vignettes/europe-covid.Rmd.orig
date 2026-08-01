@@ -280,15 +280,14 @@ distribution for the time from infection to death as that used in
 ## Model Fitting
 <hr>
 
-In general, **epidemia**'s models should be fit using Hamiltonian
-Monte Carlo. For this example, however, we use Variational Bayes (VB) as
-opposed to full MCMC sampling. This is because full MCMC sampling of a
-joint model of this size is computationally demanding, due in part to
-renewal equation having to be evaluated for each region and for each
-evaluation of the likelihood and its derivatives. Nonetheless, VB allows
-rapid iteration of models and may lead to reasonable estimates of effect
-sizes. For this example, we have also run full MCMC, and the inferences
-reported here are not substantially different.
+**epidemia**'s models are fit using Hamiltonian Monte Carlo, and this example
+is no exception. Sampling a joint model of this size is computationally
+demanding -- the renewal equation is evaluated for every region at every
+evaluation of the likelihood and its derivatives -- so it is slower than a
+variational approximation by a wide margin. It is nonetheless what the results
+below are based on, because the quantities of interest here are effect sizes
+and their uncertainty, and a variational approximation reports those with
+intervals that are too narrow to compare honestly.
 
 ### Prior Check
 
@@ -326,19 +325,32 @@ knitr::include_graphics("multilevel-prior-plot.png")
 ```
 
 
-### Approximating the Posterior
+### Fitting the Posterior
 
-The model will be fit using Variational Bayes by using
-`algorithm = "fullrank"` in the call to `epim()`. This is
-generally preferable to `"meanfield"` for these models, largely
-because `"meanfield"` ignores posterior correlations. We decrease
-the parameter `tol_rel_obj` from its default value, and increase
-the number of iterations to aid convergence.
+The model is fit with the NUTS sampler (`algorithm = "sampling"`, the
+default). Earlier versions of this tutorial used Variational Bayes
+(`algorithm = "fullrank"`) because it is much faster, but a variational
+approximation understates posterior uncertainty and CmdStan declined to
+certify the fit as converged. Since the interest here is in comparing effect
+sizes between measures, and those are exactly the quantities a variational
+approximation reports too confidently, the extra cost of MCMC is worth paying.
 
 ```{r multilevel-fit-model, cache=TRUE, warning=FALSE}
-args$algorithm <- "fullrank"; args$iter <- 5e4; args$tol_rel_obj <- 1e-3
+args$algorithm <- "sampling"
+args$iter <- 2e3
+args$chains <- 4
+args$control <- list(adapt_delta = 0.99, max_treedepth = 14)
 fm <- do.call(epim, args)
 ```
+
+```{r multilevel-diagnostics}
+sampler_diagnostics(fm)
+```
+
+`adapt_delta` and `max_treedepth` are both raised above their defaults. This
+posterior has the funnel geometry that hierarchical models with several
+partially pooled slopes tend to have, and at the defaults it produces divergent
+transitions -- which bias the posterior rather than merely slowing it down.
 
 A first step in evaluating the model fit is to perform posterior
 predictive checks. This is to confirm that the model adequately explains
@@ -422,11 +434,13 @@ knitr::include_graphics("multilevel-plot-effects.png")
 Calling `bayesplot::mcmc_intervals(mat)` leads to the results shown
 in the right panel of Figure \@ref(fig:multilevel-effects-plots).
 
-Figure \@ref(fig:multilevel-effects-plots) has relatively narrow
-intervals for many of the effect sizes. This appears to be an artifact
-of using Variational Bayes. In particular, when repeating this analysis
-with full MCMC, we observe that the intervals for all policies other
-than lockdown overlap with zero.
+The intervals in Figure \@ref(fig:multilevel-effects-plots) are wide for every
+measure other than lockdown, and all of them overlap zero. That is the honest
+picture: the five measures were enacted within days of each other, so the
+design columns are close to collinear and the individual coefficients are only
+weakly identified. An earlier version of this tutorial fit the model by
+Variational Bayes and reported visibly narrower intervals, which was an
+artefact of the approximation rather than evidence about the measures.
 
 Consider now the role of partial pooling in this analysis. Figure
 \@ref(fig:multilevel-rt-plots) shows that Sweden did enough to reduce $R$
