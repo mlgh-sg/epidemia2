@@ -52,12 +52,27 @@ opts_knit$set(bookdown.internal.label = TRUE)
 model_mtime <- suppressWarnings(max(file.mtime(c(
   list.files(file.path(root, "R"), full.names = TRUE, pattern = "\\.[Rr]$"),
   list.files(file.path(root, "inst", "stan"), full.names = TRUE,
-             recursive = TRUE)
+             recursive = TRUE),
+  # the shipped data objects carry the delay kernels, so a change there moves
+  # every fitted number even though no code changed
+  list.files(file.path(root, "data"), full.names = TRUE)
 )), -Inf))
 
 is_stale <- function(src, out) {
   if (force || !file.exists(out)) return(TRUE)
   file.mtime(out) < max(file.mtime(src), model_mtime)
+}
+
+# knitr invalidates a cached chunk when ITS OWN code changes, not when the data
+# underneath it does. A change to data/ or R/ is therefore replayed from cache
+# and the vignette reports stale numbers under new prose -- which is exactly
+# what happened when the inf2death kernel was corrected. --force drops the whole
+# cache, since chunk labels need not begin with the vignette's name (europe-covid
+# labels its chunks `multilevel-*`) and any per-vignette pattern would miss them.
+if (force && dir.exists("cache")) {
+  n <- length(list.files("cache"))
+  unlink("cache", recursive = TRUE)
+  message("== Dropped the knitr cache (", n, " files) ==")
 }
 
 skipped <- character()
