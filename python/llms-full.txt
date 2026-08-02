@@ -134,7 +134,7 @@ Licensed GPL-3.0-or-later, as the R package is.
 !!! note "Which builder to read about"
     This page describes the **single-population** builder,
     [`EpiConfig`][epidemia.EpiConfig] / [`build_model`][epidemia.build_model].
-    It is the simplest entry point and still what the `europe-covid` and
+    It is the simplest entry point and still what the `partial-pooling` and
     `partial-pooling` notebooks use, but it is **superseded**: it has a random
     walk and one population only.
 

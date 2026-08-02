@@ -430,10 +430,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#one-difference-from-the-r-vignettes-worth-knowing" class="md-nav__link">
+  <a href="#both-ports-sample" class="md-nav__link">
     <span class="md-ellipsis">
       
-        One difference from the R vignettes worth knowing
+        Both ports sample
       
     </span>
   </a>
@@ -486,34 +486,6 @@
     
   
     Spanish flu in Baltimore
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="europe-covid/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Assessing the effects of interventions
   
 
     
@@ -598,6 +570,62 @@
     
   
     Several observation series
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="flaxman/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproducing Flaxman et al. (2020)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="b117/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Transmissibility of a new variant
   
 
     
@@ -753,10 +781,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#one-difference-from-the-r-vignettes-worth-knowing" class="md-nav__link">
+  <a href="#both-ports-sample" class="md-nav__link">
     <span class="md-ellipsis">
       
-        One difference from the R vignettes worth knowing
+        Both ports sample
       
     </span>
   </a>
@@ -825,11 +853,6 @@ notebook — open it in Jupyter or VS Code, or run it with <code>python</code>.<
 <td>The smallest interesting model: one population, one series, a daily random walk on <code>R_t</code>. Compares the deterministic renewal recursion against the latent (<code>latent=True</code>) one, and forecasts from it.</td>
 </tr>
 <tr>
-<td><a href="europe-covid/">Assessing the effects of interventions</a></td>
-<td><a href="https://mlgh-sg.com/epidemia2/articles/europe-covid.html">Multilevel Modeling</a></td>
-<td>A partially pooled model of five NPIs across 11 European countries, fitted to daily deaths. Effect sizes, per-region reproduction numbers, counterfactuals.</td>
-</tr>
-<tr>
 <td><a href="multiple-obs/">Tracking SARS-CoV-2 in England</a></td>
 <td><a href="https://mlgh-sg.com/epidemia2/articles/multiple-obs.html">Multiple Observations</a></td>
 <td>Daily case counts and weekly ONS positivity fitted jointly to one region. Series observed on different days, day-of-week reporting effects, and an <code>i2o</code> that deliberately does not sum to one.</td>
@@ -851,18 +874,20 @@ notebook once and commits the rendered markdown and figures, exactly as the R
 side's <code>vignettes/precompute.R</code> bakes the vignettes. Nothing is fitted when the
 documentation is built. Re-bake after changing the modelling code:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>--group<span class="w"> </span>dev<span class="w"> </span>python<span class="w"> </span>scripts/precompute.py<span class="w">            </span><span class="c1"># all five</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>run<span class="w"> </span>--group<span class="w"> </span>dev<span class="w"> </span>python<span class="w"> </span>scripts/precompute.py<span class="w"> </span>europe-covid
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>run<span class="w"> </span>--group<span class="w"> </span>dev<span class="w"> </span>python<span class="w"> </span>scripts/precompute.py<span class="w"> </span>b117
 </code></pre></div>
 <p>The notebook sources live in
 <a href="https://github.com/mlgh-sg/epidemia2/tree/main/python/notebooks"><code>notebooks/</code></a>
 as jupytext percent files — each is a runnable script <em>and</em> a notebook.</p>
-<h2 id="one-difference-from-the-r-vignettes-worth-knowing">One difference from the R vignettes worth knowing<a class="headerlink" href="#one-difference-from-the-r-vignettes-worth-knowing" title="Permanent link">&para;</a></h2>
-<p>The R <code>europe-covid</code> vignette fits with <strong>variational Bayes</strong> for speed, and says
-so plainly — it notes that the resulting intervals are "relatively narrow ... an
-artifact of using Variational Bayes". These notebooks fit the same model with
-<strong>full NUTS</strong>, so the credible intervals are the genuine posterior ones and are
-wider than the vignette's. That is the intervals being right, not the model
-disagreeing.</p>
+<h2 id="both-ports-sample">Both ports sample<a class="headerlink" href="#both-ports-sample" title="Permanent link">&para;</a></h2>
+<p>Every tutorial here and every R vignette fits with <strong>full NUTS</strong>. An earlier
+version of the R multilevel tutorial used variational Bayes for speed and noted
+that its intervals were "relatively narrow ... an artifact of using Variational
+Bayes"; that is no longer the case anywhere, so the credible intervals in both
+ports are the genuine posterior ones and are directly comparable.</p>
+<p>Where the two ports fit the same model they are expected to agree, and the
+tutorials check it: the B.1.1.7 notebook and its R vignette both land on the
+transmissibility advantage published by Volz et al. (2021).</p>
 <p>If you want to know what that costs in wall-clock, see <a href="../performance/">Performance</a>.</p>
 <h2 id="running-them">Running them<a class="headerlink" href="#running-them" title="Permanent link">&para;</a></h2>
 <p>From the <code>python/</code> directory:</p>
@@ -872,7 +897,7 @@ disagreeing.</p>
 </code></pre></div>
 <p>Then open either notebook and select the <strong>Python (epidemia)</strong> kernel, or run it
 as a script:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>notebooks/europe-covid.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>notebooks/b117.py
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">These fit real models</p>
