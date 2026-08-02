@@ -1006,3 +1006,26 @@ def test_masked_beta_lands_in_the_right_columns():
     # and it is genuinely sensitive: the dropped column must not absorb b's slot
     rt_wrong = full["Rt_unadj"].eval({full["beta"]: np.array([1.0, 3.0, 0.0])})
     assert not np.allclose(rt_wrong, rt_mask)
+
+
+def test_unmasked_beta_keeps_the_plain_npi_dim():
+    """fixed_effects must not rename beta's dim when nothing is masked.
+
+    Setting dims="npi_fixed" unconditionally broke every consumer that selects
+    beta on "npi" -- `idata.posterior["beta"].sel(npi=...)` raised KeyError --
+    which is most of the notebooks, not just the one using the mask.
+    """
+    from epidemia.core import EpiModelConfig, build_epidemia_model
+
+    pan, om = _mask_panel()
+    gen = np.ones(5) / 5
+    plain = build_epidemia_model(pan, [om], EpiModelConfig(
+        gen=gen, region_effects=True))
+    assert plain["beta"].eval().shape == (3,)
+    assert "npi_fixed" not in plain.coords
+    assert list(plain.coords["npi"]) == ["a", "b", "swe"]
+
+    masked = build_epidemia_model(pan, [om], EpiModelConfig(
+        gen=gen, region_effects=True, fixed_effects=["a", "b"]))
+    assert list(masked.coords["npi_fixed"]) == ["a", "b"]
+    assert list(masked.coords["npi"]) == ["a", "b", "swe"]   # b still spans all

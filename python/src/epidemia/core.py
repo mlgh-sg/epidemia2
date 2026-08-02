@@ -740,13 +740,18 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
     # X[,1:6] by alpha[1:6] but X[,7] by last_intervention[m] alone.
     fe_mask = _fixed_mask(config.fixed_effects, K, data.npis)
     fe_npis = [n for n, keep in zip(data.npis, fe_mask) if keep]
+    # When nothing is masked, beta still spans every covariate, so it keeps the
+    # plain "npi" dim. Renaming it unconditionally would break every consumer
+    # that selects beta on "npi" -- which is what happened the first time.
+    fe_dim = "npi" if len(fe_npis) == K else "npi_fixed"
 
     coords = {
         "region": list(data.regions),
         "npi": list(data.npis),
-        "npi_fixed": fe_npis,
         "region_time": np.arange(T),
     }
+    if fe_dim != "npi":
+        coords["npi_fixed"] = fe_npis
     with pm.Model(coords=coords) as model:
         # ---- transmission -------------------------------------------------
         eta = pt.zeros((M, T))
@@ -800,9 +805,9 @@ def build_epidemia_model(data: PanelData, obs_models, config: EpiModelConfig):
                 scaled = _maybe_autoscale(default_beta, X_fe, config.autoscale,
                                           data.lengths)
                 g_beta = pm.Gamma("g_beta", alpha=scaled.shape,
-                                  beta=1.0 / scaled.scale, dims="npi_fixed")
+                                  beta=1.0 / scaled.scale, dims=fe_dim)
                 beta = pm.Deterministic("beta", scaled.shift - g_beta,
-                                        dims="npi_fixed")
+                                        dims=fe_dim)
             # beta spans the masked columns; b spans all of them. Scatter beta
             # back to full width so the two can be added, leaving a hard zero
             # wherever a column is random-only.
