@@ -57,6 +57,7 @@ from .data import (
     england_new_cases,
     europe_covid,
     europe_covid2,
+    england_b117,
     flu1918,
 )
 from .infer import fit
@@ -127,6 +128,7 @@ __all__ = [
     "crps",
     "effect_table",
     "europe_covid2",
+    "england_b117",
     "evaluate_forecast",
     "expected_observations",
     "fit",

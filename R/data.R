@@ -67,3 +67,43 @@
 #' @references
 #' \insertAllCited{}
 "EnglandNewCases"
+
+#' SGTF-split case counts for England, autumn 2020 to January 2021
+#'
+#' Daily PCR case counts for England split by S-gene target failure (SGTF), the
+#' data behind \insertCite{Volz2021;textual}{epidemia}'s estimate of the
+#' transmissibility advantage of SARS-CoV-2 lineage B.1.1.7.
+#'
+#' Routine testing in England used a three-target assay. B.1.1.7 carries a
+#' deletion that makes the S-gene target fail while the other two still
+#' amplify, so SGTF acts as a proxy for the lineage without sequencing every
+#' sample. Each area-day therefore splits into S-gene negative (B.1.1.7) and
+#' S-gene positive (everything else) counts, already adjusted for testing
+#' effort by the original authors.
+#'
+#' @format A list with five elements:
+#' \describe{
+#'  \item{data}{A data frame of 5,880 rows: \code{date}, \code{area},
+#'  \code{corrected_positive} (non-B.1.1.7), \code{corrected_negative}
+#'  (B.1.1.7) and \code{epiweek}, for 49 areas over 120 days
+#'  (2020-09-26 to 2021-01-23).}
+#'  \item{pop}{Populations for 42 of those areas. The remaining seven are NHS
+#'  England \emph{regions} -- aggregates of the others -- which the source does
+#'  not size, so they cannot be used with \code{epiinf(pop_adjust = TRUE)}.}
+#'  \item{iar}{England-wide daily infection ascertainment rate.}
+#'  \item{iar_sd}{Standard deviation of the ascertainment rate, used as the
+#'  prior scale on the observation coefficient.}
+#'  \item{i2o}{Infection-to-observation kernel. The observations are weekly
+#'  case totals attached to a daily series, so a daily delay distribution is
+#'  spread over seven offsets; it therefore sums to 7, not 1.}
+#' }
+#'
+#' @details The counts are aggregates. The raw SGSS line-list behind them is
+#' disclosure-controlled -- counts below five are suppressed at source -- so the
+#' raw-to-aggregate step cannot be reproduced outside PHE. Regenerate the
+#' aggregates with \code{data-raw/england-b117.R}, which pulls them from
+#' \code{mrc-ide/sarscov2-b.1.1.7} at tag \code{v1.0} (MIT licensed).
+#'
+#' @references
+#'  \insertAllCited{}
+"EnglandB117"

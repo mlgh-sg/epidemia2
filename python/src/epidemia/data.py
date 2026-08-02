@@ -114,6 +114,82 @@ def europe_covid2() -> EuropeCovid2:
     return EuropeCovid2(data=df, si=si, inf2death=inf2death)
 
 
+@dataclass
+class EnglandB117:
+    """SGTF-split case counts for England, autumn 2020 to January 2021.
+
+    The data behind Volz et al. (2021), "Assessing transmissibility of
+    SARS-CoV-2 lineage B.1.1.7 in England", *Nature* 593, 266-269. Mirrors
+    ``data("EnglandB117")`` in the R package.
+
+    Routine PCR testing in England used a three-target assay, and B.1.1.7
+    carries a deletion that makes the S-gene target fail while the other two
+    still amplify. "S-gene target failure" therefore acts as a proxy for the
+    lineage without sequencing every sample.
+
+    Attributes
+    ----------
+    data : pandas.DataFrame
+        ``date, area, corrected_positive, corrected_negative, epiweek`` for 49
+        areas over 120 days. ``corrected_negative`` is B.1.1.7 (S-gene
+        negative); ``corrected_positive`` is everything else.
+    pop : pandas.DataFrame
+        ``area, pop`` for 42 of those areas. The other seven are NHS England
+        *regions* -- aggregates of the rest -- which the source does not size,
+        so they cannot be used with ``pop_adjust``.
+    iar : pandas.DataFrame
+        ``date, iar``: England-wide daily infection ascertainment rate.
+    iar_sd : float
+        Its standard deviation, used as the prior scale on the observation
+        coefficient.
+    i2o : numpy.ndarray
+        Infection-to-observation kernel. The observations are weekly case
+        totals attached to a daily series, so a daily delay distribution is
+        spread over seven offsets and this sums to **7, not 1**.
+    published : pandas.DataFrame
+        The paper's own fitted estimates: ``area, epiweek, ratio, rt_b117,
+        rt_other``. Shipped so a reproduction can check itself against the
+        published numbers rather than against a value copied by hand.
+    published_england : pandas.DataFrame
+        ``epiweek, median, lower, upper``: the England-wide time-varying
+        advantage, pooled across areas.
+    """
+
+    data: object
+    pop: object
+    iar: object
+    iar_sd: float
+    i2o: np.ndarray
+    published: object
+    published_england: object
+
+
+def england_b117() -> EnglandB117:
+    """Return the :class:`EnglandB117` dataset.
+
+    The counts are aggregates. The raw SGSS line-list behind them is
+    disclosure-controlled -- counts below five are suppressed at source -- so
+    the raw-to-aggregate step cannot be reproduced outside PHE.
+    """
+    import pandas as pd
+
+    files = resources.files("epidemia.data_files")
+
+    def _csv(name, **kw):
+        with resources.as_file(files / name) as p:
+            return pd.read_csv(p, **kw)
+
+    return EnglandB117(
+        data=_csv("england_b117.csv", parse_dates=["date"]),
+        pop=_csv("england_b117_pop.csv"),
+        iar=_csv("england_b117_iar.csv", parse_dates=["date"]),
+        iar_sd=float(_csv("england_b117_iar_sd.csv")["iar_sd"].iloc[0]),
+        i2o=_csv("england_b117_i2o.csv")["i2o"].to_numpy(dtype=float).copy(),
+        published=_csv("england_b117_published.csv"),
+        published_england=_csv("england_b117_published_england.csv"),
+    )
+
+
 # The 11 countries in EuropeCovid, in the order R's factor levels put them. The
 # factor actually carries 14 levels (Greece, Netherlands and Portugal are unused
 # leftovers from the wider ECDC extract), so listing the observed ones here keeps
