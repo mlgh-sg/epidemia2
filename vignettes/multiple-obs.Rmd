@@ -27,7 +27,7 @@ pkgdown:
 Previous examples conditioned on a single observation series (case and
 death counts respectively). Simple models were used for describing
 ascertainment rates. The flu [example](flu.html) assumed
-*full ascertainment* of infections, while the multilevel [example](europe-covid.html) took the IFR to be *constant but unknown*.
+*full ascertainment* of infections, while the multilevel [example](multilevel-multi-obs.html) took the IFR to be *constant but unknown*.
 Population adjustments were not considered, and both examples modeled
 the entire history of the epidemic from the first observed cases.
 
@@ -159,7 +159,7 @@ i_t &= S_t \left( 1 - \exp\left(-\frac{i'_t}{P}\right)\right),
 ```
 where $P$ is the population size and $S_t$ is the time-varying
 susceptible population. We use the same generation distribution $\pi_k$
-as in the [multilevel model](europe-covid.html). The initial susceptible population
+as in the [multilevel model](multilevel-multi-obs.html). The initial susceptible population
 $S_{v}$ is given a prior $S_v \sim \mathcal{N}(0.48, 0.10)$. This is
 motivated by an ONS antibody survey [@ons_antibody], which estimates
 that 51% of the population in England would have tested positive for
@@ -339,16 +339,16 @@ fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data,
 ## Chain 4 Iteration:  200 / 4000 [  5%]  (Warmup) 
 ## Chain 3 Iteration:  300 / 4000 [  7%]  (Warmup) 
 ## Chain 2 Iteration:  300 / 4000 [  7%]  (Warmup) 
-## Chain 4 Iteration:  300 / 4000 [  7%]  (Warmup) 
 ## Chain 1 Iteration:  300 / 4000 [  7%]  (Warmup) 
+## Chain 4 Iteration:  300 / 4000 [  7%]  (Warmup) 
 ## Chain 3 Iteration:  400 / 4000 [ 10%]  (Warmup) 
 ## Chain 2 Iteration:  400 / 4000 [ 10%]  (Warmup) 
 ## Chain 4 Iteration:  400 / 4000 [ 10%]  (Warmup) 
 ## Chain 1 Iteration:  400 / 4000 [ 10%]  (Warmup) 
 ## Chain 2 Iteration:  500 / 4000 [ 12%]  (Warmup) 
 ## Chain 3 Iteration:  500 / 4000 [ 12%]  (Warmup) 
-## Chain 4 Iteration:  500 / 4000 [ 12%]  (Warmup) 
 ## Chain 1 Iteration:  500 / 4000 [ 12%]  (Warmup) 
+## Chain 4 Iteration:  500 / 4000 [ 12%]  (Warmup) 
 ## Chain 2 Iteration:  600 / 4000 [ 15%]  (Warmup) 
 ## Chain 3 Iteration:  600 / 4000 [ 15%]  (Warmup) 
 ## Chain 1 Iteration:  600 / 4000 [ 15%]  (Warmup) 
@@ -385,14 +385,14 @@ fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data,
 ## Chain 1 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
 ## Chain 3 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
 ## Chain 4 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
-## Chain 2 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
 ## Chain 1 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
-## Chain 4 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
+## Chain 2 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
 ## Chain 3 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
-## Chain 2 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
+## Chain 4 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
 ## Chain 1 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
-## Chain 4 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
+## Chain 2 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
 ## Chain 3 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
+## Chain 4 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
 ## Chain 1 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
 ## Chain 2 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
 ## Chain 4 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
@@ -414,8 +414,8 @@ fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data,
 ## Chain 3 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
 ## Chain 3 Iteration: 2001 / 4000 [ 50%]  (Sampling) 
 ## Chain 1 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
-## Chain 4 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
 ## Chain 2 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
+## Chain 4 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
 ## Chain 3 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
 ## Chain 1 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
 ## Chain 2 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
@@ -425,82 +425,82 @@ fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data,
 ## Chain 2 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
 ## Chain 4 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
 ## Chain 3 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
-## Chain 4 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
 ## Chain 1 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
 ## Chain 2 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
+## Chain 4 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
 ## Chain 3 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
-## Chain 4 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
-## Chain 2 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
 ## Chain 1 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
+## Chain 2 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
+## Chain 4 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
 ## Chain 3 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
-## Chain 4 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
-## Chain 2 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
 ## Chain 1 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
+## Chain 4 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
 ## Chain 3 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
-## Chain 4 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
-## Chain 2 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
 ## Chain 1 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
+## Chain 2 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
+## Chain 4 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
 ## Chain 3 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
-## Chain 4 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
-## Chain 2 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
 ## Chain 1 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
+## Chain 2 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
+## Chain 4 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
 ## Chain 3 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
+## Chain 1 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
 ## Chain 2 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
 ## Chain 4 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
-## Chain 1 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
 ## Chain 3 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
-## Chain 4 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
-## Chain 2 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
 ## Chain 1 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
+## Chain 2 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
+## Chain 4 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
 ## Chain 3 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
-## Chain 4 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
-## Chain 2 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
 ## Chain 1 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
+## Chain 2 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
+## Chain 4 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
 ## Chain 3 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
-## Chain 4 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
-## Chain 2 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
 ## Chain 1 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
+## Chain 2 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
 ## Chain 3 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
-## Chain 4 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 2 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
 ## Chain 1 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
+## Chain 2 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
+## Chain 4 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
 ## Chain 3 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 4 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 2 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
 ## Chain 1 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
+## Chain 2 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
+## Chain 4 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
 ## Chain 3 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 4 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 2 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
 ## Chain 1 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
+## Chain 2 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
+## Chain 4 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
 ## Chain 3 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 4 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
-## Chain 2 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
 ## Chain 1 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
+## Chain 2 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
+## Chain 4 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
 ## Chain 3 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
-## Chain 4 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
-## Chain 2 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
 ## Chain 1 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
+## Chain 2 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
+## Chain 4 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
 ## Chain 3 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
-## Chain 4 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
-## Chain 2 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
 ## Chain 1 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
+## Chain 2 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
+## Chain 4 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
 ## Chain 3 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
-## Chain 4 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
 ## Chain 2 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
 ## Chain 1 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
+## Chain 4 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
 ## Chain 3 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
-## Chain 4 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 4 finished in 154.3 seconds.
 ## Chain 2 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 2 finished in 154.5 seconds.
+## Chain 2 finished in 171.8 seconds.
 ## Chain 1 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 1 finished in 155.2 seconds.
+## Chain 4 Iteration: 4000 / 4000 [100%]  (Sampling) 
+## Chain 1 finished in 172.0 seconds.
+## Chain 4 finished in 172.0 seconds.
 ## Chain 3 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 3 finished in 156.6 seconds.
+## Chain 3 finished in 173.0 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 155.2 seconds.
-## Total execution time: 156.7 seconds.
+## Mean chain execution time: 172.2 seconds.
+## Total execution time: 173.2 seconds.
 ```
 
 Figure \@ref(fig:eng-rt) plots credible intervals for $R_t$ over the two

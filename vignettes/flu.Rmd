@@ -194,11 +194,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 1 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
+## Chain 1 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -222,11 +222,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 2 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
+## Chain 2 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -250,11 +250,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 3 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[88, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
+## Chain 3 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[88, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -278,11 +278,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 4 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
+## Chain 4 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -298,47 +298,47 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 ## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 ## Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 ## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 ## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 ## Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
@@ -347,8 +347,8 @@ system.time(fm1 <- do.call(epim, args))
 ## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
@@ -356,45 +356,45 @@ system.time(fm1 <- do.call(epim, args))
 ## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
 ## Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
 ## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
 ## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 3 finished in 29.2 seconds.
-## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 2 finished in 29.6 seconds.
-## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 1 finished in 29.7 seconds.
+## Chain 3 finished in 37.9 seconds.
 ## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 4 finished in 29.8 seconds.
+## Chain 4 finished in 38.3 seconds.
+## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 finished in 38.5 seconds.
+## Chain 1 finished in 38.5 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 29.5 seconds.
-## Total execution time: 29.9 seconds.
+## Mean chain execution time: 38.3 seconds.
+## Total execution time: 38.7 seconds.
 ```
 
 ```
 ##    user  system elapsed 
-## 111.923   2.763  31.666
+## 148.508   1.144  40.954
 ```
 
 ``` r
@@ -412,11 +412,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -440,11 +440,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -468,11 +468,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[18, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[18, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -496,11 +496,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -519,19 +519,19 @@ system.time(fm2 <- do.call(epim, args_ext))
 ## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 ## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
@@ -547,49 +547,49 @@ system.time(fm2 <- do.call(epim, args_ext))
 ## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 3 finished in 3.4 seconds.
-## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 3 finished in 4.4 seconds.
 ## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
@@ -598,21 +598,21 @@ system.time(fm2 <- do.call(epim, args_ext))
 ## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
 ## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 1 finished in 4.3 seconds.
-## Chain 4 finished in 4.2 seconds.
+## Chain 4 finished in 5.4 seconds.
+## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 1 finished in 5.6 seconds.
 ## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 2 finished in 4.4 seconds.
+## Chain 2 finished in 5.7 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 4.1 seconds.
-## Total execution time: 4.5 seconds.
+## Mean chain execution time: 5.3 seconds.
+## Total execution time: 5.8 seconds.
 ```
 
 ```
 ##    user  system elapsed 
-##  16.837   0.718   6.461
+##  22.078   0.620   8.249
 ```
 Note the stark difference in running time. The extended model appears to fit 
 faster even though there are $87$ additional parameters being sampled (daily 

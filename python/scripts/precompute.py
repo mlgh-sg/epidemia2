@@ -159,8 +159,13 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("tutorials", nargs="*", default=None,
                     help="subset to bake; default is all of them")
-    ap.add_argument("--timeout", type=int, default=3600,
-                    help="per-notebook execution timeout in seconds")
+    # Four hours, not one. These notebooks fit real models: multilevel-multi-obs
+    # takes ~55 minutes and flaxman exceeded an hour outright, so the old default
+    # was not merely wrong for one tutorial -- it was already marginal for the
+    # one below it. A timeout that fires is indistinguishable from a broken
+    # notebook until you read the log, so the default should have real headroom.
+    ap.add_argument("--timeout", type=int, default=14400,
+                    help="per-notebook execution timeout in seconds (default 4h)")
     ap.add_argument("--clean", action="store_true",
                     help="remove docs/tutorials before baking")
     ap.add_argument("--force", action="store_true",

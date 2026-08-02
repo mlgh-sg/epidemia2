@@ -77,7 +77,7 @@ between-region SD:
 
 We use a small slice of the Europe/COVID data — three countries and a single
 intervention (`lockdown`) — so the three regimes fit quickly and the shrinkage
-is easy to see. (See the [europe-covid](europe-covid.md) notebook for the full
+is easy to see. (See the [multilevel](multilevel-multi-obs.md) notebook for the full
 11-country, 5-NPI analysis.)
 
 **The countries are chosen for their contrast in *how much data they carry***,
@@ -93,7 +93,7 @@ strength — and the one to watch below.
 > reproduce Sweden's deaths falling at all, and that misfit would leak into
 > every shared parameter. Sweden *did* suppress its epidemic, with softer
 > measures — which is exactly why it belongs in the full 5-NPI
-> [europe-covid](europe-covid.md) analysis, where those measures exist, rather
+> [multilevel](multilevel-multi-obs.md) analysis, where those measures exist, rather
 > than in a one-covariate demo that cannot represent it. Adding a softer
 > measure here would not rescue it either: the measures were enacted within days
 > of each other, so a second covariate is collinear with `lockdown` and simply
@@ -144,7 +144,7 @@ az.summary(idata_pp, var_names=["beta", "sd"])
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    done in 20.7s
+    done in 33.8s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -251,7 +251,7 @@ az.summary(idata_pp, var_names=["beta", "sd"])
         Finished Chains:
         <span id="active-chains">4</span>
     </p>
-    <p>Sampling for 44 seconds</p>
+    <p>Sampling for 45 seconds</p>
     <p>
         Estimated Time to Completion:
         <span id="eta">now</span>
@@ -282,21 +282,8 @@ az.summary(idata_pp, var_names=["beta", "sd"])
                         </progress>
                     </td>
                     <td>1500</td>
-                    <td>2</td>
+                    <td>0</td>
                     <td>0.13</td>
-                    <td>31</td>
-                </tr>
-
-                <tr>
-                    <td class="progress-cell">
-                        <progress
-                            max="1500"
-                            value="1500">
-                        </progress>
-                    </td>
-                    <td>1500</td>
-                    <td>2</td>
-                    <td>0.16</td>
                     <td>63</td>
                 </tr>
 
@@ -309,8 +296,8 @@ az.summary(idata_pp, var_names=["beta", "sd"])
                     </td>
                     <td>1500</td>
                     <td>0</td>
-                    <td>0.12</td>
-                    <td>15</td>
+                    <td>0.13</td>
+                    <td>63</td>
                 </tr>
 
                 <tr>
@@ -322,8 +309,21 @@ az.summary(idata_pp, var_names=["beta", "sd"])
                     </td>
                     <td>1500</td>
                     <td>1</td>
-                    <td>0.16</td>
+                    <td>0.11</td>
                     <td>63</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>0</td>
+                    <td>0.13</td>
+                    <td>127</td>
                 </tr>
 
             </tr>
@@ -333,15 +333,14 @@ az.summary(idata_pp, var_names=["beta", "sd"])
 
 
 
-    [epidemia] sampled in 44.2s
+    [epidemia] sampled in 45.5s
 
 
-    divergences: 5
+    divergences: 1
 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 5 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.030 for sd[0] exceeds 1.01, so the chains have not mixed.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 172 for sd[0] is 43 per chain, below the 100 per chain that keeps posterior summaries stable.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 1 divergent transition. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 380 for sd[1] is 95 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 
@@ -379,38 +378,38 @@ az.summary(idata_pp, var_names=["beta", "sd"])
   <tbody>
     <tr>
       <th>beta[lockdown]</th>
-      <td>-2.289</td>
-      <td>0.102</td>
-      <td>-2.498</td>
-      <td>-2.111</td>
-      <td>0.005</td>
-      <td>0.003</td>
-      <td>442.0</td>
-      <td>578.0</td>
-      <td>1.01</td>
+      <td>-2.311</td>
+      <td>0.110</td>
+      <td>-2.533</td>
+      <td>-2.114</td>
+      <td>0.004</td>
+      <td>0.004</td>
+      <td>742.0</td>
+      <td>792.0</td>
+      <td>1.00</td>
     </tr>
     <tr>
       <th>sd[0]</th>
-      <td>0.312</td>
-      <td>0.160</td>
-      <td>0.064</td>
-      <td>0.624</td>
-      <td>0.011</td>
-      <td>0.007</td>
-      <td>172.0</td>
-      <td>230.0</td>
-      <td>1.03</td>
+      <td>0.341</td>
+      <td>0.173</td>
+      <td>0.095</td>
+      <td>0.648</td>
+      <td>0.008</td>
+      <td>0.008</td>
+      <td>438.0</td>
+      <td>850.0</td>
+      <td>1.01</td>
     </tr>
     <tr>
       <th>sd[1]</th>
-      <td>0.062</td>
-      <td>0.085</td>
+      <td>0.071</td>
+      <td>0.092</td>
       <td>0.000</td>
-      <td>0.215</td>
+      <td>0.243</td>
       <td>0.004</td>
-      <td>0.006</td>
-      <td>241.0</td>
-      <td>363.0</td>
+      <td>0.005</td>
+      <td>380.0</td>
+      <td>313.0</td>
       <td>1.01</td>
     </tr>
   </tbody>
@@ -481,9 +480,9 @@ for m, r in enumerate(fit.regions):
 ```
 
     Baseline R_0 per country (before lockdown):
-      Denmark  3.60  [3.31, 3.89]
-      Italy    3.43  [3.27, 3.61]
-      Norway   2.88  [2.56, 3.20]
+      Denmark  3.48  [3.19, 3.78]
+      Italy    3.33  [3.17, 3.48]
+      Norway   2.69  [2.35, 3.06]
 
 
 ### No pooling, and full pooling
@@ -521,7 +520,7 @@ eff = {
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    done in 19.9s
+    done in 28.8s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -659,22 +658,9 @@ eff = {
                         </progress>
                     </td>
                     <td>1500</td>
-                    <td>17</td>
-                    <td>0.08</td>
-                    <td>255</td>
-                </tr>
-
-                <tr>
-                    <td class="progress-cell">
-                        <progress
-                            max="1500"
-                            value="1500">
-                        </progress>
-                    </td>
-                    <td>1500</td>
-                    <td>7</td>
-                    <td>0.08</td>
-                    <td>255</td>
+                    <td>9</td>
+                    <td>0.10</td>
+                    <td>127</td>
                 </tr>
 
                 <tr>
@@ -686,8 +672,8 @@ eff = {
                     </td>
                     <td>1500</td>
                     <td>4</td>
-                    <td>0.10</td>
-                    <td>159</td>
+                    <td>0.11</td>
+                    <td>31</td>
                 </tr>
 
                 <tr>
@@ -698,9 +684,22 @@ eff = {
                         </progress>
                     </td>
                     <td>1500</td>
-                    <td>3</td>
-                    <td>0.10</td>
+                    <td>9</td>
+                    <td>0.09</td>
                     <td>63</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>1</td>
+                    <td>0.11</td>
+                    <td>31</td>
                 </tr>
 
             </tr>
@@ -715,12 +714,12 @@ eff = {
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 31 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for sd_intercept exceeds 1.01, so the chains have not mixed.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 204 for g_beta[lockdown] is 51 per chain, below the 100 per chain that keeps posterior summaries stable.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 23 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.060 for sd_intercept exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 60 for sd_intercept is 15 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
-    done in 19.8s
+    done in 28.5s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -827,7 +826,7 @@ eff = {
         Finished Chains:
         <span id="active-chains">4</span>
     </p>
-    <p>Sampling for 18 seconds</p>
+    <p>Sampling for 20 seconds</p>
     <p>
         Estimated Time to Completion:
         <span id="eta">now</span>
@@ -859,7 +858,20 @@ eff = {
                     </td>
                     <td>1500</td>
                     <td>0</td>
-                    <td>0.20</td>
+                    <td>0.17</td>
+                    <td>15</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>2</td>
+                    <td>0.23</td>
                     <td>15</td>
                 </tr>
 
@@ -872,20 +884,7 @@ eff = {
                     </td>
                     <td>1500</td>
                     <td>0</td>
-                    <td>0.19</td>
-                    <td>31</td>
-                </tr>
-
-                <tr>
-                    <td class="progress-cell">
-                        <progress
-                            max="1500"
-                            value="1500">
-                        </progress>
-                    </td>
-                    <td>1500</td>
-                    <td>0</td>
-                    <td>0.21</td>
+                    <td>0.18</td>
                     <td>31</td>
                 </tr>
 
@@ -898,8 +897,8 @@ eff = {
                     </td>
                     <td>1500</td>
                     <td>1</td>
-                    <td>0.19</td>
-                    <td>15</td>
+                    <td>0.21</td>
+                    <td>31</td>
                 </tr>
 
             </tr>
@@ -909,11 +908,12 @@ eff = {
 
 
 
-    [epidemia] sampled in 19.0s
+    [epidemia] sampled in 20.6s
 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 1 divergent transition. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 216 for sd_intercept is 54 per chain, below the 100 per chain that keeps posterior summaries stable.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 3 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for z0[Denmark] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 257 for sd_intercept is 64 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 ### Comparison
@@ -988,19 +988,19 @@ print("  (small => the data see little genuine between-country variation, so"
 
     regime   no pooling  partial pooling  full pooling
     country                                           
-    Denmark       -2.28            -2.29         -2.29
-    Italy         -2.29            -2.29         -2.29
-    Norway        -2.52            -2.29         -2.29
+    Denmark       -2.24            -2.31         -2.31
+    Italy         -2.29            -2.31         -2.31
+    Norway        -2.99            -2.32         -2.31
     
     interval width (95% - 5%):
     regime   no pooling  partial pooling  full pooling
     country                                           
-    Denmark        0.99             0.37          0.28
-    Italy          0.31             0.28          0.28
-    Norway         1.26             0.38          0.28
+    Denmark        0.90             0.40          0.29
+    Italy          0.30             0.28          0.29
+    Norway         4.88             0.46          0.29
     
     between-country SD sigma_lockdown under partial pooling:
-      median 0.031  90% CI [0.000, 0.229]
+      median 0.036  90% CI [0.000, 0.264]
       (small => the data see little genuine between-country variation, so
        partial pooling shrinks nearly all the way to full pooling)
 
@@ -1025,27 +1025,27 @@ print(tab.to_string(index=False, float_format=lambda x: f"{x:7.2f}"))
 print("\n(Every row here is flagged enacted=True: all three countries locked down,")
 print("so each percentage is a measured effect. Where a region never used a measure")
 print("the flag turns False and the percentage is a counterfactual from the prior —")
-print("see Sweden in the europe-covid notebook.)")
+print("see Sweden in the multilevel notebook.)")
 ```
 
      region               term kind enacted  median      lo      hi
-    Denmark  R_0 (no measures)    R    None    3.60    3.31    3.89
-    Denmark           lockdown  pct    True   79.76   77.47   81.79
-    Denmark       all measures  pct    True   79.76   77.47   81.79
-    Denmark R_t (all measures)    R    True    0.73    0.66    0.80
-      Italy  R_0 (no measures)    R    None    3.43    3.27    3.61
-      Italy           lockdown  pct    True   80.70   79.03   82.39
-      Italy       all measures  pct    True   80.70   79.03   82.39
-      Italy R_t (all measures)    R    True    0.66    0.63    0.70
-     Norway  R_0 (no measures)    R    None    2.88    2.56    3.20
-     Norway           lockdown  pct    True   83.22   80.47   85.94
-     Norway       all measures  pct    True   83.22   80.47   85.94
-     Norway R_t (all measures)    R    True    0.48    0.39    0.58
+    Denmark  R_0 (no measures)    R    None    3.48    3.19    3.78
+    Denmark           lockdown  pct    True   80.67   78.12   82.90
+    Denmark       all measures  pct    True   80.67   78.12   82.90
+    Denmark R_t (all measures)    R    True    0.67    0.61    0.75
+      Italy  R_0 (no measures)    R    None    3.33    3.17    3.48
+      Italy           lockdown  pct    True   81.58   79.74   83.22
+      Italy       all measures  pct    True   81.58   79.74   83.22
+      Italy R_t (all measures)    R    True    0.61    0.58    0.65
+     Norway  R_0 (no measures)    R    None    2.69    2.35    3.06
+     Norway           lockdown  pct    True   84.38   81.51   87.61
+     Norway       all measures  pct    True   84.38   81.51   87.61
+     Norway R_t (all measures)    R    True    0.42    0.32    0.52
     
     (Every row here is flagged enacted=True: all three countries locked down,
     so each percentage is a measured effect. Where a region never used a measure
     the flag turns False and the percentage is a counterfactual from the prior —
-    see Sweden in the europe-covid notebook.)
+    see Sweden in the multilevel notebook.)
 
 
 
@@ -1081,7 +1081,7 @@ is $\beta_k + b^{(m)}_k$, which `per_country_effect` (or
 `epi.plots.plot_region_effects`) computes. And with several *collinear*
 covariates, a single $\beta_k$ whose interval covers zero usually means "not
 separately identifiable from the others", not "this measure did nothing". The
-[europe-covid](europe-covid.md) notebook works through that case.
+[multilevel](multilevel-multi-obs.md) notebook works through that case.
 
 ### References
 

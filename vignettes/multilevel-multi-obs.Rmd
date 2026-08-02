@@ -23,7 +23,7 @@ pkgdown:
 # Combining Partial Pooling with Several Data Streams
 <hr>
 
-The [multilevel](europe-covid.html) tutorial pooled parameters across eleven
+An earlier multilevel tutorial pooled parameters across eleven
 countries, but fitted to a single data stream (deaths). The
 [multiple observations](multiple-obs.html) tutorial jointly fitted two data
 streams, but to a single region. These two capabilities are independent, and
@@ -216,14 +216,14 @@ fm <- epim(
 ```
 
 ```
-## Chain 2 finished in 435.4 seconds.
-## Chain 1 finished in 438.5 seconds.
-## Chain 4 finished in 455.8 seconds.
-## Chain 3 finished in 497.7 seconds.
+## Chain 2 finished in 561.3 seconds.
+## Chain 1 finished in 566.8 seconds.
+## Chain 4 finished in 584.2 seconds.
+## Chain 3 finished in 646.0 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 456.9 seconds.
-## Total execution time: 497.9 seconds.
+## Mean chain execution time: 589.6 seconds.
+## Total execution time: 646.1 seconds.
 ```
 
 `all_obs_types()` confirms both series are in the model, and each carries its
@@ -440,7 +440,7 @@ round(ratio, 3)
 ##        Austria        Belgium        Denmark         France        Germany 
 ##          0.263          0.062          0.165          0.053          0.250 
 ##          Italy         Norway          Spain         Sweden    Switzerland 
-##          0.049          0.306          0.072          0.026          0.186 
+##          0.049          0.306          0.072          0.026          0.185 
 ## United_Kingdom 
 ##          0.040
 ```

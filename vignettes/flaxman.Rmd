@@ -39,9 +39,9 @@ when the last measure arrived; it cannot separate that change into contributions
 from each measure individually. @Flaxman2020 make this point themselves, and it
 is worth restating whenever the coefficient is reported.
 
-The [multilevel tutorial](europe-covid.html) fits a *related but different*
-model to the same data and distributes the reduction differently, placing a
-substantial part of it on social distancing. The two are not in conflict; they
+The [multilevel tutorial](multilevel-multi-obs.html) fits a *related but
+different* model to the same data and distributes the reduction differently,
+placing a substantial part of it on social distancing. The two are not in conflict; they
 are different specifications of a weakly identified problem. This tutorial
 writes down Flaxman's specification exactly, so the two can be compared on equal
 terms.
@@ -285,12 +285,12 @@ pp <- do.call(epim, c(args, list(algorithm = "sampling", iter = 1e3,
 ```
 
 ```
-## Chain 1 finished in 7.8 seconds.
-## Chain 2 finished in 8.0 seconds.
+## Chain 1 finished in 11.5 seconds.
+## Chain 2 finished in 11.8 seconds.
 ## 
 ## Both chains finished successfully.
-## Mean chain execution time: 7.9 seconds.
-## Total execution time: 8.2 seconds.
+## Mean chain execution time: 11.7 seconds.
+## Total execution time: 11.9 seconds.
 ```
 
 ``` r
@@ -346,14 +346,14 @@ fm <- do.call(epim, c(args, list(
 ```
 
 ```
-## Chain 4 finished in 2469.0 seconds.
-## Chain 1 finished in 2509.7 seconds.
-## Chain 2 finished in 2548.1 seconds.
-## Chain 3 finished in 2803.6 seconds.
+## Chain 4 finished in 15863.6 seconds.
+## Chain 1 finished in 16013.0 seconds.
+## Chain 2 finished in 16126.3 seconds.
+## Chain 3 finished in 16568.5 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 2582.6 seconds.
-## Total execution time: 2803.7 seconds.
+## Mean chain execution time: 16142.9 seconds.
+## Total execution time: 16568.6 seconds.
 ```
 
 

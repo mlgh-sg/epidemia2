@@ -232,7 +232,7 @@ idata = fit_epidemia(panel, [obs_cases, obs_ons], config,
 ```
 
     /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for rw_scale[0] exceeds 1.01, so the chains have not mixed.
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 260 for rw_scale[0] is 65 per chain, below the 100 per chain that keeps posterior summaries stable.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 278 for rw_scale[0] is 70 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 ## Check the sampler first
@@ -265,21 +265,21 @@ print(epidemia.sampler_diagnostics(idata))
     4 chains x 2000 post-warmup draws = 8000
     
      chain  divergent  max_treedepth  ebfmi
-         1          0              0  0.886
-         2          0              0  0.856
-         3          0              0  0.821
-         4          0              0  0.901
+         1          0              0  0.905
+         2          0              0  0.879
+         3          0              0  0.842
+         4          0              0  0.882
     
     Divergent transitions: 0 (0.0%)
     Hit max treedepth:     0 (0.0%)
-    Lowest E-BFMI:         0.82
+    Lowest E-BFMI:         0.84
     Worst R-hat:           1.020  (rw_scale[0])
-    Lowest bulk ESS:       260  (rw_scale[0])
-    Lowest tail ESS:       447
+    Lowest bulk ESS:       278  (rw_scale[0])
+    Lowest tail ESS:       487
     
     Warnings:
     * R-hat of 1.020 for rw_scale[0] exceeds 1.01, so the chains have not mixed.
-    * Bulk ESS of 260 for rw_scale[0] is 65 per chain, below the 100 per chain that keeps posterior summaries stable.
+    * Bulk ESS of 278 for rw_scale[0] is 70 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
 
@@ -290,15 +290,15 @@ print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
 ```
 
                       mean     sd  r_hat  ess_bulk
-    intercept       -1.392  0.237   1.01     466.0
-    cases|coef[0]   -0.047  0.089   1.00   12435.0
-    cases|coef[1]    0.055  0.094   1.00   13145.0
-    cases|coef[2]   -0.109  0.093   1.00   12864.0
-    cases|coef[3]   -0.346  0.091   1.00   10565.0
-    cases|coef[4]   -0.657  0.093   1.00   10656.0
-    cases|coef[5]   -0.376  0.087   1.00   11464.0
-    cases|aux       13.249  2.391   1.00    2558.0
-    positivity|aux   0.013  0.002   1.00    2094.0
+    intercept       -1.384  0.238   1.01     455.0
+    cases|coef[0]   -0.047  0.089   1.00   12573.0
+    cases|coef[1]    0.055  0.093   1.00   10925.0
+    cases|coef[2]   -0.108  0.094   1.00   11480.0
+    cases|coef[3]   -0.346  0.092   1.00   10154.0
+    cases|coef[4]   -0.658  0.092   1.00   10277.0
+    cases|coef[5]   -0.374  0.085   1.00   11638.0
+    cases|aux       13.220  2.466   1.00    2714.0
+    positivity|aux   0.013  0.002   1.00    1579.0
 
 
 ## Both series have to be explained
@@ -377,11 +377,11 @@ print(tbl.round(3).to_string(index=False))
     logit-scale shift vs Monday:
     day  median     5%    95%
     Tue  -0.047 -0.192  0.100
-    Wed   0.054 -0.100  0.212
-    Thu  -0.110 -0.261  0.045
-    Fri  -0.344 -0.495 -0.196
-    Sat  -0.656 -0.816 -0.507
-    Sun  -0.375 -0.521 -0.233
+    Wed   0.054 -0.096  0.209
+    Thu  -0.108 -0.260  0.047
+    Fri  -0.347 -0.498 -0.198
+    Sat  -0.656 -0.812 -0.509
+    Sun  -0.373 -0.515 -0.236
 
 
 ## Infections and susceptibility
@@ -494,11 +494,11 @@ print(f"prior R_t: median {qs[1]:.2f}, 90% interval [{qs[0]:.2f}, {qs[2]:.2f}]")
 print(f"(the scaled_logit cap is {config.R_link_K}, so R_t cannot exceed it)")
 ```
 
-    prior R_t: median 0.85, 90% interval [0.20, 2.14]
+    prior R_t: median 0.85, 90% interval [0.20, 2.02]
     (the scaled_logit cap is 7.0, so R_t cannot exceed it)
 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for cases|rw[0, 11] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for rw_noise[0, 37] exceeds 1.01, so the chains have not mixed.
 
 
 

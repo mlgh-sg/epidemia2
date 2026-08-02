@@ -1,89 +1,75 @@
-# ---
-# jupyter:
-#   jupytext:
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.16.0
-#   kernelspec:
-#     display_name: Python 3
-#     language: python
-#     name: python3
-# ---
+# Reproducing Flaxman et al. (2020)
 
-# %% [markdown]
-# # Reproducing Flaxman et al. (2020)
-#
-# The [Nature paper](https://www.nature.com/articles/s41586-020-2405-7) that
-# **epidemia** grew out of reports one headline result: **lockdown accounts for
-# essentially all of the measured reduction in transmission**, and the other four
-# interventions sit near zero.
-#
-# Other epidemia examples of the same data do *not* reproduce that; they put a
-# large effect on social distancing as well. That is not a bug in either package
-# — they are **different models** — and this notebook writes Flaxman's
-# specification down exactly so the difference can be seen rather than argued
-# about.
-#
-# Written down exactly, it reproduces: **lockdown 79.2% [73.4, 83.4]** against
-# the paper's 81% [75, 87], with the other five effects at zero. The R vignette
-# of the same model gives 79.3% [72.5, 84.1], so the two ports agree with each
-# other as well as with the paper.
-#
-# ## Where the two specifications differ
-#
-# From `stan-models/base.stan` in the paper's repository:
-#
-# ```stan
-# alpha_hier ~ gamma(.1667, 1);
-# alpha[i]    = alpha_hier[i] - log(1.05) / 6.0;
-# mu          ~ normal(3.28, kappa);     kappa ~ normal(0, 0.5);
-# gamma             ~ normal(0, 0.2);
-# lockdown          ~ normal(0, gamma);
-# last_intervention ~ normal(0, gamma);   // socialDistancing, column 6
-# Rt[,m]      = mu[m] * exp(-X[m] * alpha - X[m][,5] * lockdown[m]);
-# tau ~ exponential(0.03);  y[m] ~ exponential(1/tau);
-# ```
-#
-# | | Flaxman | epidemia vignette |
-# |---|---|---|
-# | Link | `mu[m] * exp(-X·alpha)` | `6.5 * sigmoid(eta)` |
-# | Covariates | **six** — the five NPIs plus `firstIntervention` | the five NPIs |
-# | Country deviations | **lockdown AND socialDistancing**, sharing one scale | **all five NPIs** |
-# | Coefficient prior | `gamma(1/6, 1)`, shifted by `log(1.05)/6` | identical |
-# | Seeding | `tau ~ Exp(0.03)`, `y ~ Exp(1/tau)` | identical |
-# | Observations | negative binomial | identical |
-#
-# The priors, seeding and observation model are the *same*. Two things differ,
-# and both matter. This notebook fits only the Flaxman specification; the
-# contrast is drawn to explain the modelling choices, not scored.
-#
-# **The sixth covariate.** `firstIntervention` is 1 once *any* measure is in
-# force. It absorbs the common "something changed" drop, leaving the five
-# individual coefficients to explain only what distinguishes them from each
-# other. Without it — as in the epidemia vignette — the five near-collinear
-# columns must between them account for the entire fall in transmission, and
-# which one takes the mass is largely arbitrary.
-#
-# **The pooling.** TWO covariates get a country-specific term, sharing ONE scale
-# `gamma ~ normal(0, 0.2)`: column 5 (lockdown) and column 7. Column 7 is not
-# socialDistancing — it is a **Sweden-only** copy of public events, and it is
-# the "last intervention" term. Sweden's lockdown date is the sentinel
-# `2090-03-17` (it never locked down) and its last measure was the public-events
-# ban; for every other country lockdown *is* the last intervention, since
-# measures enacted after lockdown are collapsed onto the lockdown date. So each
-# country gets exactly one country-specific effect on its own last measure,
-# which is why the two share a scale. Column 7 also carries **no pooled
-# coefficient** — `alpha` spans columns 1–6 only.
-#
-# Getting this wrong is instructive. A first draft omitted `firstIntervention`
-# and put a country deviation on lockdown alone, returning lockdown at 0.4% and
-# distancing at 63% — the *opposite* of the Nature figure. A later draft
-# invented column 7 as "all interventions in force", which left the fit at
-# R-hat 1.27 with an effective sample size of 11.
+The [Nature paper](https://www.nature.com/articles/s41586-020-2405-7) that
+**epidemia** grew out of reports one headline result: **lockdown accounts for
+essentially all of the measured reduction in transmission**, and the other four
+interventions sit near zero.
 
-# %%
+Other epidemia examples of the same data do *not* reproduce that; they put a
+large effect on social distancing as well. That is not a bug in either package
+— they are **different models** — and this notebook writes Flaxman's
+specification down exactly so the difference can be seen rather than argued
+about.
+
+Written down exactly, it reproduces: **lockdown 79.2% [73.4, 83.4]** against
+the paper's 81% [75, 87], with the other five effects at zero. The R vignette
+of the same model gives 79.3% [72.5, 84.1], so the two ports agree with each
+other as well as with the paper.
+
+## Where the two specifications differ
+
+From `stan-models/base.stan` in the paper's repository:
+
+```stan
+alpha_hier ~ gamma(.1667, 1);
+alpha[i]    = alpha_hier[i] - log(1.05) / 6.0;
+mu          ~ normal(3.28, kappa);     kappa ~ normal(0, 0.5);
+gamma             ~ normal(0, 0.2);
+lockdown          ~ normal(0, gamma);
+last_intervention ~ normal(0, gamma);   // socialDistancing, column 6
+Rt[,m]      = mu[m] * exp(-X[m] * alpha - X[m][,5] * lockdown[m]);
+tau ~ exponential(0.03);  y[m] ~ exponential(1/tau);
+```
+
+| | Flaxman | epidemia vignette |
+|---|---|---|
+| Link | `mu[m] * exp(-X·alpha)` | `6.5 * sigmoid(eta)` |
+| Covariates | **six** — the five NPIs plus `firstIntervention` | the five NPIs |
+| Country deviations | **lockdown AND socialDistancing**, sharing one scale | **all five NPIs** |
+| Coefficient prior | `gamma(1/6, 1)`, shifted by `log(1.05)/6` | identical |
+| Seeding | `tau ~ Exp(0.03)`, `y ~ Exp(1/tau)` | identical |
+| Observations | negative binomial | identical |
+
+The priors, seeding and observation model are the *same*. Two things differ,
+and both matter. This notebook fits only the Flaxman specification; the
+contrast is drawn to explain the modelling choices, not scored.
+
+**The sixth covariate.** `firstIntervention` is 1 once *any* measure is in
+force. It absorbs the common "something changed" drop, leaving the five
+individual coefficients to explain only what distinguishes them from each
+other. Without it — as in the epidemia vignette — the five near-collinear
+columns must between them account for the entire fall in transmission, and
+which one takes the mass is largely arbitrary.
+
+**The pooling.** TWO covariates get a country-specific term, sharing ONE scale
+`gamma ~ normal(0, 0.2)`: column 5 (lockdown) and column 7. Column 7 is not
+socialDistancing — it is a **Sweden-only** copy of public events, and it is
+the "last intervention" term. Sweden's lockdown date is the sentinel
+`2090-03-17` (it never locked down) and its last measure was the public-events
+ban; for every other country lockdown *is* the last intervention, since
+measures enacted after lockdown are collapsed onto the lockdown date. So each
+country gets exactly one country-specific effect on its own last measure,
+which is why the two share a scale. Column 7 also carries **no pooled
+coefficient** — `alpha` spans columns 1–6 only.
+
+Getting this wrong is instructive. A first draft omitted `firstIntervention`
+and put a country deviation on lockdown alone, returning lockdown at 0.4% and
+distancing at 63% — the *opposite* of the Nature figure. A later draft
+invented column 7 as "all interventions in force", which left the fit at
+R-hat 1.27 with an effective sample size of 11.
+
+
+```python
 import numpy as np
 import pandas as pd
 import arviz as az
@@ -99,13 +85,21 @@ from epidemia.core import (
     prepare_panel,
 )
 from epidemia.priors import normal, shifted_gamma
+```
 
-# %% [markdown]
-# ## Data
-#
-# The same 11 countries and five interventions both models use.
+    /Users/smishra/Documents/GitHub/epidemia/python/.venv/lib/python3.12/site-packages/arviz/__init__.py:50: FutureWarning: 
+    ArviZ is undergoing a major refactor to improve flexibility and extensibility while maintaining a user-friendly interface.
+    Some upcoming changes may be backward incompatible.
+    For details and migration guidance, visit: https://python.arviz.org/en/latest/user_guide/migration_guide.html
+      warn(
 
-# %%
+
+## Data
+
+The same 11 countries and five interventions both models use.
+
+
+```python
 ec = epidemia.europe_covid2()
 df = ec.data.copy()
 
@@ -237,20 +231,40 @@ print(f"fitted country-days: {int(series['deaths']['mask'].sum())} "
 print(f"{len(panel.regions)} countries, {panel.X.shape[2]} NPIs, "
       f"{int(panel.lengths.sum())} modelled days")
 print("NPI order:", NPIS)
+```
 
-# %% [markdown]
-# ## Model A — Flaxman
-#
-# `link="log"` gives $R_t = \exp(\eta)$, so with $\eta = b_0^{(m)} + \sum_k
-# \beta_k X_k + b^{(m)}_{\text{lockdown}} X_{\text{lockdown}}$ we get
-# $R_t = \mu_m \exp(\sum_k \beta_k X_k + \ldots)$ with $\mu_m = e^{b_0^{(m)}}$ —
-# Flaxman's multiplicative form, with $\beta_k = -\alpha_k$.
-#
-# The country deviation is restricted to lockdown with
-# `sd_slope_fixed=[0, 0, 0, 0, nan]`: zero pins a slope's between-country SD at
-# zero (no deviation at all), and `nan` means "estimate this one".
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'Austria': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'Belgium': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'Denmark': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'France': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'Germany': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'Italy': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'Norway': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'Spain': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'Sweden': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'Switzerland': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: 'United_Kingdom': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
 
-# %%
+
+    i2o mean lag: paper 23.899, epidemia default 24.400
+    fitted country-days: 576 (R vignette: 576); masked run-up: 330
+    11 countries, 7 NPIs, 906 modelled days
+    NPI order: ['schools_universities', 'self_isolating_if_ill', 'public_events', 'social_distancing_encouraged', 'lockdown', 'any_intervention', 'sweden_public_events']
+
+
+## Model A — Flaxman
+
+`link="log"` gives $R_t = \exp(\eta)$, so with $\eta = b_0^{(m)} + \sum_k
+\beta_k X_k + b^{(m)}_{\text{lockdown}} X_{\text{lockdown}}$ we get
+$R_t = \mu_m \exp(\sum_k \beta_k X_k + \ldots)$ with $\mu_m = e^{b_0^{(m)}}$ —
+Flaxman's multiplicative form, with $\beta_k = -\alpha_k$.
+
+The country deviation is restricted to lockdown with
+`sd_slope_fixed=[0, 0, 0, 0, nan]`: zero pins a slope's between-country SD at
+zero (no deviation at all), and `nan` means "estimate this one".
+
+
+```python
 # Flaxman gives exactly TWO covariates a country effect, sharing one scale
 # gamma ~ normal(0, 0.2):
 #     lockdown[m] ~ normal(0, gamma)          on column 5
@@ -325,11 +339,15 @@ flaxman_cfg = EpiModelConfig(
 )
 flaxman_model = build_epidemia_model(panel, obs, flaxman_cfg)
 print(f"{len(flaxman_model.free_RVs)} free parameters")
+```
 
-# %% [markdown]
-# ## Fitting
+    10 free parameters
 
-# %%
+
+## Fitting
+
+
+```python
 # target_accept 0.99 matches the R vignette's adapt_delta; at 0.95 this geometry
 # still produced divergences. maxdepth matches its max_treedepth: the Gamma(1/6)
 # coefficient prior has an integrable spike at zero, so a covariate whose effect
@@ -346,14 +364,40 @@ idata_flaxman = fit_epidemia(panel, obs, flaxman_cfg, draws=1000, tune=1000,
                              chains=4, seed=12345, target_accept=0.99,
                              maxdepth=14, adaptation="diag", progress_bar=False)
 print(epidemia.sampler_diagnostics(idata_flaxman))
+```
 
-# %% [markdown]
-# ## The effect sizes
-#
-# This is the comparison the notebook exists for. Flaxman's constraint should
-# push the four non-lockdown effects toward zero.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.030 for beta_gamma[5] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 93 for beta_gamma[3] is 23 per chain, below the 100 per chain that keeps posterior summaries stable.
 
-# %%
+
+    Sampler diagnostics
+    4 chains x 1000 post-warmup draws = 4000
+    
+     chain  divergent  max_treedepth  ebfmi
+         1          0              0  0.902
+         2          0              0  0.942
+         3          0              0  0.835
+         4          0              0  0.783
+    
+    Divergent transitions: 0 (0.0%)
+    Hit max treedepth:     0 (0.0%)
+    Lowest E-BFMI:         0.78
+    Worst R-hat:           1.030  (beta_gamma[5])
+    Lowest bulk ESS:       93  (beta_gamma[3])
+    Lowest tail ESS:       58
+    
+    Warnings:
+    * R-hat of 1.030 for beta_gamma[5] exceeds 1.01, so the chains have not mixed.
+    * Bulk ESS of 93 for beta_gamma[3] is 23 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+## The effect sizes
+
+This is the comparison the notebook exists for. Flaxman's constraint should
+push the four non-lockdown effects toward zero.
+
+
+```python
 # `beta` now spans only the columns with a pooled coefficient, so
 # sweden_public_events -- random-only, as Flaxman has it -- is absent.
 labels = [n.replace("_", " ").capitalize()
@@ -362,12 +406,25 @@ labels[:6] = ["Schools", "Isolating", "Events", "Distancing", "Lockdown",
               "Any intervention"]
 epidemia.plot_effects(idata_flaxman, labels=labels, save="flaxman-effects",
                       title="Flaxman specification: global NPI effects")
+```
 
-# %% [markdown]
-# Flaxman's paper reports effects as a **relative reduction in $R_t$**, which for
-# the log link is $1 - e^{\beta_k}$. That is the scale of the Nature figure.
+    [epidemia] saved figures/flaxman-effects.png
 
-# %%
+
+
+
+
+    
+![png](flaxman_files/flaxman_9_1.png)
+    
+
+
+
+Flaxman's paper reports effects as a **relative reduction in $R_t$**, which for
+the log link is $1 - e^{\beta_k}$. That is the scale of the Nature figure.
+
+
+```python
 def reduction_table(idata, labels):
     beta = np.asarray(idata.posterior["beta"].stack(s=("chain", "draw")))  # (K, S)
     red = 100.0 * (1.0 - np.exp(beta))
@@ -381,74 +438,83 @@ def reduction_table(idata, labels):
 
 print("Flaxman specification — relative reduction in R_t (%)")
 print(reduction_table(idata_flaxman, labels).to_string(index=False))
+```
 
-# %% [markdown]
-# ## What does *not* map
-#
-# Two pieces of Flaxman's model have no epidemia expression, and both are
-# omitted here rather than approximated:
-#
-# * `mu[m] ~ normal(3.28, kappa)` puts the hierarchical prior on $R_0$ itself.
-#   epidemia's `(1 | country)` puts it on $\log R_0$, so the induced prior on
-#   $\mu_m$ is log-normal rather than normal.
-# * `ifr_noise[m] ~ normal(1, 0.1)` scales each country's infection fatality
-#   ratio. epidemia has no per-country IFR multiplier; writing
-#   `deaths ~ 0 + country` would give per-country ascertainment but as a
-#   *fixed* effect with a different prior.
+    Flaxman specification — relative reduction in R_t (%)
+        intervention  median %   5%  95%
+             Schools       2.2 -0.8 29.5
+           Isolating      -0.1 -0.8 19.8
+              Events      -0.6 -0.8  9.7
+          Distancing      18.2 -0.8 40.9
+            Lockdown      79.2 73.4 83.4
+    Any intervention      -0.2 -0.8 19.0
 
-# %% [markdown]
-# ## What it took to reproduce
-#
-# Five things had to be right, and each was found by reading
-# `base-nature.stan` and `utils/process-covariates.r` rather than the paper.
-#
-# **1. The fit window.** `EuropeCovid2` runs to 30 June; Flaxman's data ends
-# **5 May**. Those extra eight weeks are all post-lockdown, and
-# `social_distancing_encouraged` — in force everywhere and never lifted —
-# absorbs suppression that belongs to lockdown. Truncating it was the single
-# largest effect of any fix here: measured at the time, distancing fell from
-# 30.6% to 5.3% and lockdown rose from 75.0% to 80.8%. (Those figures predate
-# the infection-to-death kernel correction, so they show the size of the window
-# effect rather than the numbers this notebook now reports.)
-#
-# **2. The run-up is simulated but not fitted.** `EpidemicStart = index1 + 1 -
-# index2` means the likelihood starts on day 31, so 330 country-days of the
-# earliest, noisiest counts contribute nothing to the posterior.
-#
-# **3. Column 7 is Sweden-only, and has no pooled coefficient.** `alpha` spans
-# columns 1–6; column 7 enters *exclusively* through `last_intervention[m]`.
-# `fixed_effects=` expresses that. Inventing this column as "all interventions
-# in force" instead left the fit at R-hat 1.27 with ESS 11.
-#
-# **4. A global intercept.** `EpiModelConfig` defaults to `intercept=False`,
-# i.e. R's `~ 0 + ...`. Flaxman's `mu[m] ~ normal(3.28, kappa)` has a non-zero
-# hyper-mean that a zero-centred country intercept cannot supply; without it the
-# prior on $R_0$ sits at 1.01 rather than 3.31.
-#
-# **5. Per-country IFR.** 0.91%–1.26%, not a flat 1%, with the country
-# coefficient carrying `ifr_noise[m] * IFR_m / IFR_ref`.
-#
-# ## What still differs from the paper
-#
-# Two *inputs* differ, and neither is a modelling choice:
-#
-# - **The death series is a later ECDC vintage.** 299 of 1364 overlapping
-#   country-days differ; totals to 5 May run 12.9% higher for Sweden, 8.7% for
-#   Switzerland, 5.4% for Spain, while Austria, Germany, Italy and Norway match
-#   exactly.
-# - **The delay kernel is discretised differently**, which is handled above
-#   rather than left as a discrepancy: this notebook builds the paper's midpoint
-#   kernel (mean lag 23.9) instead of `ec.inf2death`, which gives entry $k$ the
-#   mass in $(k-1, k]$ (mean lag 24.4) so as to agree with the serial interval
-#   and put no mass at lag zero.
-#
-# What matches exactly: all 55 intervention start dates, the collapsing of
-# post-lockdown measures onto the lockdown date, and the serial interval
-# (`EuropeCovid$si` agrees with `serial-interval.rds` to 1.4e-16).
-#
-# Three modelling approximations remain, all stated in the R vignette too: the
-# intercept prior is on $\log R_0$ rather than $R_0$; `decov` splits one scale
-# across the intercept and both slopes where Flaxman separates `kappa` from
-# `gamma`; and this notebook uses `pop_adjust="linear"` to match Flaxman's
-# `Rt_adj = (S/P) Rt` exactly, where the R vignette uses epidemia's saturating
-# form (the two agree to first order in $i'/P$).
+
+## What does *not* map
+
+Two pieces of Flaxman's model have no epidemia expression, and both are
+omitted here rather than approximated:
+
+* `mu[m] ~ normal(3.28, kappa)` puts the hierarchical prior on $R_0$ itself.
+  epidemia's `(1 | country)` puts it on $\log R_0$, so the induced prior on
+  $\mu_m$ is log-normal rather than normal.
+* `ifr_noise[m] ~ normal(1, 0.1)` scales each country's infection fatality
+  ratio. epidemia has no per-country IFR multiplier; writing
+  `deaths ~ 0 + country` would give per-country ascertainment but as a
+  *fixed* effect with a different prior.
+
+## What it took to reproduce
+
+Five things had to be right, and each was found by reading
+`base-nature.stan` and `utils/process-covariates.r` rather than the paper.
+
+**1. The fit window.** `EuropeCovid2` runs to 30 June; Flaxman's data ends
+**5 May**. Those extra eight weeks are all post-lockdown, and
+`social_distancing_encouraged` — in force everywhere and never lifted —
+absorbs suppression that belongs to lockdown. Truncating it was the single
+largest effect of any fix here: measured at the time, distancing fell from
+30.6% to 5.3% and lockdown rose from 75.0% to 80.8%. (Those figures predate
+the infection-to-death kernel correction, so they show the size of the window
+effect rather than the numbers this notebook now reports.)
+
+**2. The run-up is simulated but not fitted.** `EpidemicStart = index1 + 1 -
+index2` means the likelihood starts on day 31, so 330 country-days of the
+earliest, noisiest counts contribute nothing to the posterior.
+
+**3. Column 7 is Sweden-only, and has no pooled coefficient.** `alpha` spans
+columns 1–6; column 7 enters *exclusively* through `last_intervention[m]`.
+`fixed_effects=` expresses that. Inventing this column as "all interventions
+in force" instead left the fit at R-hat 1.27 with ESS 11.
+
+**4. A global intercept.** `EpiModelConfig` defaults to `intercept=False`,
+i.e. R's `~ 0 + ...`. Flaxman's `mu[m] ~ normal(3.28, kappa)` has a non-zero
+hyper-mean that a zero-centred country intercept cannot supply; without it the
+prior on $R_0$ sits at 1.01 rather than 3.31.
+
+**5. Per-country IFR.** 0.91%–1.26%, not a flat 1%, with the country
+coefficient carrying `ifr_noise[m] * IFR_m / IFR_ref`.
+
+## What still differs from the paper
+
+Two *inputs* differ, and neither is a modelling choice:
+
+- **The death series is a later ECDC vintage.** 299 of 1364 overlapping
+  country-days differ; totals to 5 May run 12.9% higher for Sweden, 8.7% for
+  Switzerland, 5.4% for Spain, while Austria, Germany, Italy and Norway match
+  exactly.
+- **The delay kernel is discretised differently**, which is handled above
+  rather than left as a discrepancy: this notebook builds the paper's midpoint
+  kernel (mean lag 23.9) instead of `ec.inf2death`, which gives entry $k$ the
+  mass in $(k-1, k]$ (mean lag 24.4) so as to agree with the serial interval
+  and put no mass at lag zero.
+
+What matches exactly: all 55 intervention start dates, the collapsing of
+post-lockdown measures onto the lockdown date, and the serial interval
+(`EuropeCovid$si` agrees with `serial-interval.rds` to 1.4e-16).
+
+Three modelling approximations remain, all stated in the R vignette too: the
+intercept prior is on $\log R_0$ rather than $R_0$; `decov` splits one scale
+across the intercept and both slopes where Flaxman separates `kappa` from
+`gamma`; and this notebook uses `pop_adjust="linear"` to match Flaxman's
+`Rt_adj = (S/P) Rt` exactly, where the R vignette uses epidemia's saturating
+form (the two agree to first order in $i'/P$).
