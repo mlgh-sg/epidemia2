@@ -2,7 +2,7 @@
 # output changed.
 #
 # ON DEMAND ONLY. This is deliberately not wired to `push`. Baking means real
-# MCMC -- the europe-covid and flaxman tutorials each take hours on a developer
+# MCMC -- the flaxman tutorial takes hours on a developer
 # machine and considerably longer on a shared runner. Running it on every push
 # to R/ or data/ exceeded GitHub's six-hour job ceiling and the run was killed
 # at 360 minutes having produced nothing.
@@ -46,7 +46,7 @@ jobs:
           req='${{ github.event.inputs.tutorials }}'
           if [ -z "$req" ] || [ "$req" = "all" ]; then
             # keep in step with all_vigs in vignettes/precompute.R
-            echo 'matrix=["flu","europe-covid","multiple-obs","multilevel-multi-obs","flaxman"]' >> "$GITHUB_OUTPUT"
+            echo 'matrix=["flu","multiple-obs","multilevel-multi-obs","flaxman","b117"]' >> "$GITHUB_OUTPUT"
           else
             echo "matrix=$req" >> "$GITHUB_OUTPUT"
           fi

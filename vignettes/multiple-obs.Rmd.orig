@@ -50,7 +50,7 @@ g_legend<-function(a.gplot){
 Previous examples conditioned on a single observation series (case and
 death counts respectively). Simple models were used for describing
 ascertainment rates. The flu [example](flu.html) assumed
-*full ascertainment* of infections, while the multilevel [example](europe-covid.html) took the IFR to be *constant but unknown*.
+*full ascertainment* of infections, while the multilevel [example](multilevel-multi-obs.html) took the IFR to be *constant but unknown*.
 Population adjustments were not considered, and both examples modeled
 the entire history of the epidemic from the first observed cases.
 
@@ -177,7 +177,7 @@ i_t &= S_t \left( 1 - \exp\left(-\frac{i'_t}{P}\right)\right),
 ```
 where $P$ is the population size and $S_t$ is the time-varying
 susceptible population. We use the same generation distribution $\pi_k$
-as in the [multilevel model](europe-covid.html). The initial susceptible population
+as in the [multilevel model](multilevel-multi-obs.html). The initial susceptible population
 $S_{v}$ is given a prior $S_v \sim \mathcal{N}(0.48, 0.10)$. This is
 motivated by an ONS antibody survey [@ons_antibody], which estimates
 that 51% of the population in England would have tested positive for

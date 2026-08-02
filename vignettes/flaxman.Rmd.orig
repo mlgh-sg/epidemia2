@@ -45,9 +45,9 @@ when the last measure arrived; it cannot separate that change into contributions
 from each measure individually. @Flaxman2020 make this point themselves, and it
 is worth restating whenever the coefficient is reported.
 
-The [multilevel tutorial](europe-covid.html) fits a *related but different*
-model to the same data and distributes the reduction differently, placing a
-substantial part of it on social distancing. The two are not in conflict; they
+The [multilevel tutorial](multilevel-multi-obs.html) fits a *related but
+different* model to the same data and distributes the reduction differently,
+placing a substantial part of it on social distancing. The two are not in conflict; they
 are different specifications of a weakly identified problem. This tutorial
 writes down Flaxman's specification exactly, so the two can be compared on equal
 terms.

@@ -1,6 +1,6 @@
 [project]
 name = "epidemia"
-version = "0.1.0"
+version = "0.2.0"
 description = "Bayesian semi-mechanistic modelling of infectious diseases (renewal processes) in PyMC, fit with the fast nutpie (NUTS) sampler. Python counterpart of the R package 'epidemia'."
 readme = "README.md"
 requires-python = ">=3.10,<3.14"

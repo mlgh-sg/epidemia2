@@ -2,7 +2,8 @@
 """Head-to-head benchmark: the R (CmdStanR) multilevel fit vs the Python port.
 
 Runs the *same* model -- the eleven-country Europe/COVID multilevel model of
-``vignettes/europe-covid.Rmd`` -- through three engines and records wall-clock,
+the multilevel NPI model that the europe-covid vignette used to carry --
+through three engines and records wall-clock,
 sampler diagnostics and effective sample size, so the comparison is on
 efficiency rather than raw speed:
 

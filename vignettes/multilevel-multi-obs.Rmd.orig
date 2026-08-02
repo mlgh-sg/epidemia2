@@ -41,7 +41,7 @@ no_angle <- theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
 # Combining Partial Pooling with Several Data Streams
 <hr>
 
-The [multilevel](europe-covid.html) tutorial pooled parameters across eleven
+An earlier multilevel tutorial pooled parameters across eleven
 countries, but fitted to a single data stream (deaths). The
 [multiple observations](multiple-obs.html) tutorial jointly fitted two data
 streams, but to a single region. These two capabilities are independent, and

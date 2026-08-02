@@ -1,5 +1,41 @@
 ## epidemia 1.1.0
 
+### New data and tutorials
+
+* **`EnglandB117`**, the SGTF-split English case counts behind
+  Volz et al. (2021), *Nature* **593**, 266-269: the transmissibility advantage
+  of SARS-CoV-2 lineage B.1.1.7. 49 areas over 120 days, with populations, the
+  infection ascertainment rate, the infection-to-observation kernel, and the
+  paper's own published estimates so a reproduction can check itself against
+  them. Regenerate with `data-raw/england-b117.R`.
+* **New tutorial, "Transmissibility of a New Variant"**, reproducing that
+  analysis for one area. It is the first vignette to use `rw()` at all, and it
+  uses two summed walks plus an `NA` walk index — documented in `man/rw.Rd` and
+  previously exercised by no tutorial.
+* **New tutorial, "Reproducing Flaxman et al. (2020)"**, which lands on
+  lockdown 79.3% [72.5, 84.1] against the paper's 81% [75, 87] with the other
+  five effects at zero, and no sampler problems.
+
+### Removed
+
+* **The `europe-covid` tutorial has been removed.** The B.1.1.7 tutorial now
+  serves as the multi-group example; it is faster (about a quarter of an hour
+  against six hours), better behaved, and checks itself against published
+  values. `EuropeCovid` and `EuropeCovid2` are unaffected and are still used by
+  the remaining tutorials. Anyone relying on
+  `articles/europe-covid.html` should use `articles/multilevel-multi-obs.html`
+  or `articles/b117.html` instead.
+
+### Changed
+
+* **The infection-to-death kernel in `EuropeCovid` and `EuropeCovid2` has been
+  corrected, and every fitted number that uses it moves.** Both shipped kernels
+  are consumed at the same offset, so entry *k* should carry the mass in
+  (*k*-1, *k*]. `si` already did; `inf2death` did not — it was the source
+  distribution discretised a day early, 1.5 days out of step with `si`, and
+  with mass at lag zero where a death cannot occur. Its mean lag moves from
+  22.9 to 24.4 days. `si` is unchanged.
+
 ### Bug fixes
 
 * **Models with a single group-level term now fit.** `(1 | group)` — the

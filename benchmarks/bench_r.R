@@ -4,7 +4,8 @@
 #
 #     Rscript benchmarks/bench_r.R --draws 500 --tune 500 --chains 4 --seed 12345
 #
-# This is the exact model of vignettes/europe-covid.Rmd, fitted with MCMC rather
+# This is the multilevel NPI model the europe-covid vignette used to carry
+# (removed in 1.1.0; the model is kept here as a benchmark), fitted with MCMC rather
 # than the variational approximation the vignette uses, so that it is comparable
 # with the Python port's nutpie fit. See benchmarks/run.py.
 
