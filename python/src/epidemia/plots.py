@@ -521,15 +521,20 @@ def _ribbon_plot(band, med, palette, levels, ylab, xlab, hline=None, facet=0,
                     name="Credible interval (%)",
                     breaks=[str(lv) for lv in sorted(levels)])
             else:
+                # size 0.9 with stroke=0 renders as near-invisible specks once
+                # the credible ribbons are underneath them. The observations are
+                # the thing the reader is checking the model against, so they
+                # need to read at a glance: a larger mark, higher opacity, and a
+                # thin ring so a point still separates from the band it sits on.
                 p = p + geom_point(obs, aes("x", "obs", color="period"),
-                                   size=0.9, alpha=0.75, stroke=0)
+                                   size=1.7, alpha=0.9, stroke=0.25)
                 p = p + scale_color_manual(values=pal, name="")
         elif obs_kind == "col":
             p = p + geom_col(obs, aes("x", "obs"), fill=COLORS["observed"],
                              alpha=0.45, width=0.75)
         else:
             p = p + geom_point(obs, aes("x", "obs"), color=COLORS["observed"],
-                               size=0.9, alpha=0.75, stroke=0)
+                               size=1.7, alpha=0.9, stroke=0.25)
     if step:
         # R's plot_rt(step = TRUE): a covariate-driven R_t is piecewise constant,
         # so a step reads more honestly than an interpolating line.
@@ -1305,7 +1310,7 @@ def _spaghetti_plot(paths, med, color, alpha, ylab, xlab, hline=None, facet=0,
                              alpha=0.45, width=0.75)
         else:
             p = p + geom_point(obs, aes("x", "obs"), color=COLORS["observed"],
-                               size=0.9, alpha=0.75, stroke=0)
+                               size=1.7, alpha=0.9, stroke=0.25)
     return p
 
 

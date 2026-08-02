@@ -44,3 +44,11 @@ navbar:
     news:
       text: News
       href: news/index.html
+
+# pkgdown writes into gh-pages without deleting output it no longer generates,
+# so a retired tutorial stays publicly reachable and keeps serving numbers that
+# predate the inf2death correction. Redirect it to the tutorial that replaced it
+# rather than leaving a stale page or a bare 404 for anyone following an old
+# link or a search result.
+redirects:
+  - ["articles/europe-covid.html", "articles/b117.html"]
