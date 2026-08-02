@@ -198,6 +198,18 @@ def main() -> None:
     failed = [n for n, good in zip(stale, ok) if not good]
     if failed:
         raise SystemExit(f"failed: {', '.join(failed)}")
+
+    # Record the input fingerprint so `make docs-check` can answer "are the
+    # published tutorials stale?" in about a second, without fitting anything.
+    # Only when the FULL set was requested -- a stamp written after a partial
+    # bake would claim more freshness than it has.
+    if set(wanted) == set(ALL_TUTORIALS):
+        stamp = ROOT.parent / "tools" / "docs-stamp.sh"
+        if stamp.exists():
+            subprocess.run([str(stamp), "write", "python"], check=False)
+    else:
+        print(f"NOTE: partial bake ({', '.join(wanted)}) -- docs stamp NOT "
+              "updated. Run with no arguments to refresh it.")
     print("\nDone. Commit docs/tutorials/ and its *_files/ directories.")
 
 

@@ -94,6 +94,17 @@ for (v in vigs) {
 
 baked <- setdiff(vigs, skipped)
 if (length(baked)) {
+  # Record the input fingerprint so `make docs-check` can tell, in about a
+  # second and without fitting anything, whether the published tutorials still
+  # match the code. Only meaningful once EVERY tutorial has been baked, so skip
+  # it for a partial run rather than record a stamp that overstates freshness.
+  if (setequal(vigs, all_vigs)) {
+    stamp <- file.path(root, "tools", "docs-stamp.sh")
+    if (file.exists(stamp)) system2(stamp, c("write", "r"))
+  } else {
+    message("NOTE: partial bake (", paste(baked, collapse = ", "),
+            ") -- docs stamp NOT updated. Run without arguments to refresh it.")
+  }
   message("Done. Commit the regenerated .Rmd files and vignettes/figure/*.png")
 } else {
   message("Nothing to do -- all requested tutorials are up to date.")

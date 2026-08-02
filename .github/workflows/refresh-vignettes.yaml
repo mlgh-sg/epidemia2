@@ -1,26 +1,32 @@
-# Re-bake (precompute) the model-fitting tutorial vignettes and open a pull
-# request if their rendered output changed.
+# Re-bake the tutorial vignettes on CI and open a pull request if the rendered
+# output changed.
 #
-# The documentation site renders committed, precomputed vignettes so it can
-# build quickly without CmdStan. This workflow keeps those precomputed outputs
-# from going stale: whenever the modelling code (R/, inst/stan/) or a tutorial
-# source (*.Rmd.orig / precompute.R) changes, it refits the models by running
-# vignettes/precompute.R and, if the baked .Rmd files or figures differ, opens
-# a PR with the refreshed docs for review.
+# ON DEMAND ONLY. This is deliberately not wired to `push`. Baking means real
+# MCMC -- the europe-covid and flaxman tutorials each take hours on a developer
+# machine and considerably longer on a shared runner. Running it on every push
+# to R/ or data/ exceeded GitHub's six-hour job ceiling and the run was killed
+# at 360 minutes having produced nothing.
 #
-# It can also be run on demand (workflow_dispatch) or on a weekly schedule.
+# The routine signal now comes from docs-freshness.yaml, which hashes the inputs
+# and reports staleness in about a second without fitting anything. The intended
+# fix for stale docs is a LOCAL re-bake (`make tutorials-clean`), on hardware
+# suited to it. This workflow exists for the times you would rather CI did it
+# anyway -- so it is manual, plus a weekly run that acts as a backstop against
+# drift from dependency updates (a new CmdStan or R release can move numbers
+# even when nothing in this repo changed).
+#
+# Each tutorial is a SEPARATE job. A single job baking all of them cannot fit in
+# six hours; one job per tutorial gives each its own budget and lets them run in
+# parallel, so wall-clock is the slowest single tutorial rather than the sum.
 on:
-  push:
-    branches: [main, master]
-    paths:
-      - 'R/**'
-      - 'inst/stan/**'
-      - 'data/**'          # the shipped delay kernels live here and move every fit
-      - 'vignettes/*.Rmd.orig'
-      - 'vignettes/precompute.R'
   workflow_dispatch:
+    inputs:
+      tutorials:
+        description: 'Which tutorials to bake (JSON array, or "all")'
+        required: false
+        default: 'all'
   schedule:
-    - cron: '0 5 * * 1'   # Mondays 05:00 UTC
+    - cron: '0 5 * * 1'   # Mondays 05:00 UTC -- backstop against dependency drift
 
 name: refresh-vignettes
 
@@ -29,11 +35,30 @@ permissions:
   pull-requests: write
 
 jobs:
-  refresh:
+  plan:
     runs-on: ubuntu-latest
-    concurrency:
-      group: refresh-vignettes
-      cancel-in-progress: true
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set
+        run: |
+          req='${{ github.event.inputs.tutorials }}'
+          if [ -z "$req" ] || [ "$req" = "all" ]; then
+            # keep in step with all_vigs in vignettes/precompute.R
+            echo 'matrix=["flu","europe-covid","multiple-obs","multilevel-multi-obs","flaxman"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "matrix=$req" >> "$GITHUB_OUTPUT"
+          fi
+
+  bake:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false          # one slow tutorial must not discard the others
+      matrix:
+        tutorial: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -88,8 +113,50 @@ jobs:
       # timestamp and the comparison is meaningless -- it would skip or bake
       # arbitrarily. This job exists to detect drift by actually refitting, so
       # it always rebuilds (which also drops the knitr cache).
-      - name: Re-bake the tutorial vignettes
-        run: Rscript vignettes/precompute.R --force
+      #
+      # A single tutorial is named, so precompute.R will NOT update the docs
+      # stamp -- a stamp written after a partial bake would overstate freshness.
+      # The collect job records it once every tutorial has been rebuilt.
+      - name: Re-bake ${{ matrix.tutorial }}
+        run: Rscript vignettes/precompute.R --force ${{ matrix.tutorial }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: baked-${{ matrix.tutorial }}
+          path: |
+            vignettes/${{ matrix.tutorial }}.Rmd
+            vignettes/figure/${{ matrix.tutorial }}-*
+            vignettes/*.png
+          if-no-files-found: warn
+          retention-days: 7
+
+  collect:
+    needs: bake
+    if: always() && needs.bake.result != 'cancelled'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/baked
+          merge-multiple: false
+
+      - name: Apply the baked outputs
+        run: |
+          shopt -s nullglob
+          for d in /tmp/baked/baked-*; do
+            [ -d "$d" ] || continue
+            echo "applying $(basename "$d")"
+            cp -R "$d"/. .
+          done
+          git status --short
+
+      # Only meaningful once EVERY tutorial has been rebuilt; a stamp recorded
+      # after a partial run would claim more freshness than it has.
+      - name: Record the docs stamp
+        if: needs.bake.result == 'success'
+        run: ./tools/docs-stamp.sh write r
 
       # Needs "Allow GitHub Actions to create and approve pull requests" under
       # Settings -> Actions -> General -> Workflow permissions (and the same at
@@ -103,14 +170,18 @@ jobs:
           add-paths: |
             vignettes/*.Rmd
             vignettes/figure/**
+            vignettes/*.png
+            .docs-stamp
           branch: auto/refresh-vignettes
           delete-branch: true
           title: "Refresh precomputed vignette outputs"
           commit-message: "Refresh precomputed vignette outputs (re-baked by CI)"
           body: |
-            The modelling code or a tutorial source changed, so the precomputed
-            (baked) tutorial vignettes were regenerated by
-            `vignettes/precompute.R`. Review the updated plots and numbers, then
-            merge to publish the refreshed documentation.
+            The tutorial vignettes were re-baked by `vignettes/precompute.R`.
+            Review the updated plots and numbers, then merge to publish.
+
+            Check the sampler diagnostics in the diff before merging: a tutorial
+            that re-baked with new divergences or a worse R-hat should not be
+            published just because it ran.
 
             *Opened automatically by the `refresh-vignettes` workflow.*

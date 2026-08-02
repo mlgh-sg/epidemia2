@@ -34,3 +34,4 @@
 # "additional terms", which would require "License: GPL-3 + file LICENSE" --
 # it does not, so keep it out of the build.
 ^LICENSE$
+^\.docs-stamp$

@@ -3,7 +3,8 @@
 
 RSCRIPT := Rscript
 
-.PHONY: help setup test test-slow document check tutorials tutorials-clean compile docs clean
+.PHONY: help setup test test-slow document check tutorials tutorials-clean \
+        tutorials-python docs-check docs-stamp compile docs clean
 
 help:
 	@echo "setup            restore the renv library and pinned CmdStan"
@@ -14,6 +15,9 @@ help:
 	@echo "compile          precompile both Stan programs into the user cache"
 	@echo "tutorials        re-bake the precomputed tutorial vignettes"
 	@echo "tutorials-clean  drop the knitr cache first, forcing genuine re-fits"
+	@echo "tutorials-python re-bake the Python notebooks"
+	@echo "docs-check       are the published tutorials stale? (~1s, no fitting)"
+	@echo "docs-stamp       record the current fingerprint after re-baking"
 	@echo "docs             build the pkgdown site"
 
 setup:
@@ -45,8 +49,19 @@ tutorials:
 # knitr replays cache=TRUE chunks, so a re-bake proves nothing unless the cache
 # goes first. Use this when verifying that the tutorials still fit.
 tutorials-clean:
-	rm -rf vignettes/cache
-	$(RSCRIPT) vignettes/precompute.R
+	$(RSCRIPT) vignettes/precompute.R --force
+
+tutorials-python:
+	cd python && uv run python scripts/precompute.py --force
+
+# Cheap staleness check: hashes the inputs that can change a fitted number and
+# compares against the recorded stamp. Seconds, no model fitting, so it is safe
+# to run in CI or a pre-push hook -- unlike an actual re-bake.
+docs-check:
+	./tools/docs-stamp.sh check all
+
+docs-stamp:
+	./tools/docs-stamp.sh write all
 
 docs:
 	$(RSCRIPT) -e 'pkgdown::build_site()'

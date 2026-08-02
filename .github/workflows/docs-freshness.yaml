@@ -1,0 +1,67 @@
+# Are the published tutorials still the ones the current code produces?
+#
+# The tutorials ship pre-baked, so their numbers can drift silently away from
+# what the code produces -- which is exactly what happened when the inf2death
+# kernel was corrected and three tutorials kept displaying pre-correction
+# results until someone noticed the values had not moved.
+#
+# This job does NOT re-fit anything. It hashes the inputs that can change a
+# fitted number and compares them against the stamp recorded when the tutorials
+# were last baked. That takes about a second, so it can run on every push --
+# unlike an actual re-bake, which is hours of MCMC and belongs on a developer
+# machine rather than a shared CI runner.
+#
+# Re-baking is deliberately NOT automated here. See refresh-vignettes.yaml for
+# the on-demand version, and `make tutorials-clean` for the local one.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+name: docs-freshness
+
+permissions:
+  contents: read
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # The stamp hashes git-tracked file CONTENTS, so it is independent of
+      # checkout order, mtimes and build artefacts.
+      - name: Check whether the published tutorials are stale
+        id: check
+        continue-on-error: true
+        run: ./tools/docs-stamp.sh check all
+
+      # Stale docs are a normal state after a modelling change -- the fix is a
+      # local re-bake, which cannot happen inside this job. So report it as a
+      # warning on the run rather than failing the branch and blocking merges.
+      - name: Summarise
+        run: |
+          if [ "${{ steps.check.outcome }}" = "success" ]; then
+            echo "### Tutorials are up to date" >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "### :warning: Published tutorials may be stale"
+              echo
+              echo "Inputs that affect fitted numbers have changed since the"
+              echo "tutorials were last baked, so the published results may no"
+              echo "longer be what this code produces."
+              echo
+              echo '```'
+              echo "make tutorials-clean     # R vignettes"
+              echo "make tutorials-python    # Python notebooks"
+              echo "make docs-stamp          # record the new fingerprint"
+              echo '```'
+              echo
+              echo "Re-bake locally: these are real model fits and are far"
+              echo "better suited to a developer machine than a CI runner."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning title=Tutorials may be stale::Run 'make tutorials-clean && make tutorials-python && make docs-stamp' locally"
+          fi
