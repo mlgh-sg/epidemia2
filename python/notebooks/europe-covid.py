@@ -42,7 +42,12 @@ from plotnine import (aes, geom_col, geom_line, geom_point, geom_ribbon,
                       scale_fill_manual)
 
 import epidemia as epi
+# `epi.prepare_panel` is the older multilevel helper; the core one returns the
+# (PanelData, series) pair that ObsModel and forecast() expect.
+from epidemia.core import prepare_panel
+from epidemia.forecast import forecast
 from epidemia.plots import save_plot, theme_epidemia
+from epidemia.priors import normal
 
 # %% [markdown]
 # ## Data
@@ -65,9 +70,9 @@ data.head()
 # per-country filtering and returns padded, model-ready arrays.
 
 # %%
-fit = epi.prepare_panel(
-    data, epi.EUROPE_COVID_NPIS,
-    seed_offset=30, death_threshold=10, fit_until="2020-05-05",
+fit, series = prepare_panel(
+    data, npis=list(epi.EUROPE_COVID_NPIS), responses=["deaths"],
+    seed_offset=30, threshold=10, fit_until="2020-05-05",
 )
 start_end = pd.DataFrame({
     "country": fit.regions,
@@ -127,12 +132,28 @@ start_end
 # the priors and links above.
 
 # %%
-config = epi.MultilevelConfig(
-    gen=ec.si,            # generation kernel (serial interval)
-    i2o=ec.inf2death,     # infection-to-death delay
-    R_link_K=6.5,         # scaled_logit(6.5) on R
-    ifr_link_K=0.02,      # IFR in (0, 2%)
-    seed_days=6,
+# Built with the package's CORE builder rather than the older MultilevelConfig
+# path, so that epidemia's own forecast() can be used below instead of a
+# hand-rolled re-simulation. The two describe the SAME model -- their
+# log-densities agree to 0.0000 at a matched point, with identical observed-RV
+# contributions -- but only the core builder's objects are accepted by
+# forecast().
+obs = [epi.ObsModel(
+    "deaths", series["deaths"]["y"], series["deaths"]["mask"],
+    i2o=ec.inf2death,        # infection-to-death delay
+    family="neg_binom",
+    link="scaled_logit", link_K=0.02,   # IFR in (0, 2%)
+    prior_intercept=normal(0.0, 0.2),
+    prior_aux=normal(10.0, 5.0),
+)]
+config = epi.EpiModelConfig(
+    gen=ec.si,               # generation kernel (serial interval)
+    link="scaled_logit", R_link_K=6.5,
+    intercept=False,         # R's `~ 0 + ...`: no global intercept
+    region_effects=True, correlated=False,
+    beta_shape=1/6, beta_scale=1.0, beta_shift=float(np.log(1.05) / 6),
+    sd_intercept_shape=2.0, sd_slope_shape=0.5, sd_scale=0.25,
+    seed_days=6, seed_pooling=True, seed_aux_rate=0.03, seed_prior_mean=30.0,
 )
 config
 
@@ -170,12 +191,12 @@ config
 # ridge. Check both.
 
 # %%
-idata = epi.fit_multilevel(
-    fit, config, draws=1000, tune=2000, chains=4, seed=12345,
-    adaptation="low_rank", target_accept=0.99,
+idata = epi.fit_epidemia(
+    fit, obs, config, draws=1000, tune=2000, chains=4, seed=12345,
+    adaptation="diag", target_accept=0.99, maxdepth=14,
 )
 print("divergences:", int(idata.sample_stats["diverging"].sum()))
-az.summary(idata, var_names=["beta", "sd", "ifr", "reciprocal_dispersion", "seed_tau"])
+az.summary(idata, var_names=["beta", "sd", "deaths|rate", "deaths|aux", "seed_tau"])
 
 # %% [markdown]
 # Check the diagnostics before reading anything off this fit — `r_hat` should be
@@ -208,7 +229,10 @@ else:
 # (override with `$EPIDEMIA_FIGDIR`); pass `save=False` to skip.
 
 # %%
-epi.plots.plot_obs(idata, data=fit, save="deaths-ppc",
+# PanelData holds only the design, so the observations come from the ObsModel.
+# (MultilevelData used to carry `deaths` itself; PanelData deliberately does
+# not, since a multi-series fit has no single response to carry.)
+epi.plots.plot_obs(idata, data=fit, obs_model=obs[0], save="deaths-ppc",
                    title="Posterior predictive: deaths")
 
 # %% [markdown]
@@ -371,60 +395,50 @@ _PALETTE = {"observed": _C["observed"], "forecast_band": "#6baed6",
 
 
 # %%
-def posterior_deaths(idata, X_list, config, n_draws=400, seed=0):
-    """Posterior expected deaths per region for arbitrary NPI designs.
-
-    ``X_list[m]`` is a ``(T_m, K)`` design matrix (possibly longer than the
-    fitted window, or with shifted policies). Returns a list of ``(n_draws,
-    T_m)`` arrays of expected daily deaths.
-    """
-    post = idata.posterior
-    rng = np.random.default_rng(seed)
-    S = post.sizes["chain"] * post.sizes["draw"]
-    take = rng.choice(S, size=min(n_draws, S), replace=False)
-
-    def flat(name):
-        a = np.asarray(post[name].stack(s=("chain", "draw")))
-        return np.moveaxis(a, -1, 0)[take]           # (draws, ...)
-
-    beta = flat("beta")                               # (D, K)
-    b0 = flat("b0")                                   # (D, M)
-    b = flat("b")                                     # (D, M, K)
-    seed_ = flat("seed")                              # (D, M)
-    ifr = flat("ifr")                                 # (D,)
-    gen = np.asarray(config.gen)
-    i2o = np.asarray(config.i2o)
-    v = config.seed_days
-    out = []
-    for m, X in enumerate(X_list):
-        X = np.asarray(X, dtype=float)
-        T = X.shape[0]
-        deaths = np.empty((len(take), T))
-        for j in range(len(take)):
-            eta = b0[j, m] + X @ (beta[j] + b[j, m])
-            R = config.R_link_K / (1.0 + np.exp(-eta))
-            seeds = np.full(v, seed_[j, m])
-            infections = epi.renewal_infections(R, seeds, gen)
-            # Use the package's own reference rather than a hand-rolled
-            # convolution, so the forecast applies the *same* lag convention as
-            # the model that produced these draws.
-            deaths[j] = epi.expected_observations(infections, i2o, ifr[j])[:T]
-        out.append(deaths)
-    return out
-
-
 # %% [markdown]
-# **Out-of-sample forecast.** We rebuild the design for each country over the
-# *full* period (through the end of the data), fit only to data before 5 May, and
-# forecast beyond it. Here we show the United Kingdom.
+# **Out-of-sample forecast.** The model was fit only to data before 5 May, so
+# everything after that is genuinely held out. `epidemia.forecast.forecast()`
+# continues the renewal recursion past the fitted window from the same posterior
+# draws — the same code path R uses via standalone generated quantities, so the
+# forecast and the in-sample fit are guaranteed to agree where they overlap.
+#
+# An earlier version of this notebook re-simulated deaths with a hand-rolled
+# helper instead. It did not reproduce its own fit: the UK forecast median
+# peaked near 1500 where `plot_obs` showed roughly 950. Reconstructing the
+# linear predictor by hand is easy to get subtly wrong, and there is no reason
+# to when the package can do it.
 
 # %%
-full = epi.prepare_panel(data, epi.EUROPE_COVID_NPIS,
-                         seed_offset=30, death_threshold=10, fit_until=None)
-uk = full.regions.index("United_Kingdom")
-X_uk = full.X[uk, : full.lengths[uk], :]
-uk_dates = pd.to_datetime(full.dates[uk])
-fc = posterior_deaths(idata, [X_uk], config, seed=1)[0]
+# newdata carries the covariates over the FULL period; forecast() carries the
+# last observed row forward for any day it does not cover.
+fcast = forecast(idata, fit, obs, config, newdata=data, draws=400, seed=1)
+uk = fcast.regions.index("United_Kingdom")
+uk_dates = pd.to_datetime(fcast.dates[uk])
+fc = fcast.predicted["deaths"][:, uk, : fcast.lengths[uk]]
+
+# Does the forecast reproduce the fit it came from? Over the FITTED window the
+# forecast's expected deaths must equal the model's own E_deaths draw for draw,
+# since forecast() replays the same recursion from the same parameters. The
+# hand-rolled helper this replaced did NOT: it put the UK median near 1500 where
+# plot_obs showed roughly 950. Checking it here means the two can never silently
+# drift apart again -- `draw_index` lets the comparison be exact rather than a
+# comparison of medians.
+_E_fit = np.asarray(
+    idata.posterior["E_deaths"].stack(s=("chain", "draw"))
+)                                                    # (M, T, S)
+_E_fit = np.moveaxis(_E_fit, -1, 0)[fcast.draw_index]   # (D, M, T), same draws
+_n = int(fit.lengths[uk])
+_a = fcast.expected["deaths"][:, uk, :_n]
+_b = _E_fit[:, uk, :_n]
+_rel = np.abs(_a - _b) / np.maximum(np.abs(_b), 1e-9)
+print(f"forecast vs fitted E_deaths over the fitted window ({_n} days):")
+print(f"  max relative difference : {_rel.max():.3e}")
+print(f"  median |forecast - fit| : {np.median(np.abs(_a - _b)):.3e}")
+assert _rel.max() < 1e-6, (
+    f"forecast() does not reproduce the fit (max rel diff {_rel.max():.3g}); "
+    "the two have drifted apart"
+)
+print("  OK - the forecast reproduces the fit exactly over the fitted window")
 
 # Three NESTED credible bands, as R's plot_obs draws, and the observed counts
 # split into in-sample and out-of-sample. A single 95% band with one colour of
@@ -445,13 +459,15 @@ uk_bands = pd.concat([
 ], ignore_index=True)
 uk_med = pd.DataFrame({"date": uk_dates, "median": np.median(fc, axis=0)})
 
+# The observed counts come straight from the source frame over the forecast's
+# own dates, so the two are aligned by date rather than by position.
 n_fit = int(fit.lengths[fit.regions.index("United_Kingdom")])
-uk_obs = pd.DataFrame({
-    "date": uk_dates,
-    "deaths": full.deaths[uk, : full.lengths[uk]],
-    "period": np.where(np.arange(full.lengths[uk]) < n_fit,
-                       "In-sample", "Out-of-sample"),
-})
+uk_obs = (data[data["country"] == "United_Kingdom"][["date", "deaths"]]
+          .assign(date=lambda d: pd.to_datetime(d["date"]))
+          .merge(pd.DataFrame({"date": uk_dates}), on="date", how="right")
+          .sort_values("date").reset_index(drop=True))
+uk_obs["period"] = np.where(np.arange(len(uk_obs)) < n_fit,
+                            "In-sample", "Out-of-sample")
 
 p = (
     ggplot()
@@ -477,14 +493,16 @@ p
 # back three days for the UK and re-simulate deaths from the same posterior.
 
 # %%
-def shift_earlier(col, k):
-    return np.concatenate([col[k:], np.ones(k)])
+# Shift every NPI indicator three days earlier, then re-run the SAME posterior
+# through forecast(). Because the counterfactual goes through the same code path
+# as the fit, the two are directly comparable.
+cf_data = data.copy()
+for col in epi.EUROPE_COVID_NPIS:
+    cf_data[col] = cf_data.groupby("country")[col].shift(-3)
+    cf_data[col] = cf_data.groupby("country")[col].ffill().fillna(0.0)
 
-
-X_cf = X_uk.copy()
-for j in range(X_cf.shape[1]):
-    X_cf[:, j] = shift_earlier(X_cf[:, j], 3)
-cf = posterior_deaths(idata, [X_cf], config, seed=1)[0]
+cf_cast = forecast(idata, fit, obs, config, newdata=cf_data, draws=400, seed=1)
+cf = cf_cast.predicted["deaths"][:, uk, : cf_cast.lengths[uk]]
 
 cmp = pd.concat([
     pd.DataFrame({"date": uk_dates, "median": np.median(fc, axis=0),
