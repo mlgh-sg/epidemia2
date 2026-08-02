@@ -5331,6 +5331,7 @@ for the susceptible population.
 - `all_obs_types`: Get a list of all observation types used in a model
 - `as.matrix.epimodel`: Extract posterior samples
 - `compile_epidemia`: Precompile the epidemia Stan models
+- `EnglandB117`: SGTF-split case counts for England, autumn 2020 to January 2021
 - `EnglandNewCases`: Covid-19 Case Counts for England
 - `epidemia_stan_model`: Compile (or retrieve) an epidemia Stan model
 - `epiinf`: Model Latent Infections
