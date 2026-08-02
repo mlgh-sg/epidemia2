@@ -38,7 +38,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">epidemia</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
       </span>
     </div>
 
@@ -83,9 +83,6 @@
   <ul class="dropdown-menu" role="menu">
 <li>
       <a href="../articles/flu.html">A Basic Example</a>
-    </li>
-    <li>
-      <a href="../articles/europe-covid.html">A Multilevel Model</a>
     </li>
     <li>
       <a href="../articles/multiple-obs.html">Multiple Observations</a>
@@ -162,9 +159,9 @@ collinear with the combined policy response. The model can identify what changed
 when the last measure arrived; it cannot separate that change into contributions
 from each measure individually. <span class="citation">Flaxman et al. (<a href="#ref-Flaxman2020">2020</a>)</span> make this point themselves, and it
 is worth restating whenever the coefficient is reported.</p>
-<p>The <a href="europe-covid.html">multilevel tutorial</a> fits a <em>related but different</em>
-model to the same data and distributes the reduction differently, placing a
-substantial part of it on social distancing. The two are not in conflict; they
+<p>The <a href="multilevel-multi-obs.html">multilevel tutorial</a> fits a <em>related but
+different</em> model to the same data and distributes the reduction differently,
+placing a substantial part of it on social distancing. The two are not in conflict; they
 are different specifications of a weakly identified problem. This tutorial
 writes down Flaxman’s specification exactly, so the two can be compared on equal
 terms.</p>
@@ -235,9 +232,9 @@ part.</p>
 <h3 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
 </h3>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">EuropeCovid2</span><span class="op">$</span><span class="va">data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">ungroup</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">country</span>, <span class="va">date</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">EuropeCovid2</span><span class="op">$</span><span class="va">data</span> <span class="op">%&gt;%</span></span>
+<span>  <span class="fu">ungroup</span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span>  <span class="fu">arrange</span><span class="op">(</span><span class="va">country</span>, <span class="va">date</span><span class="op">)</span></span></code></pre></div>
 <p>The paper’s death data (<code>COVID-19-up-to-date.rds</code>) ends on <strong>5 May 2020</strong>, and
 the <em>Nature</em> analysis stops there. <code>EuropeCovid2</code> runs to 30 June, so the window
 has to be truncated — fitting the extra eight weeks of post-lockdown data lets
@@ -245,21 +242,21 @@ has to be truncated — fitting the extra eight weeks of post-lockdown data lets
 within the window, absorb sustained suppression that the truncated analysis
 attributes to the completed policy response.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">date</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-05-05"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">data</span> <span class="op">%&gt;%</span> <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">date</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-05-05"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><code>process-covariates.r</code> starts each country’s series 30 days before its
 cumulative deaths reach 10, and begins the likelihood on day 31
 (<code>EpidemicStart = index1 + 1 - index2</code>). The 30-day run-up is simulated but not
 fitted, which <code>epidemia</code> expresses by setting those observations to <code>NA</code>.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">country</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/row_number.html" class="external-link">row_number</a></span><span class="op">(</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">deaths</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fl">10</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">30</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>deaths <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/replace.html" class="external-link">replace</a></span><span class="op">(</span><span class="va">deaths</span>, <span class="fu"><a href="https://dplyr.tidyverse.org/reference/row_number.html" class="external-link">row_number</a></span><span class="op">(</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">30</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
-<span>         pop <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/nth.html" class="external-link">first</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">na.omit</a></span><span class="op">(</span><span class="va">pop</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>   <span class="co"># pop is NA on pre-epidemic rows</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">ungroup</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">data</span> <span class="op">%&gt;%</span></span>
+<span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">country</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu">row_number</span><span class="op">(</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">deaths</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fl">10</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">-</span> <span class="fl">30</span><span class="op">)</span> <span class="op">%&gt;%</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>deaths <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/replace.html" class="external-link">replace</a></span><span class="op">(</span><span class="va">deaths</span>, <span class="fu">row_number</span><span class="op">(</span><span class="op">)</span> <span class="op">&lt;=</span> <span class="fl">30</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
+<span>         pop <span class="op">=</span> <span class="fu">first</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">na.omit</a></span><span class="op">(</span><span class="va">pop</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span>   <span class="co"># pop is NA on pre-epidemic rows</span></span>
+<span>  <span class="fu">ungroup</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Now the two extra design columns.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">data</span> <span class="op">%&gt;%</span> <span class="fu">mutate</span><span class="op">(</span></span>
 <span>  first_intervention <span class="op">=</span> <span class="fl">1</span> <span class="op">*</span> <span class="op">(</span><span class="op">(</span><span class="va">schools_universities</span> <span class="op">+</span> <span class="va">self_isolating_if_ill</span> <span class="op">+</span></span>
 <span>                             <span class="va">public_events</span> <span class="op">+</span> <span class="va">lockdown</span> <span class="op">+</span></span>
 <span>                             <span class="va">social_distancing_encouraged</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fl">1</span><span class="op">)</span>,</span>
@@ -356,12 +353,12 @@ than separate. <code>scale = 0.09</code> is chosen so the implied prior on <span
 <span><span class="va">pp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">epim</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">args</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>algorithm <span class="op">=</span> <span class="st">"sampling"</span>, iter <span class="op">=</span> <span class="fl">1e3</span>,</span>
 <span>                                 chains <span class="op">=</span> <span class="fl">2</span>, prior_PD <span class="op">=</span> <span class="cn">TRUE</span>, refresh <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running MCMC with 2 parallel chains...</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 1 finished in 7.8 seconds.</span></span>
-<span><span class="co">## Chain 2 finished in 8.0 seconds.</span></span>
+<pre><code><span><span class="co">## Chain 1 finished in 11.5 seconds.</span></span>
+<span><span class="co">## Chain 2 finished in 11.8 seconds.</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Both chains finished successfully.</span></span>
-<span><span class="co">## Mean chain execution time: 7.9 seconds.</span></span>
-<span><span class="co">## Total execution time: 8.2 seconds.</span></span></code></pre>
+<span><span class="co">## Mean chain execution time: 11.7 seconds.</span></span>
+<span><span class="co">## Total execution time: 11.9 seconds.</span></span></code></pre>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">r0</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_rt.html">posterior_rt</a></span><span class="op">(</span><span class="va">pp</span><span class="op">)</span><span class="op">$</span><span class="va">draws</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running standalone generated quantities after 1 MCMC chain...</span></span>
@@ -398,14 +395,14 @@ attack rates over this window are a few percent.</p>
 <span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.99</span>, max_treedepth <span class="op">=</span> <span class="fl">14</span><span class="op">)</span></span>
 <span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running MCMC with 4 parallel chains...</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 4 finished in 2469.0 seconds.</span></span>
-<span><span class="co">## Chain 1 finished in 2509.7 seconds.</span></span>
-<span><span class="co">## Chain 2 finished in 2548.1 seconds.</span></span>
-<span><span class="co">## Chain 3 finished in 2803.6 seconds.</span></span>
+<pre><code><span><span class="co">## Chain 4 finished in 15863.6 seconds.</span></span>
+<span><span class="co">## Chain 1 finished in 16013.0 seconds.</span></span>
+<span><span class="co">## Chain 2 finished in 16126.3 seconds.</span></span>
+<span><span class="co">## Chain 3 finished in 16568.5 seconds.</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## All 4 chains finished successfully.</span></span>
-<span><span class="co">## Mean chain execution time: 2582.6 seconds.</span></span>
-<span><span class="co">## Total execution time: 2803.7 seconds.</span></span></code></pre>
+<span><span class="co">## Mean chain execution time: 16142.9 seconds.</span></span>
+<span><span class="co">## Total execution time: 16568.6 seconds.</span></span></code></pre>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sampler_diagnostics.html">sampler_diagnostics</a></span><span class="op">(</span><span class="va">fm</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Sampler diagnostics</span></span>

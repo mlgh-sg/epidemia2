@@ -2,7 +2,7 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
-  europe-covid: europe-covid.html
+  b117: b117.html
   flaxman: flaxman.html
   flu: flu.html
   install: install.html
@@ -14,7 +14,7 @@ articles:
   multiple-obs: multiple-obs.html
   partial-pooling: partial-pooling.html
   priors: priors.html
-last_built: 2026-08-02T08:02Z
+last_built: 2026-08-02T18:06Z
 urls:
   reference: https://mlgh-sg.com/epidemia2/reference
   article: https://mlgh-sg.com/epidemia2/articles

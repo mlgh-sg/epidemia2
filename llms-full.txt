@@ -1825,7 +1825,7 @@ which are partially pooled *within* each county.
 Previous examples conditioned on a single observation series (case and
 death counts respectively). Simple models were used for describing
 ascertainment rates. The flu [example](flu.html) assumed
-*full ascertainment* of infections, while the multilevel [example](europe-covid.html) took the IFR to be *constant but unknown*.
+*full ascertainment* of infections, while the multilevel [example](multilevel-multi-obs.html) took the IFR to be *constant but unknown*.
 Population adjustments were not considered, and both examples modeled
 the entire history of the epidemic from the first observed cases.
 
@@ -1957,7 +1957,7 @@ i_t &= S_t \left( 1 - \exp\left(-\frac{i'_t}{P}\right)\right),
 ```
 where $P$ is the population size and $S_t$ is the time-varying
 susceptible population. We use the same generation distribution $\pi_k$
-as in the [multilevel model](europe-covid.html). The initial susceptible population
+as in the [multilevel model](multilevel-multi-obs.html). The initial susceptible population
 $S_{v}$ is given a prior $S_v \sim \mathcal{N}(0.48, 0.10)$. This is
 motivated by an ONS antibody survey [@ons_antibody], which estimates
 that 51% of the population in England would have tested positive for
@@ -2137,16 +2137,16 @@ fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data,
 ## Chain 4 Iteration:  200 / 4000 [  5%]  (Warmup) 
 ## Chain 3 Iteration:  300 / 4000 [  7%]  (Warmup) 
 ## Chain 2 Iteration:  300 / 4000 [  7%]  (Warmup) 
-## Chain 4 Iteration:  300 / 4000 [  7%]  (Warmup) 
 ## Chain 1 Iteration:  300 / 4000 [  7%]  (Warmup) 
+## Chain 4 Iteration:  300 / 4000 [  7%]  (Warmup) 
 ## Chain 3 Iteration:  400 / 4000 [ 10%]  (Warmup) 
 ## Chain 2 Iteration:  400 / 4000 [ 10%]  (Warmup) 
 ## Chain 4 Iteration:  400 / 4000 [ 10%]  (Warmup) 
 ## Chain 1 Iteration:  400 / 4000 [ 10%]  (Warmup) 
 ## Chain 2 Iteration:  500 / 4000 [ 12%]  (Warmup) 
 ## Chain 3 Iteration:  500 / 4000 [ 12%]  (Warmup) 
-## Chain 4 Iteration:  500 / 4000 [ 12%]  (Warmup) 
 ## Chain 1 Iteration:  500 / 4000 [ 12%]  (Warmup) 
+## Chain 4 Iteration:  500 / 4000 [ 12%]  (Warmup) 
 ## Chain 2 Iteration:  600 / 4000 [ 15%]  (Warmup) 
 ## Chain 3 Iteration:  600 / 4000 [ 15%]  (Warmup) 
 ## Chain 1 Iteration:  600 / 4000 [ 15%]  (Warmup) 
@@ -2183,14 +2183,14 @@ fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data,
 ## Chain 1 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
 ## Chain 3 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
 ## Chain 4 Iteration: 1400 / 4000 [ 35%]  (Warmup) 
-## Chain 2 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
 ## Chain 1 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
-## Chain 4 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
+## Chain 2 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
 ## Chain 3 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
-## Chain 2 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
+## Chain 4 Iteration: 1500 / 4000 [ 37%]  (Warmup) 
 ## Chain 1 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
-## Chain 4 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
+## Chain 2 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
 ## Chain 3 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
+## Chain 4 Iteration: 1600 / 4000 [ 40%]  (Warmup) 
 ## Chain 1 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
 ## Chain 2 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
 ## Chain 4 Iteration: 1700 / 4000 [ 42%]  (Warmup) 
@@ -2212,8 +2212,8 @@ fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data,
 ## Chain 3 Iteration: 2000 / 4000 [ 50%]  (Warmup) 
 ## Chain 3 Iteration: 2001 / 4000 [ 50%]  (Sampling) 
 ## Chain 1 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
-## Chain 4 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
 ## Chain 2 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
+## Chain 4 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
 ## Chain 3 Iteration: 2100 / 4000 [ 52%]  (Sampling) 
 ## Chain 1 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
 ## Chain 2 Iteration: 2200 / 4000 [ 55%]  (Sampling) 
@@ -2223,82 +2223,82 @@ fm <- epim(rt = rt, inf = inf, obs = list(cases, ons), data = data,
 ## Chain 2 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
 ## Chain 4 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
 ## Chain 3 Iteration: 2300 / 4000 [ 57%]  (Sampling) 
-## Chain 4 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
 ## Chain 1 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
 ## Chain 2 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
+## Chain 4 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
 ## Chain 3 Iteration: 2400 / 4000 [ 60%]  (Sampling) 
-## Chain 4 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
-## Chain 2 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
 ## Chain 1 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
+## Chain 2 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
+## Chain 4 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
 ## Chain 3 Iteration: 2500 / 4000 [ 62%]  (Sampling) 
-## Chain 4 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
-## Chain 2 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
 ## Chain 1 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
+## Chain 4 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
 ## Chain 3 Iteration: 2600 / 4000 [ 65%]  (Sampling) 
-## Chain 4 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
-## Chain 2 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
 ## Chain 1 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
+## Chain 2 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
+## Chain 4 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
 ## Chain 3 Iteration: 2700 / 4000 [ 67%]  (Sampling) 
-## Chain 4 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
-## Chain 2 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
 ## Chain 1 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
+## Chain 2 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
+## Chain 4 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
 ## Chain 3 Iteration: 2800 / 4000 [ 70%]  (Sampling) 
+## Chain 1 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
 ## Chain 2 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
 ## Chain 4 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
-## Chain 1 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
 ## Chain 3 Iteration: 2900 / 4000 [ 72%]  (Sampling) 
-## Chain 4 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
-## Chain 2 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
 ## Chain 1 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
+## Chain 2 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
+## Chain 4 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
 ## Chain 3 Iteration: 3000 / 4000 [ 75%]  (Sampling) 
-## Chain 4 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
-## Chain 2 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
 ## Chain 1 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
+## Chain 2 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
+## Chain 4 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
 ## Chain 3 Iteration: 3100 / 4000 [ 77%]  (Sampling) 
-## Chain 4 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
-## Chain 2 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
 ## Chain 1 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
+## Chain 2 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
 ## Chain 3 Iteration: 3200 / 4000 [ 80%]  (Sampling) 
-## Chain 4 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 2 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
 ## Chain 1 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
+## Chain 2 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
+## Chain 4 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
 ## Chain 3 Iteration: 3300 / 4000 [ 82%]  (Sampling) 
-## Chain 4 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 2 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
 ## Chain 1 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
+## Chain 2 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
+## Chain 4 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
 ## Chain 3 Iteration: 3400 / 4000 [ 85%]  (Sampling) 
-## Chain 4 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 2 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
 ## Chain 1 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
+## Chain 2 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
+## Chain 4 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
 ## Chain 3 Iteration: 3500 / 4000 [ 87%]  (Sampling) 
-## Chain 4 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
-## Chain 2 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
 ## Chain 1 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
+## Chain 2 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
+## Chain 4 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
 ## Chain 3 Iteration: 3600 / 4000 [ 90%]  (Sampling) 
-## Chain 4 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
-## Chain 2 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
 ## Chain 1 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
+## Chain 2 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
+## Chain 4 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
 ## Chain 3 Iteration: 3700 / 4000 [ 92%]  (Sampling) 
-## Chain 4 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
-## Chain 2 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
 ## Chain 1 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
+## Chain 2 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
+## Chain 4 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
 ## Chain 3 Iteration: 3800 / 4000 [ 95%]  (Sampling) 
-## Chain 4 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
 ## Chain 2 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
 ## Chain 1 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
+## Chain 4 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
 ## Chain 3 Iteration: 3900 / 4000 [ 97%]  (Sampling) 
-## Chain 4 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 4 finished in 154.3 seconds.
 ## Chain 2 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 2 finished in 154.5 seconds.
+## Chain 2 finished in 171.8 seconds.
 ## Chain 1 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 1 finished in 155.2 seconds.
+## Chain 4 Iteration: 4000 / 4000 [100%]  (Sampling) 
+## Chain 1 finished in 172.0 seconds.
+## Chain 4 finished in 172.0 seconds.
 ## Chain 3 Iteration: 4000 / 4000 [100%]  (Sampling) 
-## Chain 3 finished in 156.6 seconds.
+## Chain 3 finished in 173.0 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 155.2 seconds.
-## Total execution time: 156.7 seconds.
+## Mean chain execution time: 172.2 seconds.
+## Total execution time: 173.2 seconds.
 ```
 
 Figure \@ref(fig:eng-rt) plots credible intervals for $R_t$ over the two
@@ -2609,11 +2609,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 1 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
+## Chain 1 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -2637,11 +2637,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 2 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
+## Chain 2 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -2665,11 +2665,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 3 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[88, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
+## Chain 3 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[88, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -2693,11 +2693,11 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 4 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 1, column 0, included from
+## Chain 4 Exception: epidemia_base_model_namespace::log_prob: Rt_unadj[91, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 1, column 0, included from
 ```
 
 ```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -2713,47 +2713,47 @@ system.time(fm1 <- do.call(epim, args))
 ```
 
 ```
-## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
+## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
-## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 ## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 4 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 ## Chain 2 Iteration:  500 / 2000 [ 25%]  (Warmup) 
-## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 ## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
+## Chain 3 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 ## Chain 4 Iteration:  600 / 2000 [ 30%]  (Warmup) 
 ## Chain 2 Iteration:  600 / 2000 [ 30%]  (Warmup) 
-## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 1 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 2 Iteration:  700 / 2000 [ 35%]  (Warmup) 
-## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 3 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 1 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
+## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
-## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
-## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
+## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
@@ -2762,8 +2762,8 @@ system.time(fm1 <- do.call(epim, args))
 ## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
@@ -2771,45 +2771,45 @@ system.time(fm1 <- do.call(epim, args))
 ## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
 ## Chain 2 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
-## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
 ## Chain 4 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
 ## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
+## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 3 finished in 29.2 seconds.
-## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 2 finished in 29.6 seconds.
-## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 1 finished in 29.7 seconds.
+## Chain 3 finished in 37.9 seconds.
 ## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 4 finished in 29.8 seconds.
+## Chain 4 finished in 38.3 seconds.
+## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 2 finished in 38.5 seconds.
+## Chain 1 finished in 38.5 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 29.5 seconds.
-## Total execution time: 29.9 seconds.
+## Mean chain execution time: 38.3 seconds.
+## Total execution time: 38.7 seconds.
 ```
 
 ```
 ##    user  system elapsed 
-## 111.923   2.763  31.666
+## 148.508   1.144  40.954
 ```
 
 ``` r
@@ -2827,11 +2827,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 1 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -2855,11 +2855,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 2 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -2883,11 +2883,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[18, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 3 Exception: epidemia_base_model_namespace::log_prob: load[18, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -2911,11 +2911,11 @@ system.time(fm2 <- do.call(epim, args_ext))
 ```
 
 ```
-## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/Users/smishra/Documents/GitHub/epidemia/inst/stan//tparameters/infections_rt.stan', line 2, column 0, included from
+## Chain 4 Exception: epidemia_base_model_namespace::log_prob: load[13, 1] is nan, but must be greater than or equal to 0.000000 (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//tparameters/infections_rt.stan', line 2, column 0, included from
 ```
 
 ```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpvdiIPv/model-2dba1e8b21ed.stan', line 62, column 0)
+## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 62, column 0)
 ```
 
 ```
@@ -2934,19 +2934,19 @@ system.time(fm2 <- do.call(epim, args_ext))
 ## Chain 1 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 3 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 2 Iteration:  100 / 2000 [  5%]  (Warmup) 
-## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 1 Iteration:  200 / 2000 [ 10%]  (Warmup) 
+## Chain 4 Iteration:  100 / 2000 [  5%]  (Warmup) 
 ## Chain 3 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 2 Iteration:  200 / 2000 [ 10%]  (Warmup) 
 ## Chain 1 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 3 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 4 Iteration:  200 / 2000 [ 10%]  (Warmup) 
-## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 2 Iteration:  300 / 2000 [ 15%]  (Warmup) 
-## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
+## Chain 1 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 3 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 4 Iteration:  300 / 2000 [ 15%]  (Warmup) 
 ## Chain 1 Iteration:  500 / 2000 [ 25%]  (Warmup) 
+## Chain 2 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 3 Iteration:  500 / 2000 [ 25%]  (Warmup) 
 ## Chain 4 Iteration:  400 / 2000 [ 20%]  (Warmup) 
 ## Chain 1 Iteration:  600 / 2000 [ 30%]  (Warmup) 
@@ -2962,49 +2962,49 @@ system.time(fm2 <- do.call(epim, args_ext))
 ## Chain 3 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 4 Iteration:  700 / 2000 [ 35%]  (Warmup) 
 ## Chain 1 Iteration:  900 / 2000 [ 45%]  (Warmup) 
-## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 3 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 2 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 4 Iteration:  800 / 2000 [ 40%]  (Warmup) 
 ## Chain 1 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 1 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 3 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 3 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
+## Chain 2 Iteration:  900 / 2000 [ 45%]  (Warmup) 
 ## Chain 4 Iteration:  900 / 2000 [ 45%]  (Warmup) 
+## Chain 3 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 1 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 2 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 2 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
 ## Chain 3 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 4 Iteration: 1000 / 2000 [ 50%]  (Warmup) 
 ## Chain 4 Iteration: 1001 / 2000 [ 50%]  (Sampling) 
-## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 1 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
-## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
+## Chain 3 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
 ## Chain 4 Iteration: 1100 / 2000 [ 55%]  (Sampling) 
-## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
+## Chain 3 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 4 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 1 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
+## Chain 2 Iteration: 1200 / 2000 [ 60%]  (Sampling) 
 ## Chain 3 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 3 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 2 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 4 Iteration: 1300 / 2000 [ 65%]  (Sampling) 
 ## Chain 1 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 3 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 4 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
-## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 2 Iteration: 1400 / 2000 [ 70%]  (Sampling) 
 ## Chain 3 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
+## Chain 1 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
 ## Chain 3 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 4 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
-## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 2 Iteration: 1500 / 2000 [ 75%]  (Sampling) 
+## Chain 1 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
 ## Chain 3 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
-## Chain 3 finished in 3.4 seconds.
-## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
+## Chain 3 finished in 4.4 seconds.
 ## Chain 2 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 4 Iteration: 1600 / 2000 [ 80%]  (Sampling) 
+## Chain 1 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 4 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 2 Iteration: 1700 / 2000 [ 85%]  (Sampling) 
 ## Chain 1 Iteration: 1800 / 2000 [ 90%]  (Sampling) 
@@ -3013,21 +3013,21 @@ system.time(fm2 <- do.call(epim, args_ext))
 ## Chain 1 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 4 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
 ## Chain 2 Iteration: 1900 / 2000 [ 95%]  (Sampling) 
-## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
 ## Chain 4 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 1 finished in 4.3 seconds.
-## Chain 4 finished in 4.2 seconds.
+## Chain 4 finished in 5.4 seconds.
+## Chain 1 Iteration: 2000 / 2000 [100%]  (Sampling) 
+## Chain 1 finished in 5.6 seconds.
 ## Chain 2 Iteration: 2000 / 2000 [100%]  (Sampling) 
-## Chain 2 finished in 4.4 seconds.
+## Chain 2 finished in 5.7 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 4.1 seconds.
-## Total execution time: 4.5 seconds.
+## Mean chain execution time: 5.3 seconds.
+## Total execution time: 5.8 seconds.
 ```
 
 ```
 ##    user  system elapsed 
-##  16.837   0.718   6.461
+##  22.078   0.620   8.249
 ```
 Note the stark difference in running time. The extended model appears to fit 
 faster even though there are $87$ additional parameters being sampled (daily 
@@ -3095,374 +3095,217 @@ and show that both models are able to fit the data well.
 
 :::
 
-<!-- ===== article: europe-covid ===== -->
+<!-- ===== article: b117 ===== -->
 
-# Multilevel Modeling
+# Transmissibility of a New Variant
 
 
 <style>
 .contents .page-header {
     display: none;
-} 
+}
 </style>
 
 ::: {.article_container}
 
 
 
+# Transmissibility of a New Variant
 
-# Assessing the Effects of Interventions on COVID-19 {#sec:multilevel}
-<hr>
+@Volz2021 used **epidemia** to ask how much more transmissible SARS-CoV-2
+lineage B.1.1.7 was than the lineages it displaced in England. This tutorial
+reproduces that analysis for one area.
 
-The Spanish flu [example](flu.html) considered inferring the
-instantaneous reproduction number over time in a single population.
-Here, we demonstrate some of the more advanced modeling capabilities of
-the package.
+The question has an awkward shape. Two lineages are spreading in the same
+population at the same time, under the same restrictions, and both are observed
+only through case counts. Anything that changes transmission for one — a
+lockdown, school holidays, weather, behaviour — changes it for the other too.
+What we want is the *ratio* of their reproduction numbers, and the model has to
+be built so that ratio is a parameter rather than something reconstructed
+afterwards from two separate fits.
 
-Consider modeling the evolution of an epidemic in multiple distinct
-regions. As discussed in the model [description](model-description.html), one can always approach
-this by modeling each group separately. It was argued that this approach
-is fast, because models may be fit independently. Nonetheless, often
-there is little high quality data for some groups, and the data does
-little to inform parameter estimates. This is particularly true in the
-early stages of an epidemic. Joining regions together through
-hierarchical models allows information to be shared between regions in a
-natural way, improving parameter estimates while still permitting
-between group variation.
-
-In this section, we use a hierarchical model to estimate the effect of
-non-pharmaceutical interventions (NPIs) on the transmissibility of
-Covid-19. We consider the same setup as @Flaxman2020: attempting to
-estimate the effect of a set of measures that were implemented in March
-2020 in 11 European countries during the first wave of Covid-19. This
-will be done by fitting the model to daily death data. The same set of
-measures and countries that were used in @Flaxman2020 are also used
-here. @Flaxman2020MA considered a version of this model that used
-partial pooling for all NPI effects. Here, we consider a model that uses
-the same approach.
-
-This example is not intended to be a fully rigorous statistical
-analysis. Rather, the intention is to demonstrate partial pooling of
-parameters in **epidemia** and how to infer their effect sizes. We
-also show how to forecast observations into the future, and how to
-undertake counterfactual analyses.
-
-Begin by loading required packages. **dplyr** will be used to manipulate
-the data set. The prior distributions used below are provided directly by
-**epidemia**.
-
-``` r
-library(dplyr)
-library(epidemia)
-```
-
-
-## Data
-<hr>
-
-We use a data set `EuropeCovid2`, which is provided by
-**epidemia**. This contains daily death and case data in the 11
-countries concerned up until the 1^st^ July 2020. The data derives from
-the WHO COVID-19 explorer as of the 5^th^ of January 2021. This differs
-from the data used in @Flaxman2020, because case and death counts have
-been adjusted retrospectively as new information came to light.
-**epidemia** also has a data set `EuropeCovid` which contains the
-same data as that in @Flaxman2020, and this could alternatively be used
-for this exercise.
-
-`EuropeCovid2` also contains binary series representing the set of
-five mitigation measures considered in @Flaxman2020. These correspond to
-the closing of schools and universities, the banning of public events,
-encouraging social distancing, requiring self isolation if ill, and
-finally the implementation of full lockdown. The dates at which these
-policies were enacted are exactly the same as those used in
-@Flaxman2020.
-
-Load the data set as follows.
-
-
-``` r
-data("EuropeCovid2")
-data <- EuropeCovid2$data
-head(data)
-```
-
-```
-## # A tibble: 6 × 11
-## # Groups:   country [1]
-##   id    country date       cases deaths schools_universities
-##   <chr> <chr>   <date>     <int>  <int>                <int>
-## 1 AT    Austria 2020-01-03     0      0                    0
-## 2 AT    Austria 2020-01-04     0      0                    0
-## 3 AT    Austria 2020-01-05     0      0                    0
-## 4 AT    Austria 2020-01-06     0      0                    0
-## 5 AT    Austria 2020-01-07     0      0                    0
-## 6 AT    Austria 2020-01-08     0      0                    0
-## # ℹ 5 more variables: self_isolating_if_ill <int>, public_events <int>,
-## #   lockdown <int>, social_distancing_encouraged <int>, pop <int>
-```
-
-Recall that for each country, **epidemia** will use the earliest date
-in `data` as the first date to begin seeding infections. Therefore,
-we must choose an appropriate start date for each group. One option is
-to use the same rule as in @Flaxman2020, and assume that seeding begins
-in each country 30 days prior to observing 10 cumulative deaths. To do
-this, we filter the data frame as follows.
-
-
-``` r
-data <- filter(data, date > date[which(cumsum(deaths) > 10)[1] - 30])
-```
-
-This leaves the following assumed start dates.
-
-
-``` r
-dates <- summarise(data, start = min(date), end = max(date))
-head(dates)
-```
-
-```
-## # A tibble: 6 × 3
-##   country start      end       
-##   <chr>   <date>     <date>    
-## 1 Austria 2020-02-23 2020-06-30
-## 2 Belgium 2020-02-15 2020-06-30
-## 3 Denmark 2020-02-22 2020-06-30
-## 4 France  2020-02-09 2020-06-30
-## 5 Germany 2020-02-16 2020-06-30
-## 6 Italy   2020-01-28 2020-06-30
-```
-
-Although `data` contains observations up until the end of June, we
-fit the model using a subset of the data. We hold out the rest to
-demonstrate forecasting out-of-sample. Following @Flaxman2020, the final
-date considered is the 5^th^ May.
-
-
-``` r
-data <- filter(data, date < as.Date("2020-05-05"))
-```
-
-### Model Components
-
-We have seen several times now that **epidemia** require the user to
-specify three model components: transmission, infections, and
-observations. These are now considered in turn.
-
-#### Transmission {#sec:europe-covid_transmission}
-
-Country-specific reproduction numbers $R^{(m)}_{t}$ are expressed in
-terms of the control measures. Since the measures are encoded as binary
-policy indicators, reproduction rates must follow a step function. They
-are constant between policies, and either increase or decrease as
-policies come into play. The implicit assumption, of course, is that
-only control measures may affect transmission, and that these effects
-are fully realized instantaneously.
-
-Let $t^{(m)}_{k} \geq 0$, $k \in \{1,\ldots,5\}$ be the set of integer
-times at which the $k$^th^ control measure was enacted in the $m$^th^
-country. Accordingly, we let $I^{(m)}_{k}$, $k \in \{1,\ldots,5\}$ be a
-set of corresponding binary vectors such that \begin{equation}
-I^{(m)}_{k,t} = 
-\begin{cases}
-0, & \text{if } t < t^{(m)}_k \\
-1. & \text{if } t \geq t^{(m)}_k
-\end{cases}
-\end{equation} Reproduction numbers are mathematically expressed as
-\begin{equation}
-R^{(m)}_{t} = R' g^{-1}\left(b^{(m)}_0 + \sum_{k=1}^{5}\left(\beta_k + b^{(m)}_k\right)I^{(m)}_{k,t}\right),
-\end{equation} where $R' = 3.25$ and $g$ is the logit-link. Parameters
-$b^{(m)}_0$ are country-specific intercepts, and each $b^{(m)}_k$ is a
-country effect for the $k$^th^ measure. The intercepts allow each
-country to have its own initial reproduction number, and hence accounts
-for possible variation in the inherent transmissibility of Covid-19 in
-each population. $\beta_k$ is a fixed effect for the $k$^th^ policy.
-This quantity corresponds to the average effect of a measure across all
-countries considered.
-
-Control measures were implemented in quick succession in most countries.
-For some countries, a subset of the measures were in fact enacted
-simultaneously. For example, Germany banned public events at the same
-time as implementing lockdown. The upshot of this is that policy effects
-are *highly colinear* and may prove difficult to infer with
-uninformative priors.
-
-One potential remedy is to use domain knowledge to incorporate
-information into the priors. In particular, it seems a priori unlikely
-that the measures served to increase transmission rates significantly.
-It is plausible, however, that each had a significant effect on reducing
-transmission. A symmetric prior like the Gaussian does not capture this
-intuition and increases the difficulty in inferring effects, because
-they are more able to offset each other. This motivated the prior used
-in @Flaxman2020, which was a Gamma distribution shifted to have support
-other than zero.
-
-We use the same prior in our example. Denoting the distribution of a
-Gamma random variable with shape $a$ and scale $b$ by
-$\text{Gamma}(a, b)$, this prior is \begin{equation}
--\beta_k - \frac{\log(1.05)}{6} \sim \text{Gamma}(1/6, 1).
-\label{eq:betaprior}
-\end{equation} The shift allows the measures to increase transmission
-slightly.
-
-All country-specific parameters are partially pooled by letting
-\begin{equation}
-b^{(m)}_k \sim N(0, \sigma_k),
-\end{equation} where $\sigma_k$ are standard deviations,
-$\sigma_0 \sim \text{Gamma}(2, 0.25)$ and
-$\sigma_k \sim \text{Gamma}(0.5, 0.25)$ for all $k > 0$. This gives the
-intercept terms more variability under the prior.
-
-The transmission model described above is expressed programmatically as
-follows.
-
-
-``` r
-rt <- epirt(formula = R(country, date) ~ 0 + (1 + public_events + 
-              schools_universities + self_isolating_if_ill + 
-              social_distancing_encouraged + lockdown || country) + 
-              public_events + schools_universities + self_isolating_if_ill +
-              social_distancing_encouraged + lockdown, 
-            prior = shifted_gamma(shape = 1/6, scale = 1, shift = log(1.05)/6),
-            prior_covariance = decov(shape = c(2, rep(0.5, 5)), scale = 0.25),
-            link = scaled_logit(6.5))
-```
-
-The operator `||` is used rather than `|` for random effects.
-This ensures that all effects for a given country are independent, as
-was assumed in the model described above. Using `|` would
-alternatively give a prior on the full covariance matrix, rather than on
-the individual $\sigma_i$ terms. The argument `prior` reflects
-Equation \eqref{eq:betaprior}. Since country effects are assumed
-independent, the `decov` prior reduces to assigning Gamma priors to
-each $\sigma_i$. By using a vector rather than a scalar for the
-`shape` argument, we are able to give the prior on the intercepts a
-larger shape parameter.
-
-### Infections
-
-Infections are kept simple here by using the basic version of the model.
-That is to say that infections are taken to be a deterministic function
-of seeds and reproduction numbers, propagated by the renewal process.
-Extensions to modeling infections as parameters and adjustments for the
-susceptible population are not considered. The model is defined as
-follows.
-
-
-``` r
-inf <- epiinf(gen = EuropeCovid$si, seed_days = 6)
-```
-
-`EuropeCovid$si` is a numeric vector giving the serial interval
-used in @Flaxman2020. As in that work, we make no distinction between
-the generation distribution and serial interval here.
-
-### Observations
-
-In order to infer the effects of control measures on transmission, we
-must fit the model to data. Here, daily deaths are used. In theory,
-additional types of data can be included in the model, but such
-extension are not considered here. A simple intercept model is used for
-the infection fatality rate (IFR). This makes the assumption that the
-IFR is constant over time. The model can be written as follows.
-
-
-``` r
-deaths <- epiobs(formula = deaths ~ 1, i2o = EuropeCovid2$inf2death, 
-                 prior_intercept = normal(0,0.2), link = scaled_logit(0.02))
-```
-
-By using `link = scaled_logit(0.02)`, we let the IFR range between
-$0\%$ and $2\%$. In conjunction with the symmetric prior on the
-intercept, this gives the IFR a prior mean of $1\%$.
-`EuropeCovid2$inf2death` is a numeric vector giving the same
-distribution for the time from infection to death as that used in
-@Flaxman2020.
-
-## Model Fitting
-<hr>
-
-**epidemia**'s models are fit using Hamiltonian Monte Carlo, and this example
-is no exception. Sampling a joint model of this size is computationally
-demanding -- the renewal equation is evaluated for every region at every
-evaluation of the likelihood and its derivatives -- so it is slower than a
-variational approximation by a wide margin. It is nonetheless what the results
-below are based on, because the quantities of interest here are effect sizes
-and their uncertainty, and a variational approximation reports those with
-intervals that are too narrow to compare honestly.
-
-### Prior Check
-
-The flu [article](flu.html) gave an example of using posterior predictive
-checks. It is also useful to do prior predictive checks as these allow
-the user to catch obvious mistakes that can occur when specifying the
-model, and can also help to affirm that the prior is in fact reasonable.
-
-In **epidemia** we can do this by using the `priorPD = TRUE` flag
-in `epim()`. This discards the likelihood component of the
-posterior, leaving just the prior. We use Hamiltonian Monte Carlo over
-VB for the prior check, partly because sampling from the prior is quick
-(it is the likelihood that is expensive to evaluate). In addition, we
-have defined Gamma priors on some coefficients, which are generally
-poorly approximated by VB.
-
-
-``` r
-args <- list(rt = rt, inf = inf, obs = deaths, data = data, seed = 12345, 
-             refresh = 0)
-pr_args <- c(args, list(algorithm = "sampling", iter = 1e3, prior_PD = TRUE))
-fm_prior <- do.call(epim, pr_args)
-```
-
-```
-## Running MCMC with 4 parallel chains...
-## 
-## Chain 1 finished in 9.2 seconds.
-## Chain 3 finished in 9.2 seconds.
-## Chain 2 finished in 9.5 seconds.
-## Chain 4 finished in 9.5 seconds.
-## 
-## All 4 chains finished successfully.
-## Mean chain execution time: 9.4 seconds.
-## Total execution time: 9.6 seconds.
-```
-
-Figure \@ref(fig:multilevel-prior) shows approximate samples of $R_{t,m}$
-from the prior distribution. This confirms that reproduction numbers
-follow a step function, and that rates can both increase and decrease as
-measures come into play.
-
-
-```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
-```
-
-<div class="figure" style="text-align: center">
-<img src="multilevel-prior-plot.png" alt="A prior predictive check for reproduction numbers $R_t$ in the multilevel model. Only results for the United Kingdom are presented here. The prior median is shown in black, with credible intervals shown in various shades of green. The check appears to confirm that $R_t$ follows a step-function." width="60%" />
-<p class="caption">(\#fig:multilevel-prior)A prior predictive check for reproduction numbers $R_t$ in the multilevel model. Only results for the United Kingdom are presented here. The prior median is shown in black, with credible intervals shown in various shades of green. The check appears to confirm that $R_t$ follows a step-function.</p>
+<div style="border-left: 4px solid #d95f02; padding: 0.6em 1em; margin: 1.5em 0; background: #fdf6f0;">
+**Read this as a demonstration of the method, not as a specification to copy.**
+The model structure and priors below are the ones in the paper's own code, but a
+tutorial is not an analysis. It fits **one** area rather than all of them, omits
+the machinery the authors used to get every area to converge, and makes no claim
+that these priors are appropriate for other data. Nothing here should be lifted
+into another study as a default; the "[Not the paper's configuration]" section
+at the end sets out exactly what differs and why.
 </div>
 
+## S-gene target failure
 
-### Fitting the Posterior
-
-The model is fit with the NUTS sampler (`algorithm = "sampling"`, the
-default). Earlier versions of this tutorial used Variational Bayes
-(`algorithm = "fullrank"`) because it is much faster, but a variational
-approximation understates posterior uncertainty and CmdStan declined to
-certify the fit as converged. Since the interest here is in comparing effect
-sizes between measures, and those are exactly the quantities a variational
-approximation reports too confidently, the extra cost of MCMC is worth paying.
+The measurement that makes this possible is an accident of assay design.
+Routine PCR testing in England used a three-target assay, and B.1.1.7 carries a
+deletion that makes the S-gene target fail while the other two still amplify.
+"S-gene target failure" (SGTF) therefore acts as a proxy for the lineage in
+ordinary testing data, without sequencing every sample.
 
 
 ``` r
-args$algorithm <- "sampling"
-args$iter <- 2e3
-args$chains <- 4
-args$control <- list(adapt_delta = 0.99, max_treedepth = 14)
-fm <- do.call(epim, args)
+b117 <- EnglandB117
+str(b117$data)
+```
+
+```
+## 'data.frame':	5880 obs. of  5 variables:
+##  $ date              : Date, format: "2020-09-26" "2020-09-27" ...
+##  $ area              : chr  "Bath and North East Somerset, Swindon and Wiltshire" "Bath and North East Somerset, Swindon and Wiltshire" "Bath and North East Somerset, Swindon and Wiltshire" "Bath and North East Somerset, Swindon and Wiltshire" ...
+##  $ corrected_positive: num  NA NA NA NA NA NA NA NA NA NA ...
+##  $ corrected_negative: num  NA NA NA NA NA NA NA NA NA NA ...
+##  $ epiweek           : num  39 40 40 40 40 40 40 40 41 41 ...
+```
+
+Each area-day splits into `corrected_negative` (S-gene negative, so B.1.1.7)
+and `corrected_positive` (everything else), already adjusted for testing effort
+by the original authors.
+
+We fit **Kent and Medway**, where B.1.1.7 was first identified and where
+replacement went furthest — by January 2021 it accounts for the large majority
+of cases there, while enough non-B.1.1.7 cases remain to serve as a comparison
+arm.
+
+
+``` r
+area <- "Kent and Medway"
+
+b117$data %>%
+  filter(area == !!area) %>%
+  summarise(days = n(),
+            from = min(date), to = max(date),
+            b117 = sum(corrected_negative),
+            other = sum(corrected_positive)) %>%
+  mutate(pct_b117 = round(100 * b117 / (b117 + other), 1))
+```
+
+```
+##   days       from         to b117 other pct_b117
+## 1  120 2020-09-26 2021-01-23   NA    NA       NA
+```
+
+## One area, two groups
+
+The modelling idea is to treat each lineage in an area as its **own group**.
+The area becomes two rows of the panel — `Kent and Medway positive` and
+`Kent and Medway negative` — each with its own case series, seeded
+independently, sharing a population.
+
+That turns a two-lineage problem into an ordinary multi-group epidemia model,
+and it is what lets the transmissibility ratio be a single coefficient.
+
+
+``` r
+dat <- b117$data %>%
+  filter(area == !!area) %>%
+  arrange(date) %>%
+  mutate(week = pmax(epiweek, 42))
+
+positive <- dat %>%
+  transmute(area = paste(!!area, "positive"), date, week,
+            Cases_week = corrected_positive,
+            neg = FALSE, negweek = NA_real_)
+
+negative <- dat %>%
+  transmute(area = paste(!!area, "negative"), date, week,
+            Cases_week = corrected_negative,
+            neg = TRUE, negweek = pmax(epiweek, 45))
+
+dat <- bind_rows(positive, negative) %>%
+  left_join(b117$iar, by = "date") %>%
+  fill(iar, .direction = "downup") %>%
+  mutate(area = factor(area),
+         pop = b117$pop$pop[b117$pop$area == !!area])
+```
+
+Two things there are worth pausing on.
+
+`neg` is an indicator that is `TRUE` only for the B.1.1.7 group. Because it is
+constant within a group and the two groups share everything else, **its
+coefficient is the log transmissibility advantage** — the quantity the paper is
+about. It is not a nuisance term or a correction; it is the answer.
+
+`negweek` is the epidemiological week for the B.1.1.7 group and `NA` for the
+other. A random walk indexed by it therefore exists only for B.1.1.7, which is
+how the advantage is allowed to change over time. `pmax(epiweek, 45)` pools the
+earliest weeks together, when B.1.1.7 counts are too small to say anything.
+
+## The model
+
+
+``` r
+rt <- epirt(
+  formula = R(area, date) ~ rw(time = week, prior_scale = 0.15) +
+                            neg +
+                            rw(time = negweek),
+  prior = normal(0, 0.25),
+  prior_intercept = normal(log(1.25), 0.1),
+  link = "log"
+)
+```
+
+Three terms, doing three jobs. `rw(time = week)` is a weekly random walk shared
+by both groups: it absorbs everything that moved transmission in Kent over this
+period — the November lockdown, its lifting, Christmas mixing, the January
+lockdown — without any of it having to be specified. `neg` is the constant
+advantage. `rw(time = negweek)` lets that advantage vary by week.
+
+Because the link is log, the ratio of reproduction numbers between the two
+groups on any day is
+
+$$\frac{R^{(\text{B.1.1.7})}_t}{R^{(\text{other})}_t}
+  = \exp\left(\beta_{\text{neg}} + w^{(\text{negweek})}_t\right),$$
+
+with the shared walk cancelling. That cancellation is the point of the design:
+the estimate does not depend on getting the epidemic trajectory right, only on
+the two lineages experiencing it together.
+
+
+``` r
+obs <- epiobs(
+  formula = Cases_week ~ 0 + iar,
+  link = "identity",
+  family = "quasi_poisson",
+  prior = normal(location = 1, scale = b117$iar_sd, autoscale = FALSE),
+  prior_aux = normal(location = 3, scale = 2),
+  i2o = b117$i2o
+)
+```
+
+```
+## Warning: i2o does not sum to one. Please ensure this is intentional.
+```
+
+The observations are weekly case totals. There is no ascertainment regression to
+fit: the infection ascertainment rate is supplied as data in the `iar` column,
+and the coefficient on it — with a prior centred at 1 — only allows a modest
+multiplicative correction. `i2o` is a daily infection-to-case delay spread over
+seven offsets, so it sums to 7 rather than 1 and `epiobs` says so. That is
+intentional: each observation covers seven days of cases.
+
+
+``` r
+inf <- epiinf(
+  gen = EuropeCovid$si,
+  seed_days = 14,
+  prior_seeds = hexp(exponential(rate = 1 / 5000)),
+  pop_adjust = TRUE,
+  pops = pop
+)
+```
+
+The seeding prior is deliberately vague — the two groups start at very different
+sizes and at different times, and nothing should be assumed about either.
+
+## Fitting
+
+
+``` r
+fm <- epim(
+  rt = rt, inf = inf, obs = obs, data = dat,
+  algorithm = "sampling", iter = 2e3, chains = 4, seed = 12345, refresh = 0,
+  control = list(adapt_delta = 0.92, max_treedepth = 14)
+)
 ```
 
 ```
@@ -3470,568 +3313,14 @@ fm <- do.call(epim, args)
 ```
 
 ```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: gamma_lpdf: Random variable[3] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 1 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: neg_binomial_2_lpmf: Location parameter[280] is inf, but must be positive finite! (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 157, column 8 to line 158, column 61)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 1 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 1 Exception: epidemia_base_model_namespace::log_prob: seeds[2] is nan, but must be greater than or equal to 0.000000 (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 60, column 2 to column 39)
-```
-
-```
-## Chain 1 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 1 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 1
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: gamma_lpdf: Random variable[3] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 2 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: neg_binomial_2_lpmf: Location parameter[278] is inf, but must be positive finite! (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 157, column 8 to line 158, column 61)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 2 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 2 Exception: epidemia_base_model_namespace::log_prob: seeds[2] is nan, but must be greater than or equal to 0.000000 (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 60, column 2 to column 39)
-```
-
-```
-## Chain 2 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 2 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 2
-```
-
-```
-## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 3 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 3
-```
-
-```
-## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 3 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 3
-```
-
-```
-## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 3 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 3
-```
-
-```
-## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 3 Exception: gamma_lpdf: Random variable[3] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 3 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 3
-```
-
-```
-## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 3 Exception: neg_binomial_2_lpmf: Location parameter[279] is inf, but must be positive finite! (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 157, column 8 to line 158, column 61)
-```
-
-```
-## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 3
-```
-
-```
-## Chain 3 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 3 Exception: epidemia_base_model_namespace::log_prob: seeds[2] is nan, but must be greater than or equal to 0.000000 (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 60, column 2 to column 39)
-```
-
-```
-## Chain 3 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 3 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 3
-```
-
-```
-## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 4 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 4
-```
-
-```
-## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 4 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 4
-```
-
-```
-## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 4 Exception: gamma_lpdf: Random variable[1] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 4
-```
-
-```
-## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 4 Exception: gamma_lpdf: Random variable[3] is -0, but must be positive finite! (in '/private/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/Rtmpf2BxUF/fileef2b1cce14ef/epidemia.Rcheck/epidemia/stan//model/priors_glm.stan', line 39, column 4, included from
-```
-
-```
-## Chain 4 '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 141, column 0)
-```
-
-```
-## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 4
-```
-
-```
-## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 4 Exception: neg_binomial_2_lpmf: Location parameter[279] is inf, but must be positive finite! (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 157, column 8 to line 158, column 61)
-```
-
-```
-## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 4
-```
-
-```
-## Chain 4 Informational Message: The current Metropolis proposal is about to be rejected because of the following issue:
-```
-
-```
-## Chain 4 Exception: epidemia_base_model_namespace::log_prob: seeds[2] is nan, but must be greater than or equal to 0.000000 (in '/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/RtmpuavdXd/working_dir/RtmpHVQBbh/model-f10cc34bc35.stan', line 60, column 2 to column 39)
-```
-
-```
-## Chain 4 If this warning occurs sporadically, such as for highly constrained variable types like covariance matrices, then the sampler is fine,
-```
-
-```
-## Chain 4 but if this warning occurs often then your model may be either severely ill-conditioned or misspecified.
-```
-
-```
-## Chain 4
-```
-
-```
-## Chain 4 finished in 7034.2 seconds.
-## Chain 2 finished in 7853.1 seconds.
-## Chain 1 finished in 8024.6 seconds.
-## Chain 3 finished in 8388.3 seconds.
+## Chain 2 finished in 472.0 seconds.
+## Chain 3 finished in 504.0 seconds.
+## Chain 1 finished in 525.8 seconds.
+## Chain 4 finished in 528.5 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 7825.0 seconds.
-## Total execution time: 8388.4 seconds.
-```
-
-```
-## Warning: 1 of 4000 (0.0%) transitions ended with a divergence.
-## See https://mc-stan.org/misc/warnings for details.
-```
-
-```
-## Warning: 1 of 4000 (0.0%) transitions hit the maximum treedepth limit of 14.
-## See https://mc-stan.org/misc/warnings for details.
+## Mean chain execution time: 507.6 seconds.
+## Total execution time: 528.7 seconds.
 ```
 
 
@@ -4044,224 +3333,124 @@ sampler_diagnostics(fm)
 ## 4 chains x 1000 post-warmup draws = 4000
 ## 
 ##  chain divergent max_treedepth ebfmi
-##      1         0             0 0.987
-##      2         0             1 0.849
-##      3         0             0 0.925
-##      4         1             0 0.867
+##      1         0             0 0.732
+##      2         0             0 0.778
+##      3         0             0 0.760
+##      4         0             0 0.777
 ## 
-## Divergent transitions: 1 (0.0%)
-## Hit max treedepth:     1 (0.0%)
-## Lowest E-BFMI:         0.85
-## Worst R-hat:           1.017  (R|lockdown)
-## Lowest bulk ESS:       242  (R|lockdown)
-## Lowest tail ESS:       93
+## Divergent transitions: 0 (0.0%)
+## Hit max treedepth:     0 (0.0%)
+## Lowest E-BFMI:         0.73
+## Worst R-hat:           1.002  (seeds_aux)
+## Lowest bulk ESS:       950  (log-posterior)
+## Lowest tail ESS:       1331
 ## 
-## Warnings:
-## * 1 divergent transition. These bias the posterior and more draws will
-##   not help; raise adapt_delta above its current value or
-##   reparameterise.
-## * 1 iteration saturated max_treedepth. This costs efficiency rather
-##   than correctness; raise max_treedepth.
-## * R-hat of 1.017 for R|lockdown exceeds 1.01, so the chains have not
-##   mixed.
-## * Bulk ESS of 242 for R|lockdown is 61 per chain, below the 100 per
-##   chain that keeps posterior summaries stable.
+## No problems detected.
 ```
 
-`adapt_delta` and `max_treedepth` are both raised above their defaults. This
-posterior has the funnel geometry that hierarchical models with several
-partially pooled slopes tend to have, and at the defaults it produces divergent
-transitions -- which bias the posterior rather than merely slowing it down.
+## The transmissibility advantage
 
-A first step in evaluating the model fit is to perform posterior
-predictive checks. This is to confirm that the model adequately explains
-the observed daily deaths in each region. This can be done using the
-command `plot_obs(fm, type = "deaths", levels = c(50, 95))`. The
-plot is shown in Figure \@ref(fig:multilevel-obs-plots).
-
-
-```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
-```
-
-<div class="figure" style="text-align: center">
-<img src="multilevel-obs-plot.png" alt="Posterior predictive checks. Observed daily deaths (red) is plotted as a bar plot. Credible intervals from the posterior are plotted in shades of blue, in addition to the posterior median in black. Each panel shows the data for a single country." width="100%" />
-<p class="caption">(\#fig:multilevel-obs-plots)Posterior predictive checks. Observed daily deaths (red) is plotted as a bar plot. Credible intervals from the posterior are plotted in shades of blue, in addition to the posterior median in black. Each panel shows the data for a single country.</p>
-</div>
-
-Figure \@ref(fig:multilevel-obs-plots) suggest that the epidemic was
-bought under control in each group considered. Indeed, one would expect
-that the posterior distribution for reproduction numbers lies largely
-below one in each region. Figure \@ref(fig:multilevel-rt-plots) is the
-result of `plot_rt(fm, step = T, levels = c(50,95))`, and confirms
-this.
-
-
-```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
-```
-
-<div class="figure" style="text-align: center">
-<img src="multilevel-rt-plot.png" alt="Inferred reproduction numbers in each country. Credible intervals from the posterior are plotted in shades of green, in addition to the posterior median in black. Each panel shows the data for a single country." width="100%" />
-<p class="caption">(\#fig:multilevel-rt-plots)Inferred reproduction numbers in each country. Credible intervals from the posterior are plotted in shades of green, in addition to the posterior median in black. Each panel shows the data for a single country.</p>
-</div>
-
-## Effect Sizes
-<hr>
-
-In **epidemia**, estimated effect sizes can be visualized using the
-`plot.epimodel` method. This serves a similar purpose to
-`plot.stanreg` in **rstanarm**, providing an interface to the
-**bayesplot** package. The models in **epidemia** often have many
-parameters, some of which pertain to a particular part of the model
-(i.e. transmission), and some which pertain to particular groups (i.e.,
-country-specific terms). Therefore `plot.epimodel` has arguments
-`par_models`, `par_types` and `par_groups`, which
-restrict the parameters considered to particular parts of the model.
-
-As an example, credible intervals for the global coefficients $\beta_i$
-can be plotted using the command
-`plot(fm, par_models = "R", par_types = "fixed")`. This leads to
-the left plot in Figure \@ref(fig:multilevel-effects-plots).
-
-Figure \@ref(fig:multilevel-effects-plots) shows a large negative
-coefficient for lockdown, suggesting that this is on average the most
-effective intervention. The effect of banning public events is the next
-largest, while the other policy effects appear closer to zero. Note that
-the left plot in Figure \@ref(fig:multilevel-effects-plots) shows only global
-coefficients, and does not show inferred effects in any given country.
-To assess the latter, one must instead consider the quantities
-$\beta_i + b^{(m)}_i$. We do this by extracting the underlying draws
-using `as.matrix.epimodel`, as is done below for Italy.
+The advantage in week $w$ is the ratio of the two groups' reproduction numbers,
+$R^{(\text{B.1.1.7})}_t / R^{(\text{other})}_t$. Compute it from the fitted
+$R_t$ rather than from the coefficients: the shared walk cancels automatically,
+and it avoids depending on how the walk parameters are stored.
 
 
 ``` r
-beta <- as.matrix(fm, par_models = "R", par_types = "fixed")
-b <- as.matrix(fm, regex_pars = "^R\\|b", par_groups = "Italy")
-mat <- cbind(b[,1], beta + b[,2:6])
-labels <- c("Events", "Schools", "Isolating", "Distancing", "Lockdown")
-colnames(mat) <- c("Intercept", labels)
+# Take the ratio of the two groups' fitted R_t series, which is what the
+# original analysis does (transmission_model/gather_joint.R):
+#
+#     rt <- posterior_rt(fit)
+#     Ratio_45 = quantile(rt$draws[, negative & epiweek == 45] /
+#                         rt$draws[, positive & epiweek == 45], 0.5)
+#
+# Reading the coefficient and walk parameters out of the draws matrix instead is
+# a trap: `R|rw(...)` reports the walk's INCREMENTS, so treating them as levels
+# silently flattens the curve -- it gave a correlation of 0.44 with the
+# published series where the ratio gives 0.99. Working from R_t avoids having to
+# know the walk's parameterisation at all, and the shared walk cancels in the
+# ratio by construction.
+rt_post <- posterior_rt(fm)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="multilevel-plot-effects.png" alt="**Left**: Global Effect sizes for the five policy measures considered. **Right**: Effect sizes specific to Italy. The global and country-specific effects may differ because the effects are *partially pooled*." width="80%" />
-<p class="caption">(\#fig:multilevel-effects-plots)**Left**: Global Effect sizes for the five policy measures considered. **Right**: Effect sizes specific to Italy. The global and country-specific effects may differ because the effects are *partially pooled*.</p>
-</div>
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
 
-Calling `bayesplot::mcmc_intervals(mat)` leads to the results shown
-in the right panel of Figure \@ref(fig:multilevel-effects-plots).
+``` r
+grp <- rt_post$group
+# Use the dataset's OWN epiweek column, not lubridate::epiweek(). The data
+# numbers weeks continuously through the season (39..56), whereas epiweek()
+# restarts at 1 each January -- which would relabel the last four weeks 1, 2, 3
+# and silently drop them from the comparison.
+wk_lookup <- distinct(b117$data, date, epiweek)
+wk <- wk_lookup$epiweek[match(as.Date(rt_post$time), wk_lookup$date)]
 
-The intervals in Figure \@ref(fig:multilevel-effects-plots) are wide for every
-measure other than lockdown, and all of them overlap zero. That is the honest
-picture: the five measures were enacted within days of each other, so the
-design columns are close to collinear and the individual coefficients are only
-weakly identified. An earlier version of this tutorial fit the model by
-Variational Bayes and reported visibly narrower intervals, which was an
-artefact of the approximation rather than evidence about the measures.
+advantage <- do.call(rbind, lapply(sort(unique(wk[wk >= 45])), function(w) {
+  num <- rt_post$draws[, grp == paste(area, "negative") & wk == w, drop = FALSE]
+  den <- rt_post$draws[, grp == paste(area, "positive") & wk == w, drop = FALSE]
+  if (!ncol(num) || !ncol(den)) return(NULL)
+  a <- as.numeric(num) / as.numeric(den)
+  data.frame(epiweek = w,
+             median = median(a),
+             lower = quantile(a, 0.025)[[1]],
+             upper = quantile(a, 0.975)[[1]])
+}))
 
-Consider now the role of partial pooling in this analysis. Figure
-\@ref(fig:multilevel-rt-plots) shows that Sweden did enough to reduce $R$
-below one. However, it did so without a full lockdown. Given the small
-effect sizes for other measures, the model must explain Sweden using the
-country-specific terms. Figure \@ref(fig:multilevel-interval-plots) shows
-estimated seeds, intercepts and the effects of banning public events for
-each country. Sweden has a lower intercept than other terms which in
-turn suggests a lower $R_0$ - giving the effects less to do to explain
-Sweden. There is greater variability in seeding, because the magnitude
-of future infections becomes less sensitive to initial conditions when
-the rate of growth is lower. Figure \@ref(fig:multilevel-interval-plots)
-shows that the model estimates a large negative coefficient for public
-events in Sweden. This is significantly larger then the effects for
-other policies - which are not reported here. However, the
-idiosyncrasies relating to Sweden must be explained in this model by at
-least one of the covariates, and the large effect for public policy in
-Sweden is most probably an artifact of this. Nonetheless, the use of
-partial pooling is essential for explaining difference between
-countries. If full pooling were used, effect sizes would be overly
-influenced by outliers like Sweden. This argument is made in more detail
-in @Flaxman2020MA.
+comparison <- advantage %>%
+  left_join(b117$published %>% filter(area == !!area) %>% select(epiweek, ratio),
+            by = "epiweek") %>%
+  rename(published = ratio)
 
-<div class="figure" style="text-align: center">
-<img src="multilevel-interval-plots.png" alt=" **Left**: Inferred daily seeded infections in each country. These have been assumed to occur over a period of 6 days. **Middle**: Estimated Intercepts in the linear predictor for reproduction numbers. **Right**: Country-specific effect sizes corresponding to the banning of public events." width="100%" />
-<p class="caption">(\#fig:multilevel-interval-plots) **Left**: Inferred daily seeded infections in each country. These have been assumed to occur over a period of 6 days. **Middle**: Estimated Intercepts in the linear predictor for reproduction numbers. **Right**: Country-specific effect sizes corresponding to the banning of public events.</p>
-</div>
+knitr::kable(comparison, digits = 2, row.names = FALSE,
+             caption = "Estimated multiplicative transmissibility advantage of B.1.1.7 in Kent and Medway, against the value published for this area by Volz et al. (2021).")
+```
 
-## Forecasting
-<hr>
 
-Forecasting within **epidemia** is straightforward, and consists of
-constructing a new data frame which is used in place of the original
-data frame. This could, for example, change the values of covariates, or
-alternatively include new observations in order to check the
-out-of-sample performance of the fitted model.
 
-Recall that `EuropeCovid2` holds daily death data up until the end
-of June 2020, however we only fitted the model up until the $5$^th^ May.
-The following constructs a data frame `newdata` which contains the
-additional observations. Note that we are careful to select the same
-start dates as in the original data frame.
+Table: (\#tab:b117-advantage)Estimated multiplicative transmissibility advantage of B.1.1.7 in Kent and Medway, against the value published for this area by Volz et al. (2021).
+
+| epiweek| median| lower| upper| published|
+|-------:|------:|-----:|-----:|---------:|
+|      45|   1.68|  1.55|  1.83|      1.68|
+|      46|   1.77|  1.45|  2.10|      1.76|
+|      47|   1.93|  1.66|  2.35|      1.94|
+|      48|   1.62|  1.36|  1.92|      1.62|
+|      49|   1.38|  1.17|  1.62|      1.38|
+|      50|   1.22|  1.04|  1.42|      1.21|
+|      51|   1.12|  0.84|  1.35|      1.11|
+|      52|   1.45|  1.23|  1.86|      1.46|
+|      53|   1.22|  0.97|  1.47|      1.22|
+|      54|   1.17|  0.97|  1.45|      1.17|
+|      55|   1.12|  0.82|  1.51|      1.11|
+|      56|   1.10|  0.64|  1.84|        NA|
 
 
 ``` r
-newdata <- EuropeCovid2$data
-newdata <- filter(newdata, date > date[which(cumsum(deaths) > 10)[1] - 30])
+ggplot(comparison, aes(epiweek)) +
+  geom_hline(yintercept = 1, linetype = "dashed", colour = "grey40") +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.25, fill = "#2171b5") +
+  geom_line(aes(y = median), colour = "#2171b5", linewidth = 0.8) +
+  geom_point(aes(y = published), colour = "#d95f02", size = 2) +
+  labs(x = "Epidemiological week", y = "Advantage (ratio of reproduction numbers)") +
+  theme_bw()
 ```
 
-This data frame can be passed to plotting functions `plot_rt()`,
-`plot_obs()`, `plot_infections()` and
-`plot_infectious()`. If the raw samples are desired, we can also
-pass as an argument to `posterior_rt()`, `posterior_predict()`
-etc. The top panel of Figure \@ref(fig:multilevel-counterfactuals) is the
-result of using the command
-`plot_obs(fm, type = "deaths", newdata = newdata, groups = "Italy")`.
-This plots the out of sample observations with credible intervals from
-the forecast.
-
-
 ```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
+## Warning: Removed 1 row containing missing values or values outside the scale range
+## (`geom_point()`).
 ```
 
-## Counterfactuals
-
-Counterfactual scenarios are also easy. Again, one simply has to modify
-the data frame used. In this case we shift all policy measures back
-three days.
+<div class="figure" style="text-align: center">
+<img src="figure/b117-b117-advantage-plot-1.png" alt="Estimated transmissibility advantage by week (line and ribbon) against the published per-area estimate (points). A ratio of one, marked by the dashed line, would mean no advantage." width="80%" />
+<p class="caption">(\#fig:b117-advantage-plot)Estimated transmissibility advantage by week (line and ribbon) against the published per-area estimate (points). A ratio of one, marked by the dashed line, would mean no advantage.</p>
+</div>
 
 
 ``` r
-shift <- function(x, k) c(x[-(1:k)], rep(1,k))
-days <- 3
-
-newdata <- mutate(newdata,
-  lockdown = shift(lockdown, days),
-  public_events = shift(public_events, days),
-  social_distancing_encouraged = shift(social_distancing_encouraged, days),
-  self_isolating_if_ill = shift(self_isolating_if_ill, days),
-  schools_universities = shift(schools_universities, days)
-)
-```
-
-The bottom panel of Figure \@ref(fig:multilevel-counterfactuals) visualizes
-the counterfactual scenario of all policies being implemented in the UK
-three days earlier. Deaths are projected over both the in-sample period,
-and the out-of-sample period. The left plot is obtained using
-`plot_obs(fm, type = "deaths", newdata = newdata, groups = "United_Kingdom")`,
-while the right plot adds the `cumulative = TRUE` argument. We reiterate
-that these results are not intended to be fully rigorous: they are
-simply there to illustrate usage of **epidemia**.
-
-
-```
-## Running standalone generated quantities after 1 MCMC chain...
-## 
-## Chain 1 finished in 0.0 seconds.
+plot_rt(fm, step = TRUE, levels = c(50, 95)) + theme_bw()
 ```
 
 ```
@@ -4271,11 +3460,122 @@ simply there to illustrate usage of **epidemia**.
 ```
 
 <div class="figure" style="text-align: center">
-<img src="multilevel-counterfactuals.png" alt="Forecasts and counterfactual scenarios. All results pertain to the United Kingdom. **Top**: An out-of-sample forecast for daily deaths. **Bottom:** Results corresponding to a a counterfactual whereby all policies were implemented 3 days earlier. The left plot shows credible intervals for daily deaths under this scenario. The right presents cumulative deaths. The black dotted line shows observed cumulative deaths." width="90%" />
-<p class="caption">(\#fig:multilevel-counterfactuals)Forecasts and counterfactual scenarios. All results pertain to the United Kingdom. **Top**: An out-of-sample forecast for daily deaths. **Bottom:** Results corresponding to a a counterfactual whereby all policies were implemented 3 days earlier. The left plot shows credible intervals for daily deaths under this scenario. The right presents cumulative deaths. The black dotted line shows observed cumulative deaths.</p>
+<img src="figure/b117-b117-rt-plot-1.png" alt="Reproduction numbers for the two groups. The gap between them is the advantage; the shared shape is the epidemic both lineages experienced." width="80%" />
+<p class="caption">(\#fig:b117-rt-plot)Reproduction numbers for the two groups. The gap between them is the advantage; the shared shape is the epidemic both lineages experienced.</p>
 </div>
 
-# References 
+
+``` r
+plot_obs(fm, type = "Cases_week", levels = c(50, 95)) + theme_bw()
+```
+
+```
+## Running standalone generated quantities after 1 MCMC chain...
+## 
+## Chain 1 finished in 0.0 seconds.
+```
+
+<div class="figure" style="text-align: center">
+<img src="figure/b117-b117-obs-plot-1.png" alt="Posterior predictive for weekly case counts, by group." width="80%" />
+<p class="caption">(\#fig:b117-obs-plot)Posterior predictive for weekly case counts, by group.</p>
+</div>
+
+## This is one area, not the paper's answer
+
+**The published estimate is not a single fit.** @Volz2021 fit this model
+*separately to each of the areas in England* — 42 of the areas in
+`EnglandB117` have the population needed for the susceptibility adjustment; the
+remaining seven are NHS regions, which are aggregates of the others and are not
+sized in the source. The headline figure combines those per-area fits; no single
+area produces it.
+
+That matters for reading the table above. One area gives one noisy estimate,
+and the interval for a single area is wide — wide enough, in some weeks, to
+include no advantage at all. The strength of the published result comes from the
+same signal appearing in area after area, not from any one of them. The
+England-wide series is:
+
+
+``` r
+knitr::kable(b117$published_england, digits = 2, row.names = FALSE,
+             caption = "England-wide time-varying advantage from Volz et al. (2021), pooled across areas.")
+```
+
+
+
+Table: (\#tab:b117-england)England-wide time-varying advantage from Volz et al. (2021), pooled across areas.
+
+| epiweek| median| lower| upper|
+|-------:|------:|-----:|-----:|
+|      45|   1.66|  1.11|  2.28|
+|      46|   1.79|  1.20|  2.56|
+|      47|   1.86|  1.26|  2.72|
+|      48|   1.86|  1.29|  2.73|
+|      49|   1.87|  1.31|  2.63|
+|      50|   1.85|  1.29|  2.61|
+|      51|   1.74|  1.19|  2.54|
+|      52|   1.76|  1.42|  2.59|
+|      53|   1.53|  1.11|  2.04|
+|      54|   1.49|  1.08|  2.14|
+|      55|   1.50|  1.01|  2.18|
+
+To reproduce that, loop this model over every area in `b117$pop$area`, keeping
+each fit separate, and combine the per-week advantages afterwards. The original
+implementation does exactly that — one job per area, driven by a `Makefile`, in
+`transmission_model/` of
+[mrc-ide/sarscov2-b.1.1.7](https://github.com/mrc-ide/sarscov2-b.1.1.7). At
+roughly a quarter of an hour per area that is a few hours of compute, which is
+why this tutorial demonstrates the method on one area rather than running the
+analysis.
+
+## Not the paper's configuration {#not-the-papers-configuration}
+
+Everything structural is the paper's: the three-term formula, `normal(0, 0.25)`
+on the advantage, `normal(log(1.25), 0.1)` on the intercept, `prior_scale = 0.15`
+on the shared walk, `normal(1, iar_sd)` on the ascertainment coefficient with
+`autoscale = FALSE`, `normal(3, 2)` on the dispersion, `seed_days = 14`, the
+vague `exponential(1/5000)` seeding, and the same generation distribution. The
+week clamps (`pmax(epiweek, 42)` and `pmax(epiweek, 45)`) are theirs too. So are
+the sampler settings this tutorial uses — `iter = 2000`, `chains = 4`,
+`adapt_delta = 0.92`.
+
+Three things are nonetheless **not** what produced the published numbers.
+
+*It is one area.* The published estimate combines separate per-area fits, as the
+section above describes. One area is one noisy estimate.
+
+*There is no convergence machinery.* The original script re-runs an area that
+fails its diagnostics — doubling iterations and thinning, or raising
+`adapt_delta` — and records the adjusted settings. Its `fit_params.csv` holds 89
+such re-runs. Kent and Medway is not among them, so this area did fit at the
+defaults, which is why the settings here match; but an arbitrary area may not,
+and this tutorial would simply report the bad diagnostics rather than fix them.
+
+*`max_treedepth` is 14 here, not the 18 the original sets.* That difference is
+immaterial in this instance and can be checked rather than assumed: the fit
+above saturated the tree depth **zero** times, so the lower cap was never
+binding. On a harder area it might be.
+
+More generally, these priors were chosen for *this* question on *these* data —
+two lineages observed through the same testing system, over four months, in one
+country. The informative intercept encodes what was known about $R$ in England
+in autumn 2020. The tight ascertainment prior works because the ascertainment
+rate is supplied as data. None of that transfers automatically. Treat the
+structure as the reusable idea and the numbers as specific to this analysis.
+
+## What does not reproduce exactly
+
+The counts here are **aggregates**. The raw SGSS line-list behind them is
+disclosure-controlled — the authors' own processing suppresses counts below five
+— so the step from testing records to these tables cannot be re-run outside PHE.
+This tutorial starts where the published data starts.
+
+The generation distribution is `EuropeCovid$si`, as in the original code, and is
+assumed identical for both lineages: the model asks whether B.1.1.7 transmitted
+*more*, not whether it transmitted on a different timescale. Separating those
+would need data this design does not contain.
+
+# References
 <hr>
 
 :::
@@ -4314,9 +3614,9 @@ when the last measure arrived; it cannot separate that change into contributions
 from each measure individually. @Flaxman2020 make this point themselves, and it
 is worth restating whenever the coefficient is reported.
 
-The [multilevel tutorial](europe-covid.html) fits a *related but different*
-model to the same data and distributes the reduction differently, placing a
-substantial part of it on social distancing. The two are not in conflict; they
+The [multilevel tutorial](multilevel-multi-obs.html) fits a *related but
+different* model to the same data and distributes the reduction differently,
+placing a substantial part of it on social distancing. The two are not in conflict; they
 are different specifications of a weakly identified problem. This tutorial
 writes down Flaxman's specification exactly, so the two can be compared on equal
 terms.
@@ -4560,12 +3860,12 @@ pp <- do.call(epim, c(args, list(algorithm = "sampling", iter = 1e3,
 ```
 
 ```
-## Chain 1 finished in 7.8 seconds.
-## Chain 2 finished in 8.0 seconds.
+## Chain 1 finished in 11.5 seconds.
+## Chain 2 finished in 11.8 seconds.
 ## 
 ## Both chains finished successfully.
-## Mean chain execution time: 7.9 seconds.
-## Total execution time: 8.2 seconds.
+## Mean chain execution time: 11.7 seconds.
+## Total execution time: 11.9 seconds.
 ```
 
 ``` r
@@ -4621,14 +3921,14 @@ fm <- do.call(epim, c(args, list(
 ```
 
 ```
-## Chain 4 finished in 2469.0 seconds.
-## Chain 1 finished in 2509.7 seconds.
-## Chain 2 finished in 2548.1 seconds.
-## Chain 3 finished in 2803.6 seconds.
+## Chain 4 finished in 15863.6 seconds.
+## Chain 1 finished in 16013.0 seconds.
+## Chain 2 finished in 16126.3 seconds.
+## Chain 3 finished in 16568.5 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 2582.6 seconds.
-## Total execution time: 2803.7 seconds.
+## Mean chain execution time: 16142.9 seconds.
+## Total execution time: 16568.6 seconds.
 ```
 
 
@@ -4810,7 +4110,7 @@ identifiable — apply here unchanged.
 # Combining Partial Pooling with Several Data Streams
 <hr>
 
-The [multilevel](europe-covid.html) tutorial pooled parameters across eleven
+An earlier multilevel tutorial pooled parameters across eleven
 countries, but fitted to a single data stream (deaths). The
 [multiple observations](multiple-obs.html) tutorial jointly fitted two data
 streams, but to a single region. These two capabilities are independent, and
@@ -5003,14 +4303,14 @@ fm <- epim(
 ```
 
 ```
-## Chain 2 finished in 435.4 seconds.
-## Chain 1 finished in 438.5 seconds.
-## Chain 4 finished in 455.8 seconds.
-## Chain 3 finished in 497.7 seconds.
+## Chain 2 finished in 561.3 seconds.
+## Chain 1 finished in 566.8 seconds.
+## Chain 4 finished in 584.2 seconds.
+## Chain 3 finished in 646.0 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 456.9 seconds.
-## Total execution time: 497.9 seconds.
+## Mean chain execution time: 589.6 seconds.
+## Total execution time: 646.1 seconds.
 ```
 
 `all_obs_types()` confirms both series are in the model, and each carries its
@@ -5227,7 +4527,7 @@ round(ratio, 3)
 ##        Austria        Belgium        Denmark         France        Germany 
 ##          0.263          0.062          0.165          0.053          0.250 
 ##          Italy         Norway          Spain         Sweden    Switzerland 
-##          0.049          0.306          0.072          0.026          0.186 
+##          0.049          0.306          0.072          0.026          0.185 
 ## United_Kingdom 
 ##          0.040
 ```

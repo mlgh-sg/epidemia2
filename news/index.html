@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">epidemia</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
       </span>
     </div>
 
@@ -60,9 +60,6 @@
       <a href="../articles/flu.html">A Basic Example</a>
     </li>
     <li>
-      <a href="../articles/europe-covid.html">A Multilevel Model</a>
-    </li>
-    <li>
       <a href="../articles/multiple-obs.html">Multiple Observations</a>
     </li>
     <li>
@@ -102,6 +99,25 @@
 
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.1.0" id="epidemia-110">epidemia 1.1.0<a class="anchor" aria-label="anchor" href="#epidemia-110"></a></h2>
+<div class="section level3">
+<h3 id="new-data-and-tutorials-1-1-0">New data and tutorials<a class="anchor" aria-label="anchor" href="#new-data-and-tutorials-1-1-0"></a></h3>
+<ul><li>
+<strong><code>EnglandB117</code></strong>, the SGTF-split English case counts behind Volz et al. (2021), <em>Nature</em> <strong>593</strong>, 266-269: the transmissibility advantage of SARS-CoV-2 lineage B.1.1.7. 49 areas over 120 days, with populations, the infection ascertainment rate, the infection-to-observation kernel, and the paper’s own published estimates so a reproduction can check itself against them. Regenerate with <code>data-raw/england-b117.R</code>.</li>
+<li>
+<strong>New tutorial, “Transmissibility of a New Variant”</strong>, reproducing that analysis for one area. It is the first vignette to use <code><a href="../reference/rw.html">rw()</a></code> at all, and it uses two summed walks plus an <code>NA</code> walk index — documented in <code>man/rw.Rd</code> and previously exercised by no tutorial.</li>
+<li>
+<strong>New tutorial, “Reproducing Flaxman et al. (2020)”</strong>, which lands on lockdown 79.3% [72.5, 84.1] against the paper’s 81% [75, 87] with the other five effects at zero, and no sampler problems.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="removed-1-1-0">Removed<a class="anchor" aria-label="anchor" href="#removed-1-1-0"></a></h3>
+<ul><li>
+<strong>The <code>europe-covid</code> tutorial has been removed.</strong> The B.1.1.7 tutorial now serves as the multi-group example; it is faster (about a quarter of an hour against six hours), better behaved, and checks itself against published values. <code>EuropeCovid</code> and <code>EuropeCovid2</code> are unaffected and are still used by the remaining tutorials. Anyone relying on <code>articles/europe-covid.html</code> should use <code>articles/multilevel-multi-obs.html</code> or <code>articles/b117.html</code> instead.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changed-1-1-0">Changed<a class="anchor" aria-label="anchor" href="#changed-1-1-0"></a></h3>
+<ul><li>
+<strong>The infection-to-death kernel in <code>EuropeCovid</code> and <code>EuropeCovid2</code> has been corrected, and every fitted number that uses it moves.</strong> Both shipped kernels are consumed at the same offset, so entry <em>k</em> should carry the mass in (<em>k</em>-1, <em>k</em>]. <code>si</code> already did; <code>inf2death</code> did not — it was the source distribution discretised a day early, 1.5 days out of step with <code>si</code>, and with mass at lag zero where a death cannot occur. Its mean lag moves from 22.9 to 24.4 days. <code>si</code> is unchanged.</li>
+</ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-1-1-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-0"></a></h3>
 <ul><li>

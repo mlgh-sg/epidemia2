@@ -38,7 +38,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">epidemia</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
       </span>
     </div>
 
@@ -83,9 +83,6 @@
   <ul class="dropdown-menu" role="menu">
 <li>
       <a href="../articles/flu.html">A Basic Example</a>
-    </li>
-    <li>
-      <a href="../articles/europe-covid.html">A Multilevel Model</a>
     </li>
     <li>
       <a href="../articles/multiple-obs.html">Multiple Observations</a>
@@ -148,7 +145,7 @@
 <h2 id="combining-partial-pooling-with-several-data-streams">Combining Partial Pooling with Several Data Streams<a class="anchor" aria-label="anchor" href="#combining-partial-pooling-with-several-data-streams"></a>
 </h2>
 <hr>
-<p>The <a href="europe-covid.html">multilevel</a> tutorial pooled parameters across eleven
+<p>An earlier multilevel tutorial pooled parameters across eleven
 countries, but fitted to a single data stream (deaths). The
 <a href="multiple-obs.html">multiple observations</a> tutorial jointly fitted two data
 streams, but to a single region. These two capabilities are independent, and
@@ -307,14 +304,14 @@ single-series fit.</p>
 <span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>max_treedepth <span class="op">=</span> <span class="fl">12</span>, adapt_delta <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Running MCMC with 4 parallel chains...</span></span></code></pre>
-<pre><code><span><span class="co">## Chain 2 finished in 435.4 seconds.</span></span>
-<span><span class="co">## Chain 1 finished in 438.5 seconds.</span></span>
-<span><span class="co">## Chain 4 finished in 455.8 seconds.</span></span>
-<span><span class="co">## Chain 3 finished in 497.7 seconds.</span></span>
+<pre><code><span><span class="co">## Chain 2 finished in 561.3 seconds.</span></span>
+<span><span class="co">## Chain 1 finished in 566.8 seconds.</span></span>
+<span><span class="co">## Chain 4 finished in 584.2 seconds.</span></span>
+<span><span class="co">## Chain 3 finished in 646.0 seconds.</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## All 4 chains finished successfully.</span></span>
-<span><span class="co">## Mean chain execution time: 456.9 seconds.</span></span>
-<span><span class="co">## Total execution time: 497.9 seconds.</span></span></code></pre>
+<span><span class="co">## Mean chain execution time: 589.6 seconds.</span></span>
+<span><span class="co">## Total execution time: 646.1 seconds.</span></span></code></pre>
 <p><code><a href="../reference/all_obs_types.html">all_obs_types()</a></code> confirms both series are in the model, and each carries its
 own parameters.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
@@ -473,7 +470,7 @@ these ratios would sit at one.</p>
 <pre><code><span><span class="co">##        Austria        Belgium        Denmark         France        Germany </span></span>
 <span><span class="co">##          0.263          0.062          0.165          0.053          0.250 </span></span>
 <span><span class="co">##          Italy         Norway          Spain         Sweden    Switzerland </span></span>
-<span><span class="co">##          0.049          0.306          0.072          0.026          0.186 </span></span>
+<span><span class="co">##          0.049          0.306          0.072          0.026          0.185 </span></span>
 <span><span class="co">## United_Kingdom </span></span>
 <span><span class="co">##          0.040</span></span></code></pre>
 <p>The two agree: only a fraction of infections becomes a recorded case, and that
