@@ -80,6 +80,8 @@ nav:
       - Tracking SARS-CoV-2 in England: tutorials/multiple-obs.md
       - Partial pooling: tutorials/partial-pooling.md
       - Several observation series: tutorials/multilevel-multi-obs.md
+      - Reproducing Flaxman et al. (2020): tutorials/flaxman.md
+      - Transmissibility of a new variant: tutorials/b117.md
   - Priors: priors.md
   - Parity with R: parity.md
   - Performance: performance.md

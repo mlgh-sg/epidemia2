@@ -20,7 +20,7 @@ args <- commandArgs(trailingOnly = TRUE)
 force <- "--force" %in% args
 args <- setdiff(args, "--force")
 all_vigs <- c("flu", "europe-covid", "multiple-obs", "multilevel-multi-obs",
-              "flaxman")
+              "flaxman", "b117")
 vigs <- if (length(args)) intersect(args, all_vigs) else all_vigs
 if (!length(vigs)) stop("No known tutorial requested. Choose from: ",
                         paste(all_vigs, collapse = ", "))

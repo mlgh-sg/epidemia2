@@ -33,12 +33,12 @@ OUT = ROOT / "docs" / "tutorials"
 
 # Order matters only for the printed summary.
 ALL_TUTORIALS = ["flu", "europe-covid", "multiple-obs",
-                 "partial-pooling", "multilevel-multi-obs"]
-# "flaxman" is deliberately absent: the notebook exists but does not yet
-# reproduce the paper (see notebooks/flaxman.py), so it is not published.
+                 "partial-pooling", "multilevel-multi-obs", "flaxman", "b117"]
 
 TITLES = {
     "europe-covid": "Assessing the effects of interventions",
+    "flaxman": "Reproducing Flaxman et al. (2020)",
+    "b117": "Transmissibility of a new variant",
     "partial-pooling": "Partial pooling",
     "multilevel-multi-obs": "Multilevel models with several observation series",
 }
