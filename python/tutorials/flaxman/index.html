@@ -1049,12 +1049,6 @@ R-hat 1.27 with an effective sample size of 11.</p>
 <a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">)</span>
 <a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="kn">from</span><span class="w"> </span><span class="nn">epidemia.priors</span><span class="w"> </span><span class="kn">import</span> <span class="n">normal</span><span class="p">,</span> <span class="n">shifted_gamma</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>/Users/smishra/Documents/GitHub/epidemia/python/.venv/lib/python3.12/site-packages/arviz/__init__.py:50: FutureWarning: 
-ArviZ is undergoing a major refactor to improve flexibility and extensibility while maintaining a user-friendly interface.
-Some upcoming changes may be backward incompatible.
-For details and migration guidance, visit: https://python.arviz.org/en/latest/user_guide/migration_guide.html
-  warn(
-</code></pre></div>
 <h2 id="data">Data<a class="headerlink" href="#data" title="Permanent link">&para;</a></h2>
 <p>The same 11 countries and five interventions both models use.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">ec</span> <span class="o">=</span> <span class="n">epidemia</span><span class="o">.</span><span class="n">europe_covid2</span><span class="p">()</span>
@@ -1189,17 +1183,17 @@ For details and migration guidance, visit: https://python.arviz.org/en/latest/us
 <a id="__codelineno-2-130" name="__codelineno-2-130" href="#__codelineno-2-130"></a>      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">panel</span><span class="o">.</span><span class="n">lengths</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="si">}</span><span class="s2"> modelled days&quot;</span><span class="p">)</span>
 <a id="__codelineno-2-131" name="__codelineno-2-131" href="#__codelineno-2-131"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NPI order:&quot;</span><span class="p">,</span> <span class="n">NPIS</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;Austria&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;Belgium&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;Denmark&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;France&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;Germany&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;Italy&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;Norway&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;Spain&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;Sweden&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;Switzerland&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
-/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_76867/730704751.py:64: UserWarning: &#39;United_Kingdom&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+<div class="highlight"><pre><span></span><code>/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;Austria&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;Belgium&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;Denmark&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;France&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;Germany&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;Italy&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;Norway&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;Spain&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;Sweden&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;Switzerland&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+/var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: &#39;United_Kingdom&#39;: only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
 
 
 i2o mean lag: paper 23.899, epidemia default 24.400
