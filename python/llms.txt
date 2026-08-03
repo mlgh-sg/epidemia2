@@ -39,3 +39,52 @@ with Fisher-information mass-matrix adaptation), returning an ArviZ
 - Renewal: `i_t = R_t * sum_s gen[s-1] * i_{t-s}`, seeded over `seed_days`.
 - Transmission: `R_t = link^{-1}(intercept + cumsum(rw_scale * rw_noise))`, non-centred (avoids the funnel / divergences). Links: `"log"` or `("scaled_logit", K)`.
 - Observations: `E_t = sum_k i2o[k] * i_{t-k}`; families `"poisson"`, `"neg_binom"` (default), `"normal"`.
+
+## Bundled data
+
+- `epi.europe_covid()`, `epi.europe_covid2()` — 11 European countries, first
+  COVID-19 wave: cases/deaths, five NPI indicators, `si`, `inf2death`.
+- `epi.england_b117()` — SGTF-split English case counts behind Volz et al.
+  (2021), *Nature* 593:266-269. 49 areas x 120 days, plus `pop`, `iar`,
+  `iar_sd`, `i2o`, **and the paper's own fitted estimates** (`published`,
+  `published_england`) so a reproduction can check itself.
+
+## Delay-kernel convention (important)
+
+Both `gen` and `i2o` are **lag-1-first**: entry 0 weights infections one day
+back, and an infection is never observed on the day it happens. Entry *k*
+(1-based) carries the mass in **(k-1, k]**, so a kernel's mean lag sits half a
+day above its distribution's mean and no mass falls at lag 0.
+
+Reproductions should **build their own kernel** rather than use a bundled one:
+Flaxman et al. discretise at the midpoint (half a day different), and the
+B.1.1.7 model's `i2o` sums to **7, not 1** because its observations are weekly
+totals attached to a daily series.
+
+## Random walks
+
+`RandomWalk(index=..., by_region=..., prior_scale=...)`; a **list** of them is
+summed, as R sums several `rw()` terms in one formula. An index of **-1** means
+"this day gets no term from this walk" -- Python's spelling of R's `NA` in an
+`rw(time = )` column, used to give a walk to only some groups.
+
+Python stores a walk's **cumulative levels** as a Deterministic (`rw`, `rw_1`,
+...); R reports its **increments**. The same arithmetic is therefore right in
+one port and wrong in the other. Prefer deriving quantities from the posterior
+`Rt` rather than from coefficients -- for a two-group model the ratio of the two
+groups' `Rt` cancels any shared walk and depends on no parameterisation.
+
+## Sampler settings are model-specific
+
+`fit`/`fit_multilevel`/`fit_epidemia` default to `target_accept=0.95` and
+`adaptation="low_rank"`, which wins on collinear-covariate posteriors (1.7x
+Stan's ESS/second on the NPI model). That ranking does **not** always transfer:
+the Flaxman reproduction needed `adaptation="diag"` (R-hat 1.17 -> 1.03), and
+models whose trajectories saturate the tree depth need `maxdepth` above nutpie's
+default of 10. Check the diagnostics rather than trusting the default.
+
+`correlated=True` region effects need enough groups to support a full
+covariance. With ~11 groups plus a per-group random walk it may not identify:
+check `Sigma_chol` R-hat before trusting anything downstream, and prefer
+`correlated=False` if it has not mixed.
+
