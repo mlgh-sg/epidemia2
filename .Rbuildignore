@@ -35,3 +35,4 @@
 # it does not, so keep it out of the build.
 ^LICENSE$
 ^\.docs-stamp$
+^HANDOVER\.md$

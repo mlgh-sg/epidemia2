@@ -27,12 +27,40 @@ Fisher-information mass-matrix adaptation — returning an ArviZ `InferenceData`
 
 ## Install
 
+Not on PyPI yet — install from the repository. The package lives in the `python/`
+subdirectory, hence `#subdirectory=python`; without it pip looks for a
+`pyproject.toml` at the repo root and fails.
+
+```bash
+pip install "git+https://github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+```
+
+Pin to a tag for anything you need to reproduce later, since `main` moves:
+
+```bash
+pip install "git+https://github.com/mlgh-sg/epidemia2.git@v0.1.0#subdirectory=python"
+```
+
+Python 3.10–3.13. The example datasets ship inside the wheel.
+
+!!! warning "While the repository is private"
+    The `https://` forms fail for everyone until the repo is public. Use SSH in
+    the meantime — it uses the key you already push with:
+
+    ```bash
+    pip install "git+ssh://git@github.com/mlgh-sg/epidemia2.git#subdirectory=python"
+    ```
+
+### For development
+
 Using [`uv`](https://docs.astral.sh/uv/):
 
 ```bash
-cd python
+git clone git@github.com:mlgh-sg/epidemia2.git
+cd epidemia2/python
 uv python pin 3.12   # broad wheel availability
 uv sync              # PyMC + nutpie, compiled with the numba CPU backend
+uv run pytest
 ```
 
 The default `numba` backend is the recommended optimized path on **all**
@@ -73,10 +101,51 @@ uv run epidemia-flu --save flu
   options, and the performance design.
 - The [**API reference**](reference.md) documents every public function and class.
 
+## Authors and credit
+
+This Python package is written and maintained by **Swapnil Mishra**
+([ORCID](https://orcid.org/0000-0002-8759-5902)), with
+**[Claude Code](https://claude.com/claude-code)** (Anthropic).
+
+!!! note "Cite the original, not this port"
+    This is a port, not a new method. The model, its priors and links, the
+    example data, and the design it follows all come from the R package
+    **epidemia** — by James A. Scott, Axel Gandy, Swapnil Mishra,
+    H. Juliette T. Unwin, Seth Flaxman and Samir Bhatt — and the framework is
+    Bhatt et al. (2020), applied in Flaxman et al. (2020).
+
+    * Scott, J. A., Gandy, A., Mishra, S., Bhatt, S., Flaxman, S., Unwin, H. J. T.
+      & Ish-Horowicz, J. (2021). *Epidemia: An R Package for Semi-Mechanistic
+      Bayesian Modelling of Infectious Diseases using Point Processes.*
+      [arXiv:2110.12461](https://arxiv.org/abs/2110.12461)
+    * Bhatt, S. et al. (2020). *Semi-mechanistic Bayesian modelling of COVID-19
+      with renewal processes.* [arXiv:2012.00394](https://arxiv.org/abs/2012.00394)
+    * Flaxman, S. et al. (2020). *Estimating the effects of non-pharmaceutical
+      interventions on COVID-19 in Europe.*
+      [Nature 584, 257–261](https://www.nature.com/articles/s41586-020-2405-7)
+
+Licensed GPL-3.0-or-later, as the R package is.
+
 
 <!-- ===== guide.md ===== -->
 
 # User guide
+
+!!! note "Which builder to read about"
+    This page describes the **single-population** builder,
+    [`EpiConfig`][epidemia.EpiConfig] / [`build_model`][epidemia.build_model].
+    It is the simplest entry point and still what the `partial-pooling` and
+    `partial-pooling` notebooks use, but it is **superseded**: it has a random
+    walk and one population only.
+
+    For anything with several regions or several observation series — which is
+    ordinary usage in R — read
+    **[The model](reference.md#the-model)**: `EpiModelConfig`,
+    `ObsModel`, `PanelData` and `build_epidemia_model`/`fit_epidemia`. The
+    [Spanish flu](tutorials/flu.md), [England](tutorials/multiple-obs.md) and
+    [multilevel + multiple observations](tutorials/multilevel-multi-obs.md)
+    tutorials all use it, and the [parity table](parity.md) maps every R feature
+    onto it.
 
 ## The model
 
@@ -130,7 +199,7 @@ Every knob lives on [`EpiConfig`][epidemia.EpiConfig]:
 | `i2o` | infection-to-observation delay distribution |
 | `seed_days` | length of the seeding window |
 | `link` | `"log"` or `("scaled_logit", K)` |
-| `family` | `"poisson"`, `"neg_binom"`, or `"normal"` |
+| `family` | `"poisson"` (this builder's default), `"neg_binom"`, or `"normal"`. Note `ObsModel` in the current builder defaults to `"neg_binom"`, matching R's `epiobs()`. |
 | `rw_prior_scale` | scale of the `HalfNormal` prior on the RW step size |
 | `intercept_loc`, `intercept_scale` | `Normal` prior for the `R_t` intercept |
 | `seed_prior_mean` | mean of the `Exponential` prior on seeded infections |
@@ -142,18 +211,20 @@ Every knob lives on [`EpiConfig`][epidemia.EpiConfig]:
 
 ```python
 idata = epi.fit(y, config, draws=1000, tune=1000, chains=4, seed=0,
-                adaptation="diag", backend="numba")
+                adaptation="low_rank", backend="numba")
 ```
 
-- **`adaptation`** — `"diag"` (Fisher-information diagonal; a strong default),
-  `"low_rank"`, or `"flow"` (normalizing-flow; needs `uv sync --extra flow`) for
-  harder posteriors.
+- **`adaptation`** — `"low_rank"` is the **default** here, deliberately unlike
+  nutpie's own `"diag"`: a diagonal metric cannot follow the ridge these
+  posteriors have and fails *silently*, mixing badly without diverging. See
+  [performance](performance.md) for the measurements. `"diag"` and `"flow"`
+  (normalizing-flow; needs `uv sync --extra flow`) are also available.
 - **`backend`** — `"numba"` (low-overhead CPU default, incl. Apple Silicon) or
   `"jax"` (required for GPU on Linux, `uv sync --extra gpu`).
 
 ## Plotting
 
-The [`plots`][epidemia.plots] module uses **plotnine** (a grammar of graphics)
+The [`plots`](reference.md#plots) module uses **plotnine** (a grammar of graphics)
 with publication-oriented defaults:
 
 ```python
@@ -163,6 +234,96 @@ epi.plots.plot_obs(idata, observed=y)  # posterior predictive vs observed
 ```
 
 Each returns a `plotnine.ggplot` you can further theme or `.save(...)`.
+
+**Every plot is written to disk by default** — into `./figures`, or
+`$EPIDEMIA_FIGDIR` if that is set. Pass `save=False` to turn it off, or
+`save="name"` / `save="path/to/file.png"` to choose the destination:
+
+```python
+epi.plots.plot_rt(idata, save=False)        # render only, write nothing
+epi.plots.plot_rt(idata, save="rt-final")   # -> ./figures/rt-final.png
+```
+
+### Multi-region (multilevel) fits
+
+As in R, the same three functions handle a multi-region fit — pass the
+`MultilevelData` you fitted as `data=` and you get **one panel per region**:
+
+```python
+fit = epi.prepare_panel(data, epi.EUROPE_COVID_NPIS, fit_until="2020-05-05")
+idata = epi.fit_multilevel(fit, config)
+
+epi.plots.plot_rt(idata, data=fit)                  # every country, faceted
+epi.plots.plot_obs(idata, data=fit)                 # deaths PPC, faceted
+epi.plots.plot_rt(idata, data=fit, group="Italy")   # just one country
+```
+
+`data=` is required (not optional) for a multi-region fit, because each region's
+series is left-aligned to *its own* first modelled day — column `t` is a
+different calendar date in every region, and only `data` knows which. It also
+supplies each region's true length, so padded days are dropped rather than drawn.
+
+Effect sizes for a multilevel fit:
+
+```python
+epi.plots.plot_effects(idata)                       # global beta_k
+epi.plots.plot_effects(idata, group="Italy")        # Italy's beta_k + b_k
+epi.plots.plot_region_effects(idata, "lockdown")    # one NPI, every region
+```
+
+!!! note "The global `beta_k` is not 'the effect in region m'"
+    Under partial pooling each region's effect is `beta_k + b[m, k]`. The global
+    `beta_k` is the average across regions; `plot_effects(idata, group=...)` and
+    `plot_region_effects` give the per-region quantity. And when covariates are
+    collinear (as the COVID NPIs are), a `beta_k` interval covering zero means
+    "not separately identifiable from the other covariates", not "no effect".
+
+!!! warning "Correlated covariates: use `adaptation="low_rank"`, and check `r_hat`"
+    Divergences and `r_hat` are different failures with different cures.
+    `fit_multilevel` already defaults `target_accept=0.95`, which handles the
+    hierarchical funnel and warns if any divergences survive. But collinear
+    covariates produce a long thin *correlation ridge* that the default diagonal
+    mass matrix cannot follow — the sampler does not diverge, it just fails to
+    mix, and the estimates come out biased.
+
+    ```python
+    idata = epi.fit_multilevel(fit, config, tune=2000,
+                               adaptation="low_rank", target_accept=0.99)
+    ```
+
+    On the 11-country example, `"diag"` gives `beta[schools]` and
+    `beta[social_distancing]` an `r_hat` of 1.08–1.11 with an **ESS of 25–36 out
+    of 4000** — and their estimates move materially once `"low_rank"` lets the
+    sampler traverse the ridge. A clean divergence count is *not* evidence the
+    ridge is absent: always read `r_hat` and `ess_bulk` from `arviz.summary`.
+
+### Effect sizes as a percent reduction
+
+[`effect_table`][epidemia.effect_table] converts the coefficients into the
+quantity most people want — *by what percent did this measure cut transmission?*
+
+```python
+tab = epi.effect_table(idata, config, data=fit)
+epi.plots.plot_percent_effects(idata, config, data=fit)
+```
+
+It returns one row per region × term: `kind="pct"` rows are percent reductions in
+`R_t`, `kind="R"` rows are the `R_0` (no measures) and `R_t` (all measures)
+reproduction numbers the percentage is derived from.
+
+!!! warning "`1 - exp(beta)` is the wrong conversion here"
+    That is the answer for a **log** link. This model uses `scaled_logit(K)`, so
+    `R = K * sigmoid(eta)` and a coefficient does *not* imply a constant
+    multiplicative effect — the same `beta` buys a larger percentage where `R_0`
+    is low than where it is high. On the Europe data the shortcut overstates
+    lockdown by ~9 percentage points. `effect_table` does the counterfactual per
+    posterior draw instead, which is also why it reports per region rather than
+    one global figure.
+
+Pass `data=` so each row is flagged with `enacted`: where a region never used a
+measure (Sweden and lockdown), the percentage is a counterfactual extrapolation
+from the pooled prior — that region's data say nothing about it —
+and `plot_percent_effects` greys it out.
 
 ## Performance
 
@@ -183,23 +344,4045 @@ allocation-free (it reads each window straight out of the infection array) and i
 used for forward/prior simulation and testing.
 
 
+<!-- ===== tutorials.md ===== -->
+
+# Tutorials
+
+Five worked examples, all ported from the R package's vignettes so you can read
+them side by side. They are **jupytext** notebooks stored as plain `.py` files in
+percent format, which means each one is simultaneously a runnable script and a
+notebook — open it in Jupyter or VS Code, or run it with `python`.
+
+| Tutorial | R counterpart | What it covers |
+|---|---|---|
+| [Spanish flu in Baltimore](tutorials/flu.md) | [Spanish Flu](https://mlgh-sg.com/epidemia2/articles/flu.html) | The smallest interesting model: one population, one series, a daily random walk on `R_t`. Compares the deterministic renewal recursion against the latent (`latent=True`) one, and forecasts from it. |
+| [Tracking SARS-CoV-2 in England](tutorials/multiple-obs.md) | [Multiple Observations](https://mlgh-sg.com/epidemia2/articles/multiple-obs.html) | Daily case counts and weekly ONS positivity fitted jointly to one region. Series observed on different days, day-of-week reporting effects, and an `i2o` that deliberately does not sum to one. |
+| [Partial pooling](tutorials/partial-pooling.md) | [Partial Pooling](https://mlgh-sg.com/epidemia2/articles/partial-pooling.html) | How R's `(expr \| factor)` and `(expr \|\| factor)` map onto hierarchical priors here, and what no pooling, partial pooling and full pooling each do to the estimates. |
+| [Several observation series](tutorials/multilevel-multi-obs.md) | [Multilevel + Multiple Observations](https://mlgh-sg.com/epidemia2/articles/multilevel-multi-obs.html) | Deaths and cases fitted jointly, with correlated region effects, a weekly random walk per region, and a susceptibility adjustment. Scored with `epidemia.scoring`. |
+
+The pages above are **precomputed**: `scripts/precompute.py` executes each
+notebook once and commits the rendered markdown and figures, exactly as the R
+side's `vignettes/precompute.R` bakes the vignettes. Nothing is fitted when the
+documentation is built. Re-bake after changing the modelling code:
+
+```bash
+uv run --group dev python scripts/precompute.py            # all five
+uv run --group dev python scripts/precompute.py b117
+```
+
+The notebook sources live in
+[`notebooks/`](https://github.com/mlgh-sg/epidemia2/tree/main/python/notebooks)
+as jupytext percent files — each is a runnable script *and* a notebook.
+
+## Both ports sample
+
+Every tutorial here and every R vignette fits with **full NUTS**. An earlier
+version of the R multilevel tutorial used variational Bayes for speed and noted
+that its intervals were "relatively narrow ... an artifact of using Variational
+Bayes"; that is no longer the case anywhere, so the credible intervals in both
+ports are the genuine posterior ones and are directly comparable.
+
+Where the two ports fit the same model they are expected to agree, and the
+tutorials check it: the B.1.1.7 notebook and its R vignette both land on the
+transmissibility advantage published by Volz et al. (2021).
+
+If you want to know what that costs in wall-clock, see [Performance](performance.md).
+
+## Running them
+
+From the `python/` directory:
+
+```bash
+uv sync --dev
+uv run python -m ipykernel install --user --name epidemia \
+    --display-name "Python (epidemia)"
+```
+
+Then open either notebook and select the **Python (epidemia)** kernel, or run it
+as a script:
+
+```bash
+uv run python notebooks/b117.py
+```
+
+!!! note "These fit real models"
+    The multilevel notebook runs NUTS on eleven regions and takes minutes, not
+    seconds. `fit_multilevel` prints the compile step separately from the
+    sampling, because compilation alone can take as long as the sampling and has
+    no progress bar of its own.
+
+## Before you start
+
+Read [What this port does and does not do](parity.md) first if you are coming
+from the R package. Everything the R tutorials use routinely — multiple
+observation series, per-region random walks on `R_t`, the population and
+susceptibility adjustment, forecasting and scoring — is available here; the
+parity table maps each R feature onto its Python spelling and records the few
+places the two genuinely differ.
+
+
+<!-- ===== tutorials/flu.md ===== -->
+
+# Spanish Flu in Baltimore
+
+Python counterpart of the R vignette
+[`flu`](https://mlgh-sg.com/epidemia2/articles/flu.html).
+
+The smallest interesting model the package can fit: **one population, one
+observation series, and a random walk on $R_t$**. There are no covariates and
+no partial pooling, so everything the model says about transmission comes from
+the walk. That makes it the right place to see the renewal process on its own,
+and to compare the two infection models — the deterministic recursion, and the
+*latent* one that adds variance to it.
+
+The data are 93 days of case counts from the 1918 influenza pandemic in
+Baltimore, together with the serial interval **EpiEstim** ships with them.
+
+
+```python
+import numpy as np
+import pandas as pd
+import arviz as az
+
+import epidemia
+from epidemia.core import (
+    EpiModelConfig,
+    ObsModel,
+    PanelData,
+    RandomWalk,
+    build_epidemia_model,
+    fit_epidemia,
+)
+from epidemia.priors import normal
+```
+
+## Data
+
+`flu1918()` returns the daily counts and the serial-interval PMF. Note the
+distinction the package draws between the two kernels it carries: the serial
+interval `si[k]` is the probability of a serial interval of exactly `k` days
+and so begins with a zero (nobody infects on the day they are infected), while
+the **generation kernel** the renewal equation wants is that vector with the
+leading zero dropped, so that `generation[0]` weights *yesterday's* infections.
+`EpiData.generation` does that for you — getting it wrong shifts the whole
+epidemic by a day.
+
+
+```python
+flu = epidemia.flu1918()
+y = flu.incidence
+T = len(y)
+dates = pd.date_range("1918-09-17", periods=T)
+
+print(f"{T} days, {int(y.sum())} cases, peak {int(y.max())} on "
+      f"{dates[int(y.argmax())].date()}")
+print("serial interval starts:", np.round(flu.serial_interval[:5], 3))
+print("generation kernel starts:", np.round(flu.generation[:5], 3))
+```
+
+    92 days, 6202 cases, peak 553 on 1918-10-31
+    serial interval starts: [0.    0.233 0.359 0.198 0.103]
+    generation kernel starts: [0.233 0.359 0.198 0.103 0.053]
+
+
+## The panel
+
+The Python builder is written for many regions and many series, so a
+single-population model is the degenerate case: one region, no covariates.
+`region_effects=False` in the config below turns off the hierarchical
+intercept that would otherwise be estimated across regions — with one region
+there is nothing to pool.
+
+
+```python
+M = 1
+panel = PanelData(
+    X=np.zeros((M, T, 0)),          # no covariates: the walk does the work
+    lengths=np.array([T]),
+    regions=["Baltimore"],
+    npis=[],
+    dates=[dates.values],
+    pops=None,                      # no susceptibility adjustment
+)
+```
+
+## Transmission: a daily random walk
+
+$R_t$ follows a random walk on the log scale, which is R's
+
+```r
+epirt(formula = R(city, date) ~ 1 + rw(prior_scale = 0.01), ...)
+```
+
+`RandomWalk(index=)` is the Python spelling of R's `rw(time=)`: it says which
+walk step each day belongs to. `arange(T)` gives one step per day; repeating
+indices would give a coarser walk. `prior_scale` is the scale of the
+half-normal prior on the step size — small, because a daily walk with a loose
+step prior can absorb almost any epidemic curve and tell you nothing.
+
+The prior on the intercept puts $R_0$ near 2.
+
+
+```python
+config = EpiModelConfig(
+    gen=flu.generation,
+    link="log",
+    intercept=True,
+    prior_intercept=normal(np.log(2), 0.2),
+    region_effects=False,
+    rw=RandomWalk(index=np.tile(np.arange(T), (M, 1)), prior_scale=0.01),
+    seed_days=6,
+)
+```
+
+## Observations: full ascertainment
+
+This example assumes every infection eventually shows up as a case, so the
+ascertainment rate is fixed at 1 rather than estimated. R writes that as
+
+```r
+epiobs(formula = cases ~ 0 + offset(rep(1, 93)), link = "identity", i2o = rep(.25, 4))
+```
+
+— an `identity` link with an offset of 1 and no intercept, so the linear
+predictor *is* the rate and no parameter multiplies it. The same three pieces
+translate directly: `intercept=False`, `offset=ones`, `link="identity"`.
+
+`i2o` says a case is recorded with equal probability on any of the four days
+after infection. Like every kernel in the package it is lag-1-first, so an
+infection is never observed on the day it happens.
+
+
+```python
+obs = ObsModel(
+    name="cases",
+    y=y[None, :],
+    mask=np.ones((M, T), dtype=bool),
+    i2o=np.repeat(0.25, 4),
+    family="neg_binom",              # R's epiobs() default
+    link="identity",
+    intercept=False,
+    offset=np.ones((M, T)),          # rate == 1: full ascertainment
+)
+```
+
+## Fitting
+
+Two infection models, exactly as the R vignette compares them. The first is
+the plain renewal recursion: infections are a deterministic function of past
+infections and $R_t$. The second sets `latent=True`, which makes the
+post-seeding infections *parameters* whose mean the renewal equation supplies
+— so the epidemic can wobble around its own expectation. `prior_aux` sets the
+dispersion; a mean around 10 says the conditional variance is about ten times
+the conditional mean.
+
+The observation family is the `epiobs()` default, `neg_binom`. That matters
+more than it looks: with a Poisson likelihood and full ascertainment the
+deterministic model is over-determined — infections must reproduce the counts
+exactly through the convolution — and the sampler diverges on essentially
+every iteration. The diagnostics below are the check that catches it.
+
+
+```python
+idata = fit_epidemia(panel, [obs], config, draws=1000, tune=1000, chains=4,
+                     seed=12345, target_accept=0.99, progress_bar=False)
+```
+
+
+```python
+config_latent = EpiModelConfig(
+    **{**config.__dict__, "latent": True, "prior_aux": normal(10.0, 2.0)}
+)
+idata_latent = fit_epidemia(panel, [obs], config_latent, draws=1000, tune=1000,
+                            chains=4, seed=12345, target_accept=0.99,
+                            progress_bar=False)
+```
+
+## Check the sampler first
+
+Before reading any estimate, check that the sampler explored the posterior.
+`sampler_diagnostics()` is the mirror of R's function of the same name.
+
+
+```python
+print(epidemia.sampler_diagnostics(idata))
+```
+
+    Sampler diagnostics
+    4 chains x 1000 post-warmup draws = 4000
+    
+     chain  divergent  max_treedepth  ebfmi
+         1          0              0  1.021
+         2          0              0  1.053
+         3          0              0  0.930
+         4          0              0  0.977
+    
+    Divergent transitions: 0 (0.0%)
+    Hit max treedepth:     0 (0.0%)
+    Lowest E-BFMI:         0.93
+    Worst R-hat:           1.010  (rw_noise[0, 10])
+    Lowest bulk ESS:       633  (rw_scale[0])
+    Lowest tail ESS:       1067
+    
+    No problems detected.
+
+
+
+```python
+print(epidemia.sampler_diagnostics(idata_latent))
+```
+
+    Sampler diagnostics
+    4 chains x 1000 post-warmup draws = 4000
+    
+     chain  divergent  max_treedepth  ebfmi
+         1          0              0  0.882
+         2          0              0  1.093
+         3          0              0  0.905
+         4          0              0  0.924
+    
+    Divergent transitions: 0 (0.0%)
+    Hit max treedepth:     0 (0.0%)
+    Lowest E-BFMI:         0.88
+    Worst R-hat:           1.010  (rw_noise[0, 2])
+    Lowest bulk ESS:       1649  (infections_raw[0, 56])
+    Lowest tail ESS:       791
+    
+    No problems detected.
+
+
+## Reproduction numbers
+
+The walk is what makes $R_t$ move, so this plot is the model's whole account
+of transmission. The dotted line at 1 is the epidemic threshold.
+
+
+```python
+epidemia.plot_rt(idata, data=panel, levels=(50, 95), save=False)
+```
+
+
+
+
+    
+![png](flu_files/flu_17_0.png)
+    
+
+
+
+## Infections and infectiousness
+
+`plot_infections` shows the latent infections; `plot_infectious` shows total
+infectiousness, the generation-weighted sum of past infections divided by
+`max(gen)` — the same quantity R's `plot_infectious` draws. The second peaks
+slightly earlier than the first, because it is a weighted average over the
+days *before* each date.
+
+
+```python
+epidemia.plot_infections(idata, data=panel, levels=(50, 95), save=False)
+```
+
+
+
+
+    
+![png](flu_files/flu_19_0.png)
+    
+
+
+
+
+```python
+epidemia.plot_infectious(idata, config, data=panel, levels=(50, 95), save=False)
+```
+
+
+
+
+    
+![png](flu_files/flu_20_0.png)
+    
+
+
+
+## Posterior predictive check
+
+`plot_obs` bands the posterior **predictive**, not the posterior of the mean:
+the ribbon carries the negative-binomial observation noise on top of parameter
+uncertainty, which is what makes it comparable to the counts drawn over it.
+Banding the expected count instead would give a much narrower ribbon that the
+data would fall outside of far too often.
+
+
+```python
+epidemia.plot_obs(idata, data=panel, obs_model=obs, series="cases",
+                  ylab="Daily cases", levels=(50, 95), save=False)
+```
+
+
+
+
+    
+![png](flu_files/flu_22_0.png)
+    
+
+
+
+## What `latent=True` buys
+
+The two fits tell nearly the same story about $R_t$, but the latent model is
+honest about a source of uncertainty the deterministic one ignores: real
+epidemics do not follow the renewal equation exactly. Compare the widths.
+
+
+```python
+def rt_width(idata, level=95):
+    rt = np.asarray(idata.posterior["Rt"]).reshape(-1, T)
+    lo, hi = (100 - level) / 2, 100 - (100 - level) / 2
+    return float((np.percentile(rt, hi, axis=0)
+                  - np.percentile(rt, lo, axis=0)).mean())
+
+
+print(f"mean 95% R_t width, deterministic : {rt_width(idata):.3f}")
+print(f"mean 95% R_t width, latent        : {rt_width(idata_latent):.3f}")
+
+summ = az.summary(idata_latent, var_names=["inf_aux"])
+print()
+print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
+```
+
+    mean 95% R_t width, deterministic : 0.249
+    mean 95% R_t width, latent        : 0.427
+    
+               mean     sd  r_hat  ess_bulk
+    inf_aux  10.806  0.739    1.0    3556.0
+
+
+The dispersion `inf_aux` is estimated rather than assumed, so the data get a
+say in how far infections may stray from the renewal equation.
+
+## Forecasting
+
+A latent fit can be forecast: the fitted window's infections are read back
+from the posterior and the horizon is drawn from the latent process, rather
+than run through the deterministic recursion — which would be a different
+model from the one that was fitted. The random walk keeps walking too, at its
+own fitted scale, so $R_t$ fans out rather than freezing.
+
+
+```python
+fc = epidemia.forecast(idata_latent, panel, [obs], config_latent,
+                       draws=200, seed=0)
+print("forecast horizon:", fc.Rt.shape[-1], "days")
+```
+
+    forecast horizon: 92 days
+
+
+## Caveats
+
+As with every tutorial here, this demonstrates the software rather than making
+an epidemiological claim. Full ascertainment is a strong assumption and
+certainly false for 1918; the serial interval stands in for the generation
+time; and a daily random walk with no covariates cannot attribute any of the
+change in $R_t$ to a cause.
+
+
+<!-- ===== tutorials/multiple-obs.md ===== -->
+
+# Tracking SARS-CoV-2 in England
+
+Python counterpart of the R vignette
+[`multiple-obs`](https://mlgh-sg.com/epidemia2/articles/multiple-obs.html).
+
+One region, **two very different data streams**. Daily case counts are
+plentiful but only a fraction of infections and heavily patterned by day of
+week. Weekly ONS positivity estimates are sparse — seven numbers — but they
+are a direct estimate of the *prevalence* of infection, with no ascertainment
+rate in the way. Fitting both lets each do the job it is suited to: the cases
+pin down the shape, the survey pins down the level.
+
+This is the tutorial to read for three things the others do not show:
+**series observed on different days**, **day-of-week effects**, and an
+observation model whose kernel deliberately does not sum to one.
+
+
+```python
+import numpy as np
+import pandas as pd
+import arviz as az
+
+import epidemia
+from epidemia.core import (
+    EpiModelConfig,
+    ObsModel,
+    PanelData,
+    RandomWalk,
+    build_epidemia_model,
+    fit_epidemia,
+)
+from epidemia.priors import normal
+```
+
+## Data
+
+`england_new_cases()` is PHE's "New Cases by Specimen Date" for England. We fit
+the last 80 days, of which the first 20 are the seeding period — the model is
+not conditioned on case counts there, which is what the mask below expresses.
+
+
+```python
+cases_df = epidemia.england_new_cases()
+cases_df = cases_df[cases_df["date"] > cases_df["date"].max() - pd.Timedelta(days=80)]
+cases_df = cases_df.reset_index(drop=True)
+
+T = len(cases_df)
+dates = pd.to_datetime(cases_df["date"]).reset_index(drop=True)
+cases = cases_df["cases"].to_numpy(dtype=float)
+SEED_DAYS = 20
+POP = 56_000_000                       # England, roughly
+
+print(f"{T} days, {dates.iloc[0].date()} to {dates.iloc[-1].date()}")
+print(f"seeding period: first {SEED_DAYS} days (cases not fitted there)")
+```
+
+    80 days, 2021-03-12 to 2021-05-30
+    seeding period: first 20 days (cases not fitted there)
+
+
+The ONS Infection Survey publishes weekly positivity estimates. We take seven
+weeks from the 1st of April and place each on the Thursday of its week.
+
+
+```python
+ons_dates = pd.to_datetime("2021-04-01") + pd.to_timedelta(7 * np.arange(7), "D")
+ons_values = np.array([0.21, 0.17, 0.10, 0.08, 0.07, 0.09, 0.09])
+
+positivity = np.full(T, np.nan)
+for d, v in zip(ons_dates, ons_values):
+    hit = np.where(dates == d)[0]
+    if hit.size:
+        positivity[hit[0]] = v
+
+print(f"{int(np.isfinite(positivity).sum())} of {T} days carry an ONS estimate")
+```
+
+    7 of 80 days carry an ONS estimate
+
+
+## The panel
+
+One region, no covariates on `R_t`.
+
+
+```python
+M = 1
+panel = PanelData(
+    X=np.zeros((M, T, 0)),
+    lengths=np.array([T]),
+    regions=["England"],
+    npis=[],
+    dates=[dates.to_numpy()],
+    pops=np.array([POP], dtype=float),
+)
+```
+
+## Transmission
+
+$R_t = 7\,g^{-1}(\beta_0 + w_t)$ with a logit link, so $R_t$ is confined to
+$[0, 7]$. The walk is daily.
+
+The R vignette does something worth copying: it builds a `dt` column that is
+`NA` before the 1st of April, which keeps the walk out of the window where
+there is no data to constrain it. `RandomWalk(index=-1)` is the Python
+spelling of that `NA` — those days take the walk's $w = 0$ initial condition.
+
+It matters more than it looks. Giving the seeding days the walk's *first step*
+instead leaves that step confounded with the intercept, since both just shift
+the level: the fit comes back with `r_hat` 1.03 on `intercept` and no
+divergences to hint at why.
+
+
+```python
+# -1 means "no walk term on this day" -- R's NA in the rw(time =) column. The
+# seeding days take the walk's w = 0 initial condition rather than its first
+# step, which is a free parameter and would be confounded with the intercept.
+rw_index = np.where(np.arange(T) < SEED_DAYS, -1, np.arange(T) - SEED_DAYS)
+config = EpiModelConfig(
+    gen=epidemia.europe_covid().si,
+    link="scaled_logit",
+    R_link_K=7.0,
+    intercept=True,
+    prior_intercept=normal(-1.0, 1.0),
+    region_effects=False,
+    rw=RandomWalk(index=np.tile(rw_index, (M, 1)), prior_scale=0.05),
+    seed_days=SEED_DAYS,
+    prior_seeds=normal(15e3, 2e3),
+    pop_adjust=True,
+    prior_susc_mean=0.49,
+    prior_susc_sd=0.1,
+)
+
+print(f"walk steps: {rw_index.max() + 1} "
+      f"(no walk term for the first {SEED_DAYS} days)")
+```
+
+    walk steps: 60 (no walk term for the first 20 days)
+
+
+## Series 1 — case counts
+
+Cases are a delayed, partially ascertained view of infections: undetected for
+three days, then reported with equal probability over the following week. The
+ascertainment rate gets a logit link and its own daily random walk, because
+testing capacity changed over the period.
+
+**Day-of-week effects** matter here — reporting dips at weekends — so the
+ascertainment regression carries six dummies (Monday is the reference level,
+absorbed by the intercept). This is R's
+`factor(day, ordered = FALSE)`.
+
+The family is `quasi_poisson`: variance proportional to the mean, which is
+R's parameterisation `neg_binomial_2(E, E/aux)`.
+
+
+```python
+dow = dates.dt.dayofweek.to_numpy()
+X_dow = np.zeros((M, T, 6))
+for k in range(6):
+    X_dow[0, :, k] = (dow == k + 1).astype(float)      # Mon is the reference
+
+obs_cases = ObsModel(
+    name="cases",
+    y=cases[None, :],
+    mask=(np.arange(T) >= SEED_DAYS)[None, :],         # not fitted while seeding
+    i2o=np.concatenate([np.zeros(3), np.full(7, 1 / 7)]),
+    family="quasi_poisson",
+    link="logit",
+    X=X_dow,
+    intercept=True,
+    prior_intercept=normal(0.0, 1.5),
+    prior=normal(0.0, 0.5),
+    prior_aux=normal(10.0, 5.0),
+    rw=RandomWalk(index=np.tile(rw_index, (M, 1)), prior_scale=0.05),
+)
+```
+
+## Series 2 — ONS positivity
+
+This one does not fit the usual template, and the R vignette is explicit about
+it. Positivity is the *proportion of the population currently infected*:
+
+$$ y^{(2)}_t = \frac{\sum_{s=1}^{14} i_{t-s-3}}{P} $$
+
+— everyone infected in the previous three days tests negative, everyone
+infected in the two weeks before that tests positive. There is no
+ascertainment rate at all, and the weights deliberately **do not sum to one**:
+they sum to 14, then get divided by the population and multiplied by 100 to
+give a percentage. All of that is folded into `i2o`, with an `identity` link
+and an offset of 1 so no parameter multiplies it.
+
+The mask is what lets a weekly series sit in a daily model: only the seven
+days carrying an estimate enter the likelihood.
+
+
+```python
+i2o_ons = np.concatenate([np.zeros(3), np.ones(14)]) * 100.0 / POP
+
+obs_ons = ObsModel(
+    name="positivity",
+    y=np.nan_to_num(positivity)[None, :],
+    mask=np.isfinite(positivity)[None, :],             # weekly, not daily
+    i2o=i2o_ons,
+    family="normal",
+    link="identity",
+    intercept=False,
+    offset=np.ones((M, T)),
+    prior_aux=normal(0.01, 2.5e-3),
+)
+
+print(f"i2o sums to {i2o_ons.sum():.3e} -- deliberately not 1")
+```
+
+    i2o sums to 2.500e-05 -- deliberately not 1
+
+
+## Fitting
+
+Both series go in as a list. Everything else is a single-series fit.
+
+`target_accept=0.99` rather than the 0.95 the other tutorials use: the walk's
+scale `rw_scale` sits in a funnel against the walk's own increments, and at
+0.95 the sampler leaves a handful of divergent transitions and an R-hat above
+1.01 on exactly that parameter. The diagnostics below are how that was found.
+
+
+```python
+idata = fit_epidemia(panel, [obs_cases, obs_ons], config,
+                     draws=2000, tune=2000, chains=4, seed=12345,
+                     target_accept=0.99, progress_bar=False)
+```
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for rw_scale[0] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 278 for rw_scale[0] is 70 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+## Check the sampler first
+
+This model does not sample cleanly, and it is worth being plain about why
+rather than quietly raising the iteration count until the warning goes away.
+
+There are **two random walks** here — one on $R_t$, one on case ascertainment
+— and with a single region they compete for the same signal. A dip in reported
+cases can be explained by transmission falling or by ascertainment falling,
+and only the seven ONS positivity numbers distinguish them. The walk *scales*
+are what absorb that ambiguity, so `rw_scale` is the parameter the diagnostics
+complain about: its R-hat sits above 1.01 and its effective sample size stays
+low even after doubling the draws, which is the signature of a geometry
+problem rather than too short a run.
+
+The R vignette meets the same wall and answers it the same way — it notes that
+"in order to ensure a large enough effective sample size" it raises the tree
+depth and uses 4,000 iterations. Treat the walk scales as poorly identified in
+this specification and do not quote their intervals. The quantities the
+tutorial is actually about — $R_t$, infections, the day-of-week effects — are
+fine, which the summary below is the check for.
+
+
+```python
+print(epidemia.sampler_diagnostics(idata))
+```
+
+    Sampler diagnostics
+    4 chains x 2000 post-warmup draws = 8000
+    
+     chain  divergent  max_treedepth  ebfmi
+         1          0              0  0.905
+         2          0              0  0.879
+         3          0              0  0.842
+         4          0              0  0.882
+    
+    Divergent transitions: 0 (0.0%)
+    Hit max treedepth:     0 (0.0%)
+    Lowest E-BFMI:         0.84
+    Worst R-hat:           1.020  (rw_scale[0])
+    Lowest bulk ESS:       278  (rw_scale[0])
+    Lowest tail ESS:       487
+    
+    Warnings:
+    * R-hat of 1.020 for rw_scale[0] exceeds 1.01, so the chains have not mixed.
+    * Bulk ESS of 278 for rw_scale[0] is 70 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+
+```python
+summ = az.summary(idata, var_names=["intercept", "cases|coef", "cases|aux",
+                                    "positivity|aux"])
+print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
+```
+
+                      mean     sd  r_hat  ess_bulk
+    intercept       -1.384  0.238   1.01     455.0
+    cases|coef[0]   -0.047  0.089   1.00   12573.0
+    cases|coef[1]    0.055  0.093   1.00   10925.0
+    cases|coef[2]   -0.108  0.094   1.00   11480.0
+    cases|coef[3]   -0.346  0.092   1.00   10154.0
+    cases|coef[4]   -0.658  0.092   1.00   10277.0
+    cases|coef[5]   -0.374  0.085   1.00   11638.0
+    cases|aux       13.220  2.466   1.00    2714.0
+    positivity|aux   0.013  0.002   1.00    1579.0
+
+
+## Both series have to be explained
+
+A joint model must fit everything it is conditioned on. `series=` picks one.
+
+
+```python
+epidemia.plot_obs(idata, data=panel, obs_model=obs_cases, series="cases",
+                  ylab="Daily cases", levels=(50, 95), save=False)
+```
+
+
+
+
+    
+![png](multiple-obs_files/multiple-obs_20_0.png)
+    
+
+
+
+
+```python
+epidemia.plot_obs(idata, data=panel, obs_model=obs_ons, series="positivity",
+                  ylab="Positivity (%)", levels=(50, 95), save=False)
+```
+
+
+
+
+    
+![png](multiple-obs_files/multiple-obs_21_0.png)
+    
+
+
+
+The positivity panel has seven observations and a continuous predicted line
+through them, which is exactly what a mask buys: the series constrains the
+model only where it was measured.
+
+## Reproduction numbers
+
+
+```python
+epidemia.plot_rt(idata, data=panel, levels=(50, 95), save=False)
+```
+
+
+
+
+    
+![png](multiple-obs_files/multiple-obs_23_0.png)
+    
+
+
+
+## What the day-of-week effects look like
+
+Reporting, not transmission. These shift the *ascertainment* rate, so they
+explain the weekly sawtooth in the case counts without contaminating $R_t$.
+
+
+```python
+coef = np.asarray(idata.posterior["cases|coef"]).reshape(-1, 6)
+days = ["Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+tbl = pd.DataFrame({
+    "day": days,
+    "median": np.percentile(coef, 50, axis=0),
+    "5%": np.percentile(coef, 5, axis=0),
+    "95%": np.percentile(coef, 95, axis=0),
+})
+print("logit-scale shift vs Monday:")
+print(tbl.round(3).to_string(index=False))
+```
+
+    logit-scale shift vs Monday:
+    day  median     5%    95%
+    Tue  -0.047 -0.192  0.100
+    Wed   0.054 -0.096  0.209
+    Thu  -0.108 -0.260  0.047
+    Fri  -0.347 -0.498 -0.198
+    Sat  -0.656 -0.812 -0.509
+    Sun  -0.373 -0.515 -0.236
+
+
+## Infections and susceptibility
+
+`pop_adjust=True` tracks the susceptible pool, so $R_t$ and the *effective*
+reproduction number diverge as the epidemic depletes susceptibles.
+
+
+```python
+epidemia.plot_infections(idata, data=panel, levels=(50, 95), save=False)
+```
+
+
+
+
+    
+![png](multiple-obs_files/multiple-obs_27_0.png)
+    
+
+
+
+
+```python
+epidemia.plot_infectious(idata, config, data=panel, levels=(50, 95), save=False)
+```
+
+
+
+
+    
+![png](multiple-obs_files/multiple-obs_28_0.png)
+    
+
+
+
+## Writing the same model as a formula
+
+Everything above assembled design matrices by hand, which is explicit but a
+long way from R, where the formula *is* the interface. `parse_formula` reads
+R's syntax, and `build_from_formula` turns a long data frame plus a formula
+straight into the panel and the config keywords — the closest thing here to
+`epirt(formula = ...)`.
+
+
+```python
+from epidemia.formula import build_from_formula, parse_formula
+
+spec = parse_formula("R(region, date) ~ 1 + rw(time = week)")
+print("group column   :", spec.group)
+print("date column    :", spec.date)
+print("intercept      :", spec.intercept)
+print("covariates     :", spec.covariates)
+print("random walk    :", spec.rw)
+```
+
+    group column   : region
+    date column    : date
+    intercept      : True
+    covariates     : []
+    random walk    : [RwTerm(time='week', gr=None, prior_scale=0.2)]
+
+
+Fed a data frame, it returns the same objects built by hand earlier, so the
+formula route and the explicit route are interchangeable.
+
+
+```python
+demo = cases_df.assign(
+    region="England",
+    week=pd.to_datetime(cases_df["date"]).dt.strftime("%G-%V"),
+    pop=POP,
+)
+panel_f, series_f, cfg_kw = build_from_formula(
+    demo, "R(region, date) ~ 1 + rw(time = week)",
+    responses=["cases"], pop="pop", threshold=1, seed_offset=SEED_DAYS,
+)
+print("panel regions  :", panel_f.regions)
+print("panel shape    :", panel_f.X.shape)
+print("series built   :", sorted(series_f))
+print("config kwargs  :", sorted(cfg_kw))
+```
+
+    panel regions  : ['England']
+    panel shape    : (1, 80, 0)
+    series built   : ['cases']
+    config kwargs  : ['correlated', 'intercept', 'region_effects', 'rw']
+
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/formula.py:586: UserWarning: 'England': only 0 day(s) before cumulative cases exceeded 1, fewer than seed_offset=20; starting at the first available day.
+
+
+## Prior predictive checks
+
+Before looking at any posterior it is worth asking what the priors alone
+imply. `prior_PD=True` drops every likelihood term, so sampling the model
+returns draws from the prior predictive — R's `epim(prior_PD = TRUE)`. If the
+prior already rules out plausible epidemics, no amount of data will rescue the
+fit.
+
+
+```python
+prior_cfg = EpiModelConfig(**{**config.__dict__, "prior_PD": True})
+idata_prior = fit_epidemia(panel, [obs_cases, obs_ons], prior_cfg,
+                           draws=500, tune=500, chains=2, seed=1,
+                           progress_bar=False)
+
+rt_prior = np.asarray(idata_prior.posterior["Rt"]).reshape(-1, T)
+qs = np.percentile(rt_prior, [5, 50, 95])
+print(f"prior R_t: median {qs[1]:.2f}, 90% interval [{qs[0]:.2f}, {qs[2]:.2f}]")
+print(f"(the scaled_logit cap is {config.R_link_K}, so R_t cannot exceed it)")
+```
+
+    prior R_t: median 0.83, 90% interval [0.20, 2.11]
+    (the scaled_logit cap is 7.0, so R_t cannot exceed it)
+
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for rw_noise[0, 11] exceeds 1.01, so the chains have not mixed.
+
+
+
+```python
+epidemia.plot_rt(idata_prior, data=panel, levels=(50, 95), save=False,
+                 title="Prior predictive $R_t$")
+```
+
+
+
+
+    
+![png](multiple-obs_files/multiple-obs_35_0.png)
+    
+
+
+
+## Caveats
+
+The vignette this follows is candid that the positivity model is a
+simplification: it assumes a test is definitively negative for three days and
+definitively positive for the next fourteen, where the truth is a smooth
+curve of test sensitivity against time since infection, and says nothing about
+specificity. The case-ascertainment walk can absorb a great deal, so its
+estimates should not be read as a measurement of testing capacity.
+
+
+<!-- ===== tutorials/partial-pooling.md ===== -->
+
+# Partial Pooling
+
+Python counterpart of the R vignette
+[`partial-pooling`](https://mlgh-sg.com/epidemia2/articles/partial-pooling.html).
+This is a **jupytext** notebook stored as a plain `.py` file (percent format).
+
+In the R package, parameters underlying the reproduction numbers are partially
+pooled through a formula operator, `(expr | factor)` (or `(expr || factor)` for
+independent effects). There is no formula mini-language in the Python port —
+instead the pooling is expressed **directly as hierarchical priors** in the
+PyMC model (`epidemia.multilevel`). This notebook explains the mapping and then
+**demonstrates** the three regimes — no pooling, partial pooling, full pooling
+— fitting each with **MCMC** (NUTS via nutpie), *not* Variational Bayes.
+
+
+```python
+import numpy as np
+import pandas as pd
+import arviz as az
+from plotnine import (aes, coord_flip, geom_hline, geom_pointrange, ggplot,
+                      labs, position_dodge, scale_color_manual)
+
+import epidemia as epi
+from epidemia.plots import save_plot, theme_epidemia
+```
+
+## From R formulas to hierarchical priors
+
+A term `(expr | factor)` says: the columns of the model matrix parsed from
+`expr` have **separate effects per level of `factor`**, drawn from a **common
+prior** whose parameters are themselves estimated — this is what shares
+information across levels. The table below maps the R formula idioms
+(`R(region, date) ~ ...`) to what the Python model does.
+
+| R formula R.H.S.        | Pooling         | In `epidemia.multilevel` |
+|-------------------------|-----------------|--------------------------|
+| `1 + npi`               | **Full** pooling | one global `beta_npi`, shared by all regions |
+| `1 + npi:region`        | **No** pooling   | an independent effect per region, flat/independent priors |
+| `1 + (0 + npi \| region)` | **Partial** pooling | `beta_npi + b[region]`, with `b[region] ~ N(0, sigma_npi)` and `sigma_npi` estimated |
+| `(npi \| region)`       | Partial pooling, correlated intercept+slope | multivariate-normal region effects |
+| `(npi \|\| region)`      | Partial pooling, **independent** intercept+slope | `b[region,k] ~ N(0, sigma_k)`, one `sigma_k` per column |
+
+The key statistical difference:
+
+* **No pooling** gives each region its own free parameter — noisy where data
+  are scarce (early epidemic, small regions).
+* **Full pooling** forces one shared value — hides genuine between-region
+  variation.
+* **Partial pooling** estimates a common distribution $N(0, \sigma_k)$ and lets
+  each region's effect deviate from the global mean by an amount **shrunk**
+  toward zero; $\sigma_k$ (estimated) controls how much. It interpolates
+  between the two extremes and is what the Europe/COVID example uses.
+
+The `epidemia.multilevel` model implements the last two rows: fixed global
+effects `beta_k` **plus** partially-pooled region deviations `b[region, k]`
+with `b[region, k] ~ N(0, sigma_k)` (the `||`, independent-effects, case).
+
+### Selecting a regime
+
+What separates the three regimes is **what happens to $\sigma_k$**, the
+between-region SD:
+
+| Regime | $\sigma_k$ | `MultilevelConfig` |
+|--------|-----------|--------------------|
+| Partial pooling | estimated from the data | `config.pooling("partial")` (the default) |
+| No pooling | fixed large — the prior barely constrains `b[m]`, so each region is free | `config.pooling("none")` |
+| Full pooling | fixed ~0 — every region collapses onto the global $\beta_k$ | `config.pooling("full")` |
+
+> **Do not fake no-pooling by inflating the Gamma prior's *shape*** (e.g.
+> `sd_slope_shape=1e6`). That puts $\sigma_k$ itself near $10^6$, so
+> `b = sigma * z` lands around $N(0, 10^6)$, $\eta$ saturates the
+> `scaled_logit(6.5)` link, and every $R_t$ collapses to exactly 0 or 6.5.
+> That is a broken prior, not an unpooled model. `pooling("none")` fixes
+> $\sigma_k$ at a large-but-sane value instead.
+
+## A worked demonstration
+
+We use a small slice of the Europe/COVID data — three countries and a single
+intervention (`lockdown`) — so the three regimes fit quickly and the shrinkage
+is easy to see. (See the [multilevel](multilevel-multi-obs.md) notebook for the full
+11-country, 5-NPI analysis.)
+
+**The countries are chosen for their contrast in *how much data they carry***,
+which is what shrinkage responds to. Italy has ~29,000 deaths in the window;
+Denmark has ~500 and Norway ~200. Norway's own data pin its lockdown effect
+only loosely, so it is the country with the most to gain from borrowing
+strength — and the one to watch below.
+
+> **Why not Sweden, the famous case?** Sweden never locked down, so with
+> `lockdown` as the only covariate it would have *nothing* that ever switches
+> on: its $R_t$ would be pinned to a constant, and (since its epidemic was
+> growing when the window opens) a constant above one. The model then could not
+> reproduce Sweden's deaths falling at all, and that misfit would leak into
+> every shared parameter. Sweden *did* suppress its epidemic, with softer
+> measures — which is exactly why it belongs in the full 5-NPI
+> [multilevel](multilevel-multi-obs.md) analysis, where those measures exist, rather
+> than in a one-covariate demo that cannot represent it. Adding a softer
+> measure here would not rescue it either: the measures were enacted within days
+> of each other, so a second covariate is collinear with `lockdown` and simply
+> takes the effect over. Identifiability, not Sweden, is the lesson there.
+
+
+```python
+ec = epi.europe_covid2()
+subset = ec.data[ec.data["country"].isin(["Italy", "Norway", "Denmark"])].copy()
+npis = ["lockdown"]
+fit = epi.prepare_panel(subset, npis, seed_offset=30, death_threshold=10,
+                        fit_until="2020-05-05")
+print("regions:", fit.regions, "| days:", dict(zip(fit.regions, fit.lengths.tolist())))
+print(f"\n{'country':9s}{'lockdown days':>16s}{'total deaths':>15s}")
+for m, r in enumerate(fit.regions):
+    n = int(fit.lengths[m])
+    print(f"{r:9s}{int(fit.X[m, :n, 0].sum()):>10d} of {n:<4d}"
+          f"{int(fit.deaths[m, :n].sum()):>15d}")
+print("\nAll three locked down, so the effect is identified in each. What differs is")
+print("how much data each brings: Italy ~140x Norway. That is what pooling acts on.")
+```
+
+    regions: ['Denmark', 'Italy', 'Norway'] | days: {'Denmark': 73, 'Italy': 98, 'Norway': 69}
+    
+    country     lockdown days   total deaths
+    Denmark          48 of 73              484
+    Italy            55 of 98            28884
+    Norway           42 of 69              208
+    
+    All three locked down, so the effect is identified in each. What differs is
+    how much data each brings: Italy ~140x Norway. That is what pooling acts on.
+
+
+### Partial pooling
+
+The default `MultilevelConfig` partially pools the region effects. We estimate
+the country-specific lockdown effect $\beta + b^{(m)}$ for each country and the
+between-country SD $\sigma_\text{lockdown}$.
+
+
+```python
+config = epi.MultilevelConfig(gen=ec.si, i2o=ec.inf2death, seed_days=6)
+idata_pp = epi.fit_multilevel(fit, config.pooling("partial"), draws=500, tune=1000,
+                              chains=4, seed=1)
+print("divergences:", int(idata_pp.sample_stats["diverging"].sum()))
+az.summary(idata_pp, var_names=["beta", "sd"])
+```
+
+    [epidemia] compiling the log-density (numba backend)... 
+
+    done in 20.6s
+
+
+    [epidemia] sampling 4 chains x (1000 tune + 500 draws)
+
+
+
+
+<style>
+    :root {
+        --column-width-1: 40%; /* Progress column width */
+        --column-width-2: 15%; /* Chain column width */
+        --column-width-3: 15%; /* Divergences column width */
+        --column-width-4: 15%; /* Step Size column width */
+        --column-width-5: 15%; /* Gradients/Draw column width */
+    }
+
+    .nutpie {
+        max-width: 800px;
+        margin: 10px auto;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        //color: #333;
+        //background-color: #fff;
+        padding: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        font-size: 14px; /* Smaller font size for a more compact look */
+    }
+    .nutpie table {
+        width: 100%;
+        border-collapse: collapse; /* Remove any extra space between borders */
+    }
+    .nutpie th, .nutpie td {
+        padding: 8px 10px; /* Reduce padding to make table more compact */
+        text-align: left;
+        border-bottom: 1px solid #888;
+    }
+    .nutpie th {
+        //background-color: #f0f0f0;
+    }
+
+    .nutpie th:nth-child(1) { width: var(--column-width-1); }
+    .nutpie th:nth-child(2) { width: var(--column-width-2); }
+    .nutpie th:nth-child(3) { width: var(--column-width-3); }
+    .nutpie th:nth-child(4) { width: var(--column-width-4); }
+    .nutpie th:nth-child(5) { width: var(--column-width-5); }
+
+    .nutpie progress {
+        width: 100%;
+        height: 15px; /* Smaller progress bars */
+        border-radius: 5px;
+    }
+    progress::-webkit-progress-bar {
+        background-color: #eee;
+        border-radius: 5px;
+    }
+    progress::-webkit-progress-value {
+        background-color: #5cb85c;
+        border-radius: 5px;
+    }
+    progress::-moz-progress-bar {
+        background-color: #5cb85c;
+        border-radius: 5px;
+    }
+    .nutpie .progress-cell {
+        width: 100%;
+    }
+
+    .nutpie p strong { font-size: 16px; font-weight: bold; }
+
+    @media (prefers-color-scheme: dark) {
+        .nutpie {
+            //color: #ddd;
+            //background-color: #1e1e1e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .nutpie table, .nutpie th, .nutpie td {
+            border-color: #555;
+            color: #ccc;
+        }
+        .nutpie th {
+            background-color: #2a2a2a;
+        }
+        .nutpie progress::-webkit-progress-bar {
+            background-color: #444;
+        }
+        .nutpie progress::-webkit-progress-value {
+            background-color: #3178c6;
+        }
+        .nutpie progress::-moz-progress-bar {
+            background-color: #3178c6;
+        }
+    }
+</style>
+
+
+
+
+
+<div class="nutpie">
+    <p><strong>Sampler Progress</strong></p>
+    <p>Total Chains: <span id="total-chains">4</span></p>
+    <p>Active Chains: <span id="active-chains">0</span></p>
+    <p>
+        Finished Chains:
+        <span id="active-chains">4</span>
+    </p>
+    <p>Sampling for a minute</p>
+    <p>
+        Estimated Time to Completion:
+        <span id="eta">now</span>
+    </p>
+
+    <progress
+        id="total-progress-bar"
+        max="6000"
+        value="6000">
+    </progress>
+    <table>
+        <thead>
+            <tr>
+                <th>Progress</th>
+                <th>Draws</th>
+                <th>Divergences</th>
+                <th>Step Size</th>
+                <th>Gradients/Draw</th>
+            </tr>
+        </thead>
+        <tbody id="chain-details">
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>0</td>
+                    <td>0.13</td>
+                    <td>63</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>0</td>
+                    <td>0.13</td>
+                    <td>63</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>1</td>
+                    <td>0.11</td>
+                    <td>63</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>0</td>
+                    <td>0.13</td>
+                    <td>127</td>
+                </tr>
+
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+
+    [epidemia] sampled in 49.5s
+
+
+    divergences: 1
+
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 1 divergent transition. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 380 for sd[1] is 95 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>mean</th>
+      <th>sd</th>
+      <th>hdi_3%</th>
+      <th>hdi_97%</th>
+      <th>mcse_mean</th>
+      <th>mcse_sd</th>
+      <th>ess_bulk</th>
+      <th>ess_tail</th>
+      <th>r_hat</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>beta[lockdown]</th>
+      <td>-2.311</td>
+      <td>0.110</td>
+      <td>-2.533</td>
+      <td>-2.114</td>
+      <td>0.004</td>
+      <td>0.004</td>
+      <td>742.0</td>
+      <td>792.0</td>
+      <td>1.00</td>
+    </tr>
+    <tr>
+      <th>sd[0]</th>
+      <td>0.341</td>
+      <td>0.173</td>
+      <td>0.095</td>
+      <td>0.648</td>
+      <td>0.008</td>
+      <td>0.008</td>
+      <td>438.0</td>
+      <td>850.0</td>
+      <td>1.01</td>
+    </tr>
+    <tr>
+      <th>sd[1]</th>
+      <td>0.071</td>
+      <td>0.092</td>
+      <td>0.000</td>
+      <td>0.243</td>
+      <td>0.004</td>
+      <td>0.005</td>
+      <td>380.0</td>
+      <td>313.0</td>
+      <td>1.01</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+#### Does it actually fit?
+
+Before reading any effect size, look at the fit itself — one panel per country.
+`Rt`, `infections` and `E_deaths` are indexed by `region` in the posterior, so
+passing the `fit` panel as `data=` places each country on **its own** dates
+(country $m$'s column $t$ is a different calendar day from country $n$'s) and
+drops its padded tail. Every plot is written to `figures/` by default.
+
+
+```python
+epi.plots.plot_obs(idata_pp, data=fit, save="pp-deaths-ppc",
+                   title="Posterior predictive: deaths")
+```
+
+    [epidemia] saved figures/pp-deaths-ppc.png
+
+
+
+
+
+    
+![png](partial-pooling_files/partial-pooling_8_1.png)
+    
+
+
+
+
+```python
+epi.plots.plot_rt(idata_pp, data=fit, save="pp-rt",
+                  title="Inferred $R_t$ (a step function of lockdown)")
+```
+
+    [epidemia] saved figures/pp-rt.png
+
+
+
+
+
+    
+![png](partial-pooling_files/partial-pooling_9_1.png)
+    
+
+
+
+Each country steps down at *its own* lockdown date — the model has no
+random walk here, so $R_t$ is a two-level step function by construction: one
+level before, one after. Each also starts from its **own** baseline $R_0$,
+which is what the country-specific intercepts $b^{(m)}_0$ buy you. Without
+them every country would be forced to share one baseline, and the lockdown
+effect would have to absorb the difference.
+
+
+```python
+b0 = np.asarray(idata_pp.posterior["b0"].stack(s=("chain", "draw")))
+R0 = 6.5 / (1.0 + np.exp(-b0))
+print("Baseline R_0 per country (before lockdown):")
+for m, r in enumerate(fit.regions):
+    print(f"  {r:8s} {np.median(R0[m]):.2f}  "
+          f"[{np.percentile(R0[m], 5):.2f}, {np.percentile(R0[m], 95):.2f}]")
+```
+
+    Baseline R_0 per country (before lockdown):
+      Denmark  3.48  [3.19, 3.78]
+      Italy    3.33  [3.17, 3.48]
+      Norway   2.69  [2.35, 3.06]
+
+
+### No pooling, and full pooling
+
+Now the two extremes, via `config.pooling(...)`. "No pooling" fixes
+$\sigma_\text{lockdown}$ large so each country's `b[m]` is effectively free;
+"full pooling" fixes it at ~0 so every country is forced onto the single
+global $\beta$.
+
+
+```python
+def per_country_effect(idata):
+    """Country-specific lockdown effect beta + b[region] from a pooled fit."""
+    post = idata.posterior
+    beta = np.asarray(post["beta"].sel(npi="lockdown").stack(s=("chain", "draw")))
+    return {
+        str(r): beta + np.asarray(
+            post["b"].sel(region=r, npi="lockdown").stack(s=("chain", "draw"))
+        )
+        for r in post.coords["region"].values
+    }
+
+
+idata_np = epi.fit_multilevel(fit, config.pooling("none"), draws=500, tune=1000,
+                              chains=4, seed=1)
+idata_fp = epi.fit_multilevel(fit, config.pooling("full"), draws=500, tune=1000,
+                              chains=4, seed=1)
+
+eff = {
+    "partial pooling": per_country_effect(idata_pp),
+    "no pooling": per_country_effect(idata_np),
+    "full pooling": per_country_effect(idata_fp),
+}
+```
+
+    [epidemia] compiling the log-density (numba backend)... 
+
+    done in 20.1s
+
+
+    [epidemia] sampling 4 chains x (1000 tune + 500 draws)
+
+
+
+
+<style>
+    :root {
+        --column-width-1: 40%; /* Progress column width */
+        --column-width-2: 15%; /* Chain column width */
+        --column-width-3: 15%; /* Divergences column width */
+        --column-width-4: 15%; /* Step Size column width */
+        --column-width-5: 15%; /* Gradients/Draw column width */
+    }
+
+    .nutpie {
+        max-width: 800px;
+        margin: 10px auto;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        //color: #333;
+        //background-color: #fff;
+        padding: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        font-size: 14px; /* Smaller font size for a more compact look */
+    }
+    .nutpie table {
+        width: 100%;
+        border-collapse: collapse; /* Remove any extra space between borders */
+    }
+    .nutpie th, .nutpie td {
+        padding: 8px 10px; /* Reduce padding to make table more compact */
+        text-align: left;
+        border-bottom: 1px solid #888;
+    }
+    .nutpie th {
+        //background-color: #f0f0f0;
+    }
+
+    .nutpie th:nth-child(1) { width: var(--column-width-1); }
+    .nutpie th:nth-child(2) { width: var(--column-width-2); }
+    .nutpie th:nth-child(3) { width: var(--column-width-3); }
+    .nutpie th:nth-child(4) { width: var(--column-width-4); }
+    .nutpie th:nth-child(5) { width: var(--column-width-5); }
+
+    .nutpie progress {
+        width: 100%;
+        height: 15px; /* Smaller progress bars */
+        border-radius: 5px;
+    }
+    progress::-webkit-progress-bar {
+        background-color: #eee;
+        border-radius: 5px;
+    }
+    progress::-webkit-progress-value {
+        background-color: #5cb85c;
+        border-radius: 5px;
+    }
+    progress::-moz-progress-bar {
+        background-color: #5cb85c;
+        border-radius: 5px;
+    }
+    .nutpie .progress-cell {
+        width: 100%;
+    }
+
+    .nutpie p strong { font-size: 16px; font-weight: bold; }
+
+    @media (prefers-color-scheme: dark) {
+        .nutpie {
+            //color: #ddd;
+            //background-color: #1e1e1e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .nutpie table, .nutpie th, .nutpie td {
+            border-color: #555;
+            color: #ccc;
+        }
+        .nutpie th {
+            background-color: #2a2a2a;
+        }
+        .nutpie progress::-webkit-progress-bar {
+            background-color: #444;
+        }
+        .nutpie progress::-webkit-progress-value {
+            background-color: #3178c6;
+        }
+        .nutpie progress::-moz-progress-bar {
+            background-color: #3178c6;
+        }
+    }
+</style>
+
+
+
+
+
+<div class="nutpie">
+    <p><strong>Sampler Progress</strong></p>
+    <p>Total Chains: <span id="total-chains">4</span></p>
+    <p>Active Chains: <span id="active-chains">0</span></p>
+    <p>
+        Finished Chains:
+        <span id="active-chains">4</span>
+    </p>
+    <p>Sampling for a minute</p>
+    <p>
+        Estimated Time to Completion:
+        <span id="eta">now</span>
+    </p>
+
+    <progress
+        id="total-progress-bar"
+        max="6000"
+        value="6000">
+    </progress>
+    <table>
+        <thead>
+            <tr>
+                <th>Progress</th>
+                <th>Draws</th>
+                <th>Divergences</th>
+                <th>Step Size</th>
+                <th>Gradients/Draw</th>
+            </tr>
+        </thead>
+        <tbody id="chain-details">
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>9</td>
+                    <td>0.10</td>
+                    <td>127</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>4</td>
+                    <td>0.11</td>
+                    <td>31</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>9</td>
+                    <td>0.09</td>
+                    <td>63</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>1</td>
+                    <td>0.11</td>
+                    <td>31</td>
+                </tr>
+
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+
+    [epidemia] sampled in 67.1s
+
+
+    [epidemia] compiling the log-density (numba backend)... 
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 23 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.060 for sd_intercept exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 60 for sd_intercept is 15 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+    done in 20.2s
+
+
+    [epidemia] sampling 4 chains x (1000 tune + 500 draws)
+
+
+
+
+<style>
+    :root {
+        --column-width-1: 40%; /* Progress column width */
+        --column-width-2: 15%; /* Chain column width */
+        --column-width-3: 15%; /* Divergences column width */
+        --column-width-4: 15%; /* Step Size column width */
+        --column-width-5: 15%; /* Gradients/Draw column width */
+    }
+
+    .nutpie {
+        max-width: 800px;
+        margin: 10px auto;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        //color: #333;
+        //background-color: #fff;
+        padding: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        font-size: 14px; /* Smaller font size for a more compact look */
+    }
+    .nutpie table {
+        width: 100%;
+        border-collapse: collapse; /* Remove any extra space between borders */
+    }
+    .nutpie th, .nutpie td {
+        padding: 8px 10px; /* Reduce padding to make table more compact */
+        text-align: left;
+        border-bottom: 1px solid #888;
+    }
+    .nutpie th {
+        //background-color: #f0f0f0;
+    }
+
+    .nutpie th:nth-child(1) { width: var(--column-width-1); }
+    .nutpie th:nth-child(2) { width: var(--column-width-2); }
+    .nutpie th:nth-child(3) { width: var(--column-width-3); }
+    .nutpie th:nth-child(4) { width: var(--column-width-4); }
+    .nutpie th:nth-child(5) { width: var(--column-width-5); }
+
+    .nutpie progress {
+        width: 100%;
+        height: 15px; /* Smaller progress bars */
+        border-radius: 5px;
+    }
+    progress::-webkit-progress-bar {
+        background-color: #eee;
+        border-radius: 5px;
+    }
+    progress::-webkit-progress-value {
+        background-color: #5cb85c;
+        border-radius: 5px;
+    }
+    progress::-moz-progress-bar {
+        background-color: #5cb85c;
+        border-radius: 5px;
+    }
+    .nutpie .progress-cell {
+        width: 100%;
+    }
+
+    .nutpie p strong { font-size: 16px; font-weight: bold; }
+
+    @media (prefers-color-scheme: dark) {
+        .nutpie {
+            //color: #ddd;
+            //background-color: #1e1e1e;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .nutpie table, .nutpie th, .nutpie td {
+            border-color: #555;
+            color: #ccc;
+        }
+        .nutpie th {
+            background-color: #2a2a2a;
+        }
+        .nutpie progress::-webkit-progress-bar {
+            background-color: #444;
+        }
+        .nutpie progress::-webkit-progress-value {
+            background-color: #3178c6;
+        }
+        .nutpie progress::-moz-progress-bar {
+            background-color: #3178c6;
+        }
+    }
+</style>
+
+
+
+
+
+<div class="nutpie">
+    <p><strong>Sampler Progress</strong></p>
+    <p>Total Chains: <span id="total-chains">4</span></p>
+    <p>Active Chains: <span id="active-chains">0</span></p>
+    <p>
+        Finished Chains:
+        <span id="active-chains">4</span>
+    </p>
+    <p>Sampling for 19 seconds</p>
+    <p>
+        Estimated Time to Completion:
+        <span id="eta">now</span>
+    </p>
+
+    <progress
+        id="total-progress-bar"
+        max="6000"
+        value="6000">
+    </progress>
+    <table>
+        <thead>
+            <tr>
+                <th>Progress</th>
+                <th>Draws</th>
+                <th>Divergences</th>
+                <th>Step Size</th>
+                <th>Gradients/Draw</th>
+            </tr>
+        </thead>
+        <tbody id="chain-details">
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>0</td>
+                    <td>0.17</td>
+                    <td>15</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>2</td>
+                    <td>0.23</td>
+                    <td>15</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>0</td>
+                    <td>0.18</td>
+                    <td>31</td>
+                </tr>
+
+                <tr>
+                    <td class="progress-cell">
+                        <progress
+                            max="1500"
+                            value="1500">
+                        </progress>
+                    </td>
+                    <td>1500</td>
+                    <td>1</td>
+                    <td>0.21</td>
+                    <td>31</td>
+                </tr>
+
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+
+    [epidemia] sampled in 19.9s
+
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 3 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for z0[Denmark] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 257 for sd_intercept is 64 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+### Comparison
+
+Plotting the country-specific lockdown effect under all three regimes shows
+**shrinkage**, and shows that it is *selective*. Watch **Norway** — 208 deaths
+against Italy's 28,884. Under no pooling its interval is wide, because that is
+honestly all its own data support. Under partial pooling it tightens and moves
+toward the others' consensus. Italy barely moves at all: it has enough data of
+its own that the shared prior has nothing to tell it.
+
+That asymmetry is the point. Partial pooling is not an averaging-together; it
+lends precision where precision is missing and gets out of the way where it is
+not. Full pooling, by contrast, collapses all three to one number regardless of
+what any of them knew.
+
+
+```python
+rows = [
+    {"country": country, "regime": regime,
+     "median": np.median(draws),
+     "lo": np.percentile(draws, 5), "hi": np.percentile(draws, 95)}
+    for regime, e in eff.items() for country, draws in e.items()
+]
+comp = pd.DataFrame(rows)
+comp["regime"] = pd.Categorical(
+    comp["regime"], categories=["no pooling", "partial pooling", "full pooling"]
+)
+p = (
+    ggplot(comp, aes("country", "median", color="regime"))
+    + geom_hline(yintercept=0.0, linetype="dotted", color="#555555")
+    + geom_pointrange(aes(ymin="lo", ymax="hi"), position=position_dodge(width=0.5))
+    + coord_flip()
+    # Sequential, not a hue wheel: the three regimes are ordered (none ->
+    # partial -> full), so they should read as an ordered ramp.
+    + scale_color_manual(
+        values={"no pooling": "#9ecae1", "partial pooling": "#4292c6",
+                "full pooling": "#08306b"}, name="")
+    + labs(x="", y="Lockdown effect on logit $R_t$  ($\\beta + b^{(m)}$)",
+           title="Three pooling regimes: country-specific lockdown effect")
+    + theme_epidemia()
+)
+save_plot(p, "pooling-comparison")
+p
+```
+
+    [epidemia] saved figures/pooling-comparison.png
+
+
+
+
+
+    
+![png](partial-pooling_files/partial-pooling_15_1.png)
+    
+
+
+
+
+```python
+print(comp.pivot(index="country", columns="regime", values="median").round(2).to_string())
+print("\ninterval width (95% - 5%):")
+w = comp.assign(width=comp.hi - comp.lo)
+print(w.pivot(index="country", columns="regime", values="width").round(2).to_string())
+print("\nbetween-country SD sigma_lockdown under partial pooling:")
+sd = np.asarray(idata_pp.posterior["sd"].stack(s=("chain", "draw")))[1]
+print(f"  median {np.median(sd):.3f}  90% CI [{np.percentile(sd, 5):.3f}, "
+      f"{np.percentile(sd, 95):.3f}]")
+print("  (small => the data see little genuine between-country variation, so"
+      "\n   partial pooling shrinks nearly all the way to full pooling)")
+```
+
+    regime   no pooling  partial pooling  full pooling
+    country                                           
+    Denmark       -2.24            -2.31         -2.31
+    Italy         -2.29            -2.31         -2.31
+    Norway        -2.99            -2.32         -2.31
+    
+    interval width (95% - 5%):
+    regime   no pooling  partial pooling  full pooling
+    country                                           
+    Denmark        0.90             0.40          0.29
+    Italy          0.30             0.28          0.29
+    Norway         4.88             0.46          0.29
+    
+    between-country SD sigma_lockdown under partial pooling:
+      median 0.036  90% CI [0.000, 0.264]
+      (small => the data see little genuine between-country variation, so
+       partial pooling shrinks nearly all the way to full pooling)
+
+
+### What the effect means, in percent
+
+A coefficient of $-2.3$ on the logit scale is hard to feel. `epi.effect_table`
+turns it into the percent by which lockdown cut transmission, by counterfactual
+— comparing $6.5\,\mathrm{sigmoid}(b_0^{(m)})$ with
+$6.5\,\mathrm{sigmoid}(b_0^{(m)} + \beta + b^{(m)})$ on every posterior draw.
+
+> Note the percentages differ across countries even though the *coefficients*
+> are nearly identical after shrinkage. That is not a bug: the link is
+> `scaled_logit(6.5)`, not a log link, so the same coefficient buys a bigger
+> percentage where $R_0$ is lower. It is also why $1 - e^{\beta}$ — the log-link
+> shortcut — is the wrong conversion here and overstates the effect.
+
+
+```python
+tab = epi.effect_table(idata_pp, config, data=fit)
+print(tab.to_string(index=False, float_format=lambda x: f"{x:7.2f}"))
+print("\n(Every row here is flagged enacted=True: all three countries locked down,")
+print("so each percentage is a measured effect. Where a region never used a measure")
+print("the flag turns False and the percentage is a counterfactual from the prior —")
+print("see Sweden in the multilevel notebook.)")
+```
+
+     region               term kind enacted  median      lo      hi
+    Denmark  R_0 (no measures)    R    None    3.48    3.19    3.78
+    Denmark           lockdown  pct    True   80.67   78.12   82.90
+    Denmark       all measures  pct    True   80.67   78.12   82.90
+    Denmark R_t (all measures)    R    True    0.67    0.61    0.75
+      Italy  R_0 (no measures)    R    None    3.33    3.17    3.48
+      Italy           lockdown  pct    True   81.58   79.74   83.22
+      Italy       all measures  pct    True   81.58   79.74   83.22
+      Italy R_t (all measures)    R    True    0.61    0.58    0.65
+     Norway  R_0 (no measures)    R    None    2.69    2.35    3.06
+     Norway           lockdown  pct    True   84.38   81.51   87.61
+     Norway       all measures  pct    True   84.38   81.51   87.61
+     Norway R_t (all measures)    R    True    0.42    0.32    0.52
+    
+    (Every row here is flagged enacted=True: all three countries locked down,
+    so each percentage is a measured effect. Where a region never used a measure
+    the flag turns False and the percentage is a counterfactual from the prior —
+    see Sweden in the multilevel notebook.)
+
+
+
+```python
+epi.plots.plot_percent_effects(idata_pp, config, data=fit, save="pp-percent-effects")
+```
+
+    [epidemia] saved figures/pp-percent-effects.png
+
+
+
+
+
+    
+![png](partial-pooling_files/partial-pooling_19_1.png)
+    
+
+
+
+The partially-pooled intervals sit between the two extremes: narrower than
+no-pooling because information is shared through the common prior
+$N(0, \sigma_\text{lockdown})$, but — unlike full pooling — still able to
+differ from one another if the data insist. This is exactly the behaviour the
+`(lockdown || country)` term encodes in R, and $\sigma_\text{lockdown}$ is the
+dial: the smaller the data say it is, the closer partial pooling sits to full
+pooling.
+
+### Reading the output
+
+A caution that matters as soon as there is more than one covariate: the global
+$\beta_k$ printed by `az.summary` is **not** "the effect in country $m$" — that
+is $\beta_k + b^{(m)}_k$, which `per_country_effect` (or
+`epi.plots.plot_region_effects`) computes. And with several *collinear*
+covariates, a single $\beta_k$ whose interval covers zero usually means "not
+separately identifiable from the others", not "this measure did nothing". The
+[multilevel](multilevel-multi-obs.md) notebook works through that case.
+
+### References
+
+* Bates, D. et al. (2015). *Fitting Linear Mixed-Effects Models Using lme4.*
+* Flaxman, S. et al. (2020). *Estimating the effects of non-pharmaceutical
+  interventions on COVID-19 in Europe.*
+
+
+<!-- ===== tutorials/multilevel-multi-obs.md ===== -->
+
+# Multilevel models with several observation series
+
+The Python counterpart of the R vignette
+[`multilevel-multi-obs`](https://mlgh-sg.com/epidemia2/articles/multilevel-multi-obs.html).
+
+This is the model the earlier Python builders could not express. It puts four
+things together at once:
+
+* **partial pooling** of reproduction numbers across regions, with independent
+  region intercepts and slopes (R's double-bar `(1 + x || region)`);
+* a **random walk** on $R_t$, one per region (R's `rw(time = week, gr = region)`);
+* **two observation series** fitted jointly, deaths and cases, each with its own
+  delay distribution, family and ascertainment rate;
+* a **susceptibility adjustment**, so infections saturate instead of growing
+  without bound.
+
+All of it comes from `epidemia.core`.
+
+
+```python
+import numpy as np
+import pandas as pd
+import arviz as az
+
+import epidemia
+from epidemia.core import (
+    EpiModelConfig,
+    ObsModel,
+    RandomWalk,
+    build_epidemia_model,
+    fit_epidemia,
+    prepare_panel,
+)
+```
+
+## Data
+
+`EuropeCovid2` carries daily deaths *and* daily cases for eleven countries,
+alongside the intervention indicators. We use all eleven countries, and add a
+month column to index the random walk.
+
+
+```python
+ec = epidemia.europe_covid2()
+df = ec.data.copy()
+# A monthly walk index, not a weekly one. See "Read the diagnostics" below:
+# a walk free to move every week can absorb a one-off step covariate into its
+# own increments, leaving beta[lockdown] only weakly identified.
+df["month"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m")
+
+panel, series = prepare_panel(
+    df,
+    npis=["lockdown"],
+    responses=["deaths", "cases"],
+    pop="pop",
+    rw_by="month",
+    fit_until="2020-05-05",
+)
+print(panel.regions, panel.X.shape, panel.pops.astype(int))
+```
+
+    ['Austria', 'Belgium', 'Denmark', 'France', 'Germany', 'Italy', 'Norway', 'Spain', 'Sweden', 'Switzerland', 'United_Kingdom'] (11, 98, 1) [ 9006400 11589616  5792203 65273512 83783945 60461828  5421242 46754783
+     10099270  8654618 67886004]
+
+
+`prepare_panel` windows every response onto one shared time axis: each region
+starts 30 days before its tenth cumulative death, as in the R vignettes. Series
+observed on different days are handled by their own masks, so a weekly survey
+and a daily count can sit in the same model.
+
+## The two observation series
+
+Neither series *is* the infections. Each is infections convolved with a delay
+distribution and scaled by an ascertainment rate that is itself estimated:
+
+$$\mathbb{E}\left[Y^{(s)}_{t,m}\right]
+   = \alpha^{(s)}_{t,m} \sum_{k \ge 1} \pi^{(s)}_k\, i_{t-k,m}$$
+
+For deaths, $\alpha$ is the infection fatality ratio, capped at 2% by
+`link_K`. For cases it is the ascertainment ratio, capped at 40%. The
+infection-to-case delay here is deliberately crude — undetected for four days,
+then uniform over a week.
+
+
+```python
+i2o_cases = np.concatenate([np.zeros(4), np.full(7, 1 / 7)])
+
+obs = [
+    ObsModel(
+        "deaths", series["deaths"]["y"], series["deaths"]["mask"],
+        i2o=ec.inf2death, family="neg_binom", link_K=0.02,
+    ),
+    ObsModel(
+        "cases", series["cases"]["y"], series["cases"]["mask"],
+        i2o=i2o_cases, family="quasi_poisson", link_K=0.4,
+    ),
+]
+```
+
+## The transmission model
+
+`correlated=False` gives independent region intercepts and slopes — R's
+double-bar `(1 + lockdown || country)`. Setting it `True` would estimate their
+full covariance through an LKJ-Cholesky prior instead, R's single-bar form.
+
+**This tutorial deliberately uses the independent form.** The correlated one is
+the more expressive model and epidemia supports it, but on *these* data it does
+not identify: eleven regions are asked to support a full intercept-slope
+covariance *and* a per-region random walk at the same time, and the sampler
+cannot explore the resulting funnel. Fitted that way it returns a worst R-hat
+of **1.620** on `Sigma_chol[0]` with a bulk ESS of **7** — chains that never
+mixed, and a plot whose credible bands are an artefact of their disagreement
+rather than a posterior. The independent form, at identical sampler settings,
+gives R-hat **1.020** and ESS **96**.
+
+Raising `maxdepth` does not rescue the correlated version: at 14 the fit
+extrapolates to fifteen hours and still saturates. The fix is the model, not
+the compute budget. Use `correlated=True` when the correlation is what you are
+after and you have the regions to support it — and check `Sigma_chol` before
+believing anything downstream of it.
+
+`RandomWalk(by_region=True)` gives each country its own monthly walk with its
+own scale; `by_region=False` would put them all on one shared walk.
+
+`pop_adjust=True` tracks the susceptible pool.
+
+
+```python
+config = EpiModelConfig(
+    gen=ec.si,
+    correlated=False,
+    pop_adjust=True,
+    prior_susc_mean=0.95,
+    prior_susc_sd=0.05,
+    rw=RandomWalk(index=panel.rw_index, by_region=True, prior_scale=0.1),
+)
+
+model = build_epidemia_model(panel, obs, config)
+print(f"{len(model.free_RVs)} free parameters")
+```
+
+    13 free parameters
+
+
+## Fitting
+
+`fit_epidemia` builds and samples in one call. Two of its defaults differ from
+nutpie's, both because of this model class's geometry: `target_accept=0.95` for
+the funnel between the between-region SDs and the non-centred effects, and
+`adaptation="low_rank"` for the correlated ridge that the covariates and the
+random walk create together. A diagonal mass matrix cannot follow that ridge,
+and it fails *silently* — bad mixing with no divergences to warn you. See the
+[performance](../performance.md) page for the measurements.
+
+
+```python
+# maxdepth is raised from nutpie's 10: about a third of iterations saturate it
+# even in the independent form, and a truncated trajectory costs efficiency
+# silently. 12 rather than 14 -- on this posterior 14 is not worth its cost.
+idata = fit_epidemia(panel, obs, config, draws=1000, tune=1000, chains=4,
+                     seed=12345, target_accept=0.99, maxdepth=12,
+                     progress_bar=False)
+summ = az.summary(idata, var_names=["beta", "seed", "rw_scale", "sd"])
+print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
+```
+
+                             mean      sd  r_hat  ess_bulk
+    beta[lockdown]         -1.571   0.163   1.00    2949.0
+    seed[Austria]         159.727  39.868   1.00    4736.0
+    seed[Belgium]          93.071  22.435   1.00    4725.0
+    seed[Denmark]         157.189  42.412   1.00    3624.0
+    seed[France]           81.588  21.611   1.00    3898.0
+    seed[Germany]         100.524  23.914   1.00    4394.0
+    seed[Italy]            39.041  10.940   1.00    4223.0
+    seed[Norway]          196.442  50.949   1.00    3061.0
+    seed[Spain]            68.172  16.086   1.00    3691.0
+    seed[Sweden]          381.023  66.685   1.00    4121.0
+    seed[Switzerland]     138.672  33.740   1.00    3590.0
+    seed[United_Kingdom]  269.087  48.151   1.00    2776.0
+    rw_scale[0]             0.071   0.054   1.00    3116.0
+    rw_scale[1]             0.176   0.060   1.00    2719.0
+    rw_scale[2]             0.099   0.066   1.00    2114.0
+    rw_scale[3]             0.279   0.053   1.00    3561.0
+    rw_scale[4]             0.216   0.051   1.00    3914.0
+    rw_scale[5]             0.305   0.055   1.00    2537.0
+    rw_scale[6]             0.117   0.078   1.00     924.0
+    rw_scale[7]             0.255   0.053   1.00    2305.0
+    rw_scale[8]             0.334   0.053   1.00    4161.0
+    rw_scale[9]             0.150   0.077   1.00    1300.0
+    rw_scale[10]            0.112   0.072   1.01     574.0
+    sd[0]                   0.403   0.170   1.02     269.0
+    sd[1]                   0.455   0.138   1.01    1283.0
+
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 1 iteration saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for sd[0] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 269 for sd[0] is 67 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+### Read the diagnostics before the estimates
+
+Check the sampler before reading a single estimate. `sampler_diagnostics()`
+is the mirror of R's function of the same name and reports the same
+quantities: divergent transitions, iterations that saturated the maximum tree
+depth, E-BFMI per chain, and the worst R-hat and effective sample size across
+all parameters.
+
+
+```python
+print(epidemia.sampler_diagnostics(idata))
+```
+
+    Sampler diagnostics
+    4 chains x 1000 post-warmup draws = 4000
+    
+     chain  divergent  max_treedepth  ebfmi
+         1          0              0  0.908
+         2          0              0  0.861
+         3          0              0  0.845
+         4          0              1  0.798
+    
+    Divergent transitions: 0 (0.0%)
+    Hit max treedepth:     1 (0.0%)
+    Lowest E-BFMI:         0.80
+    Worst R-hat:           1.020  (sd[0])
+    Lowest bulk ESS:       269  (sd[0])
+    Lowest tail ESS:       300
+    
+    Warnings:
+    * 1 iteration saturated max_treedepth. This costs efficiency rather than correctness; raise max_treedepth.
+    * R-hat of 1.020 for sd[0] exceeds 1.01, so the chains have not mixed.
+    * Bulk ESS of 269 for sd[0] is 67 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+The three sampler quantities answer different questions. **Divergent
+transitions** mean the sampler could not follow the posterior's curvature;
+they bias the result and drawing more samples does not help, so they have to
+be fixed by raising `target_accept` or reparameterising. **Max treedepth** is
+an efficiency problem rather than a correctness one. **E-BFMI** below about
+0.2 suggests the momentum resampling is not exploring the energy distribution.
+
+Two choices earlier in this notebook were made to keep these numbers clean,
+and both are worth understanding because they are easy to get wrong.
+
+**The walk is monthly, not weekly.** A random walk and a one-off step
+covariate compete for the same signal: lockdown is a single permanent change
+in one direction, and a walk free to move every week can absorb exactly that
+change into its own increments. The two are then only weakly separable, the
+posterior has a ridge along which `beta[lockdown]` trades off against the
+walk, and the chains explore it slowly — a low `ess_bulk` and an `r_hat` above
+1.01 for that one coefficient. A monthly index cannot track a weekly step, so
+the competition goes away. This is not a Python quirk; the same formula in R
+(`~ lockdown + rw(time = week, gr = country)`) has the same problem.
+
+**All eleven countries, not a handful.** A partially pooled slope asks the
+data to estimate a *variance* across groups, and a few groups barely identify
+it. Cutting the panel down to three countries to save runtime reintroduces
+divergences and a tail ESS in the tens.
+
+If you do hit this in your own model, the honest responses are to report the
+parameter as poorly identified and not quote its interval, to drop one of the
+two competing terms, or to make the walk coarser as done here.
+
+
+```python
+bad = summ[(summ["r_hat"] > 1.01) | (summ["ess_bulk"] < 400)]
+if len(bad):
+    print("weakly identified or poorly mixed:")
+    print(bad[["mean", "ess_bulk", "r_hat"]].to_string())
+else:
+    print(f"all clear: max r_hat = {summ['r_hat'].max():.3f}")
+```
+
+    weakly identified or poorly mixed:
+            mean  ess_bulk  r_hat
+    sd[0]  0.403     269.0   1.02
+
+
+## Both series are explained
+
+A joint model has to fit everything it is conditioned on, so check each series.
+
+
+```python
+# `plot_obs` bands the posterior **predictive** -- draws pushed through each
+# series' observation family -- so the ribbon carries the negative-binomial (and
+# quasi-Poisson) noise, not just parameter uncertainty. Banding `E_deaths`
+# directly, which an earlier version of this notebook did by hand, gives an
+# interval several times too narrow to compare against the counts drawn over it.
+#
+# Three nested credible bands, as R's `plot_obs` draws by default.
+```
+
+
+```python
+for name, model in zip(("deaths", "cases"), obs):
+    epidemia.plot_obs(
+        idata, data=panel, obs_model=model, series=name,
+        levels=(30, 60, 90), ylab=name.capitalize(),
+        title=f"Posterior predictive: {name}", save=f"multilevel-obs-{name}",
+    )
+```
+
+    [epidemia] saved figures/multilevel-obs-deaths.png
+
+
+    [epidemia] saved figures/multilevel-obs-cases.png
+
+
+## What the susceptibility adjustment does
+
+With `pop_adjust`, the realised $R_t$ is the unadjusted rate scaled by the
+susceptible fraction, so it falls as the epidemic proceeds even when the
+unadjusted rate is flat. Over an eight-week window the effect is small; over a
+long forecast it is what stops infections growing without bound.
+
+
+```python
+S = idata.posterior["susceptible"].mean(("chain", "draw")).values
+Rt = idata.posterior["Rt"].mean(("chain", "draw")).values
+Rt_un = idata.posterior["Rt_unadj"].mean(("chain", "draw")).values
+
+for m, region in enumerate(panel.regions):
+    n = int(panel.lengths[m])
+    print(f"{region:10s} susceptible {S[m, n-1] / panel.pops[m]:.3f} "
+          f"at the end;  Rt {Rt[m, n-1]:.2f} vs unadjusted {Rt_un[m, n-1]:.2f}")
+```
+
+    Austria    susceptible 0.931 at the end;  Rt 0.81 vs unadjusted 0.87
+    Belgium    susceptible 0.881 at the end;  Rt 0.74 vs unadjusted 0.85
+    Denmark    susceptible 0.911 at the end;  Rt 0.99 vs unadjusted 1.09
+    France     susceptible 0.914 at the end;  Rt 0.65 vs unadjusted 0.72
+    Germany    susceptible 0.924 at the end;  Rt 0.72 vs unadjusted 0.78
+    Italy      susceptible 0.900 at the end;  Rt 0.82 vs unadjusted 0.91
+    Norway     susceptible 0.916 at the end;  Rt 0.83 vs unadjusted 0.91
+    Spain      susceptible 0.891 at the end;  Rt 0.63 vs unadjusted 0.71
+    Sweden     susceptible 0.904 at the end;  Rt 0.89 vs unadjusted 0.99
+    Switzerland susceptible 0.909 at the end;  Rt 0.67 vs unadjusted 0.74
+    United_Kingdom susceptible 0.891 at the end;  Rt 0.97 vs unadjusted 1.09
+
+
+## Per-region reproduction numbers
+
+Each country has its own weekly walk, so $R_t$ varies smoothly within a country
+rather than stepping only when a policy changes.
+
+
+```python
+epidemia.plot_rt(
+    idata, data=panel, levels=(30, 60, 90),
+    title="Reproduction numbers, with a monthly walk per region",
+    save="multilevel-rt",
+)
+```
+
+    [epidemia] saved figures/multilevel-rt.png
+
+
+
+
+
+    
+![png](multilevel-multi-obs_files/multilevel-multi-obs_20_1.png)
+    
+
+
+
+## Scoring the fit
+
+`epidemia.scoring` mirrors R's `evaluate_forecast`. Feed it observations and
+predictive draws — note the orientation: one **row per observation**, one column
+per draw.
+
+Note also that these are draws from the posterior *predictive*, not bands on the
+expected count: `epidemia.predict.posterior_predict` samples from the negative
+binomial, so the intervals include observation noise. Banding `E_deaths` alone
+would give intervals that are too narrow.
+
+
+```python
+from epidemia.predict import posterior_predict
+from epidemia.scoring import evaluate_forecast
+
+m = 0                                  # score the first region
+n = int(panel.lengths[m])
+E = idata.posterior["E_deaths"].isel(region=m).values.reshape(-1, panel.X.shape[1])[:, :n]
+aux = idata.posterior["deaths|aux"].values.reshape(-1)
+
+pp = posterior_predict(E, family="neg_binom", aux=aux[:, None], rng=np.random.default_rng(0))
+
+mask = series["deaths"]["mask"][m, :n]
+y = series["deaths"]["y"][m, :n]
+result = evaluate_forecast(
+    y[mask], pp[:, mask].T,                     # (observations, draws)
+    date=pd.to_datetime(panel.dates[m][:n])[mask],
+    levels=(50, 95),
+)
+print(result.error.head())
+print(result.coverage.groupby("level")["in_ci"].mean().round(3))
+```
+
+      group       date      crps  mean_abs_error  median_abs_error
+    0   all 2020-02-23  0.000000           0.000               0.0
+    1   all 2020-02-24  0.000000           0.000               0.0
+    2   all 2020-02-25  0.000000           0.000               0.0
+    3   all 2020-02-26  0.000000           0.000               0.0
+    4   all 2020-02-27  0.000001           0.001               0.0
+    level
+    50.0    0.611
+    95.0    0.917
+    Name: in_ci, dtype: float64
+
+
+## Where this differs from R
+
+The models are the same; the interfaces are not. R parses
+`R(country, date) ~ (1 + lockdown | country) + rw(time = week, gr = country)`
+from a formula, while here you hand `prepare_panel` the column names and it
+builds the design matrix. Forecasting from a `newdata` frame is one call in R;
+here you use `epidemia.predict.simulate` yourself. See
+[parity](../parity.md) for the full list.
+
+
+<!-- ===== tutorials/flaxman.md ===== -->
+
+# Reproducing Flaxman et al. (2020)
+
+The [Nature paper](https://www.nature.com/articles/s41586-020-2405-7) that
+**epidemia** grew out of reports one headline result: **lockdown accounts for
+essentially all of the measured reduction in transmission**, and the other four
+interventions sit near zero.
+
+Other epidemia examples of the same data do *not* reproduce that; they put a
+large effect on social distancing as well. That is not a bug in either package
+— they are **different models** — and this notebook writes Flaxman's
+specification down exactly so the difference can be seen rather than argued
+about.
+
+Written down exactly, it reproduces: **lockdown 79.2% [73.4, 83.4]** against
+the paper's 81% [75, 87], with the other five effects at zero. The R vignette
+of the same model gives 79.3% [72.5, 84.1], so the two ports agree with each
+other as well as with the paper.
+
+## Where the two specifications differ
+
+From `stan-models/base.stan` in the paper's repository:
+
+```stan
+alpha_hier ~ gamma(.1667, 1);
+alpha[i]    = alpha_hier[i] - log(1.05) / 6.0;
+mu          ~ normal(3.28, kappa);     kappa ~ normal(0, 0.5);
+gamma             ~ normal(0, 0.2);
+lockdown          ~ normal(0, gamma);
+last_intervention ~ normal(0, gamma);   // socialDistancing, column 6
+Rt[,m]      = mu[m] * exp(-X[m] * alpha - X[m][,5] * lockdown[m]);
+tau ~ exponential(0.03);  y[m] ~ exponential(1/tau);
+```
+
+| | Flaxman | epidemia vignette |
+|---|---|---|
+| Link | `mu[m] * exp(-X·alpha)` | `6.5 * sigmoid(eta)` |
+| Covariates | **six** — the five NPIs plus `firstIntervention` | the five NPIs |
+| Country deviations | **lockdown AND socialDistancing**, sharing one scale | **all five NPIs** |
+| Coefficient prior | `gamma(1/6, 1)`, shifted by `log(1.05)/6` | identical |
+| Seeding | `tau ~ Exp(0.03)`, `y ~ Exp(1/tau)` | identical |
+| Observations | negative binomial | identical |
+
+The priors, seeding and observation model are the *same*. Two things differ,
+and both matter. This notebook fits only the Flaxman specification; the
+contrast is drawn to explain the modelling choices, not scored.
+
+**The sixth covariate.** `firstIntervention` is 1 once *any* measure is in
+force. It absorbs the common "something changed" drop, leaving the five
+individual coefficients to explain only what distinguishes them from each
+other. Without it — as in the epidemia vignette — the five near-collinear
+columns must between them account for the entire fall in transmission, and
+which one takes the mass is largely arbitrary.
+
+**The pooling.** TWO covariates get a country-specific term, sharing ONE scale
+`gamma ~ normal(0, 0.2)`: column 5 (lockdown) and column 7. Column 7 is not
+socialDistancing — it is a **Sweden-only** copy of public events, and it is
+the "last intervention" term. Sweden's lockdown date is the sentinel
+`2090-03-17` (it never locked down) and its last measure was the public-events
+ban; for every other country lockdown *is* the last intervention, since
+measures enacted after lockdown are collapsed onto the lockdown date. So each
+country gets exactly one country-specific effect on its own last measure,
+which is why the two share a scale. Column 7 also carries **no pooled
+coefficient** — `alpha` spans columns 1–6 only.
+
+Getting this wrong is instructive. A first draft omitted `firstIntervention`
+and put a country deviation on lockdown alone, returning lockdown at 0.4% and
+distancing at 63% — the *opposite* of the Nature figure. A later draft
+invented column 7 as "all interventions in force", which left the fit at
+R-hat 1.27 with an effective sample size of 11.
+
+
+```python
+import numpy as np
+import pandas as pd
+import arviz as az
+import pymc as pm
+
+import epidemia
+from epidemia.core import (
+    EpiModelConfig,
+    ObsModel,
+    PanelData,
+    build_epidemia_model,
+    fit_epidemia,
+    prepare_panel,
+)
+from epidemia.priors import normal, shifted_gamma
+```
+
+## Data
+
+The same 11 countries and five interventions both models use.
+
+
+```python
+ec = epidemia.europe_covid2()
+df = ec.data.copy()
+
+# Flaxman's design has SIX columns, not five. The fourth --
+#   firstIntervention = 1*((school + selfIsolation + publicEvents
+#                           + lockdown + socialDistancing) >= 1)
+# (utils/process-covariates.r) -- is an indicator that ANY measure is in force.
+# It is the decisive term: it absorbs the common "something changed" drop, so
+# the five individual coefficients are left to explain only what distinguishes
+# them from one another. Omit it and the collinear five redistribute the whole
+# effect among themselves, which is exactly what the epidemia vignette shows.
+BASE = list(epidemia.EUROPE_COVID_NPIS)
+# Column 4: firstIntervention -- 1 once ANY measure is in force.
+df["any_intervention"] = (df[BASE].sum(axis=1) >= 1).astype(float)
+# Column 7 is NOT "all interventions" -- it is a SWEDEN-ONLY copy of public
+# events. process-covariates.r builds six columns and then bolts on a seventh:
+#     X2 = array(0, c(M, N2, 7)); X2[,,1:6] = X
+#     X2[which(countries == "Sweden"),,7] = X2[which(countries == "Sweden"),,3]
+# It is zero for all ten other countries, so the `last_intervention[m]` it
+# carries is identified only for Sweden -- a bespoke term for the one country
+# that never locked down. Flaxman gives it a country effect and NO pooled
+# coefficient: base-nature.stan multiplies X[,1:6] by alpha[1:6] and X[,7] by
+# last_intervention[m] alone (alpha[7] is sampled but never enters the
+# likelihood). `fixed_effects=` below is how this is spelled in Python: one
+# design matrix is shared between beta and b, so the split between them is a
+# mask rather than a formula. The R vignette says the same thing by naming the
+# covariate only inside its `(... || country)` term.
+df["sweden_public_events"] = (df["public_events"]
+                              * (df["country"] == "Sweden")).astype(float)
+NPIS = BASE + ["any_intervention", "sweden_public_events"]
+
+# The window is built here rather than left to prepare_panel's own rule, so it
+# lines up with the R vignette row for row. prepare_panel uses `cumsum > 10`,
+# drops the boundary row and treats `fit_until` as strictly-before; R uses
+# `cumsum >= 10`, keeps the boundary and is inclusive. Those off-by-ones cost 25
+# of 906 country-days, which is a confound this comparison does not need.
+#
+# Flaxman SIMULATES the run-up but does not FIT it. process-covariates.r starts
+# each country 30 days before its cumulative deaths reach 10 and sets
+# EpidemicStart = index1 + 1 - index2, so base-nature.stan's likelihood runs
+#     deaths[EpidemicStart[m]:N[m], m] ~ neg_binomial_2(...)
+# The first 30 days are seeded and propagated but contribute nothing to the
+# posterior. NaN is how prepare_panel is told that: its mask is
+# `isfinite(y) & (y >= 0)`.
+RUN_UP = 30
+df = df[df["date"] <= pd.Timestamp("2020-05-05")].copy()
+
+
+def _flaxman_window(g):
+    g = g.sort_values("date").reset_index(drop=True)
+    cross = np.flatnonzero(g["deaths"].cumsum().to_numpy() >= 10)[0]
+    g = g.iloc[max(cross - RUN_UP, 0):].reset_index(drop=True)
+    g.loc[: RUN_UP - 1, "deaths"] = np.nan     # simulated, not fitted
+    g["pop"] = g["pop"].dropna().iloc[0]       # NA on pre-epidemic rows
+    return g
+
+
+df = (df.groupby("country", group_keys=False)[list(df.columns)]
+        .apply(_flaxman_window).reset_index(drop=True))
+
+# `_win` is 1 from the first row, so prepare_panel's own windowing is a no-op
+# and the frame above is used verbatim.
+df["_win"] = 1.0
+panel, series = prepare_panel(
+    df, npis=NPIS, responses=["deaths"], pop="pop",
+    threshold_on="_win", threshold=0, seed_offset=1,
+)
+
+# Flaxman's observation model has NO ascertainment regression: f = h*s (IFR x
+# delay) is DATA, and ifr_noise[m] ~ normal(1, 0.1) is a tight per-country
+# multiplier. That is reachable with no epidemia change -- an identity link with
+# a one-hot country design gives rate = coef[m], and the IFR is folded into i2o.
+#
+# The IFR is PER COUNTRY (data/popt-ifr.rds), not a flat 1%: it ranges from
+# 0.91% (Norway) to 1.26% (France). i2o carries a reference IFR and the one-hot
+# coefficient carries ifr_noise[m] * IFR_m / IFR_ref, so the prior location
+# moves with the country while the 10% spread stays Flaxman's.
+IFR_BY_COUNTRY = {
+    "Austria": 0.010388226, "Belgium": 0.010959878, "Denmark": 0.010207470,
+    "France": 0.012556187, "Germany": 0.012332443, "Italy": 0.012449626,
+    "Norway": 0.009149564, "Spain": 0.010783873, "Sweden": 0.010311043,
+    "Switzerland": 0.010213453, "United_Kingdom": 0.010350438,
+}
+ifr_m = np.array([IFR_BY_COUNTRY[c] for c in panel.regions])
+ifr_ref = float(ifr_m.mean())
+
+# The delay kernel is built here rather than taken from `ec.inf2death`, because
+# the two discretise the same distribution differently. epidemia gives entry k
+# the mass in (k-1, k], matching its serial interval and putting no mass at lag
+# zero (mean lag 24.4). Flaxman uses the midpoint rule f[k] = F(k+1/2) -
+# F(k-1/2), whose mean lag is the distribution's own 23.9 days. Reproducing the
+# paper means using the paper's discretisation. The R vignette does the same.
+_h = 1e-3
+_grid = np.arange(0.0, 300.0 + _h, _h)
+
+
+def _dgamma(x, mean, cv):
+    from scipy.stats import gamma
+    return gamma.pdf(x, a=1 / cv**2, scale=mean * cv**2)
+
+
+_dens = np.convolve(_dgamma(_grid, 5.1, 0.86),
+                    _dgamma(_grid, 18.8, 0.45))[:_grid.size] * _h
+_cdf = np.cumsum(_dens) * _h
+
+
+def _F(q):
+    return _cdf[np.clip(np.round(np.asarray(q) / _h).astype(int), 0,
+                        _cdf.size - 1)]
+
+
+_k = np.arange(1, len(ec.inf2death) + 1)
+f_kernel = np.concatenate([[_F(1.5) - _F(0.0)],
+                           _F(_k[1:] + 0.5) - _F(_k[1:] - 0.5)])
+f_kernel = f_kernel / f_kernel.sum()
+print(f"i2o mean lag: paper {(f_kernel * _k).sum():.3f}, "
+      f"epidemia default {(np.asarray(ec.inf2death) * _k).sum():.3f}")
+f_kernel = f_kernel * ifr_ref
+onehot = np.zeros((len(panel.regions), panel.X.shape[1], len(panel.regions)))
+for _m in range(len(panel.regions)):
+    onehot[_m, :, _m] = 1.0
+
+obs = [ObsModel("deaths", series["deaths"]["y"], series["deaths"]["mask"],
+                i2o=f_kernel, family="neg_binom", link="identity",
+                intercept=False, X=onehot,
+                prior=normal(ifr_m / ifr_ref, 0.1 * ifr_m / ifr_ref))]
+print(f"fitted country-days: {int(series['deaths']['mask'].sum())} "
+      f"(R vignette: 576); masked run-up: {RUN_UP * len(panel.regions)}")
+print(f"{len(panel.regions)} countries, {panel.X.shape[2]} NPIs, "
+      f"{int(panel.lengths.sum())} modelled days")
+print("NPI order:", NPIS)
+```
+
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'Austria': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'Belgium': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'Denmark': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'France': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'Germany': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'Italy': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'Norway': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'Spain': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'Sweden': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'Switzerland': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_95919/730704751.py:64: UserWarning: 'United_Kingdom': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+
+
+    i2o mean lag: paper 23.899, epidemia default 24.400
+    fitted country-days: 576 (R vignette: 576); masked run-up: 330
+    11 countries, 7 NPIs, 906 modelled days
+    NPI order: ['schools_universities', 'self_isolating_if_ill', 'public_events', 'social_distancing_encouraged', 'lockdown', 'any_intervention', 'sweden_public_events']
+
+
+## Model A — Flaxman
+
+`link="log"` gives $R_t = \exp(\eta)$, so with $\eta = b_0^{(m)} + \sum_k
+\beta_k X_k + b^{(m)}_{\text{lockdown}} X_{\text{lockdown}}$ we get
+$R_t = \mu_m \exp(\sum_k \beta_k X_k + \ldots)$ with $\mu_m = e^{b_0^{(m)}}$ —
+Flaxman's multiplicative form, with $\beta_k = -\alpha_k$.
+
+The country deviation is restricted to lockdown with
+`sd_slope_fixed=[0, 0, 0, 0, nan]`: zero pins a slope's between-country SD at
+zero (no deviation at all), and `nan` means "estimate this one".
+
+
+```python
+# Flaxman gives exactly TWO covariates a country effect, sharing one scale
+# gamma ~ normal(0, 0.2):
+#     lockdown[m] ~ normal(0, gamma)          on column 5
+#     last_intervention[m] ~ normal(0, gamma) on column 7
+# These are the same thing seen twice. Lockdown IS the last intervention for
+# every country except Sweden, whose lockdown date is the sentinel 2090-03-17
+# ("never") and whose last measure was the public-events ban on 2020-03-29. So
+# each country gets one country-specific "last intervention" effect: through
+# column 5 for the ten that locked down, through column 7 for Sweden.
+# nan means "estimate this slope's between-country SD"; 0 pins it at zero.
+POOLED = [NPIS.index("lockdown"), NPIS.index("sweden_public_events")]
+slope_sd = [0.0] * len(NPIS)
+for k in POOLED:
+    slope_sd[k] = np.nan
+
+# Column 7 carries a country effect and NO pooled coefficient: base-nature.stan
+# multiplies X[,1:6] by alpha[1:6] and X[,7] by last_intervention[m] alone
+# (alpha[7] is sampled but never enters the likelihood). A pooled beta there
+# would double-count -- Sweden's public events already get alpha[3] from column
+# 3. `fixed_effects` is how Python spells R's "named only inside (... || g)".
+FIXED = [n != "sweden_public_events" for n in NPIS]
+
+flaxman_cfg = EpiModelConfig(
+    gen=ec.si,
+    link="log",                       # mu[m] * exp(-X . alpha)
+    # EpiModelConfig defaults to intercept=False, i.e. R's `~ 0 + ...`. The R
+    # vignette writes `~ 1 + ...`, and Flaxman needs it: mu[m] ~ normal(3.28,
+    # kappa) has a non-zero hyper-mean, which a zero-centred country intercept
+    # alone cannot supply. Without this the prior on R_0 sits at 1.01 rather
+    # than 3.30.
+    intercept=True,
+    region_effects=True,              # the per-country part of mu[m]
+    correlated=False,
+    sd_slope_fixed=slope_sd,
+    fixed_effects=FIXED,
+    # gamma ~ normal(0, 0.2) is a half-normal with mean 0.16, but that scale is
+    # SHARED with the country intercept here, exactly as R's decov splits one
+    # scale across the intercept and the two slopes. 0.09 is what makes the
+    # implied prior on R_0 match Flaxman's mean 3.28 / sd 0.40 -- at 0.16 the
+    # prior sd came out at 1.25, three times too wide. This is the same value
+    # the R vignette passes as decov(shape = 1, scale = 0.09).
+    sd_slope_shape=1.0,
+    sd_scale=0.09,
+    sd_intercept_shape=1.0,
+    # Flaxman fixes the hyper-mean of mu[m] ~ normal(3.28, kappa) rather than
+    # estimating it. A log link can only carry a prior on log R_0, so pin the
+    # global intercept near log(3.28) and let the country term carry kappa.
+    # An earlier draft dropped this as "inert" -- true when sd_scale was 0.16
+    # and the country term could absorb anything, no longer true once the
+    # covariance is this tight.
+    prior_intercept=normal(np.log(3.28), 0.05),
+    prior_covariates=shifted_gamma(shape=1 / 6, scale=1.0,
+                                   shift=np.log(1.05) / 6),
+    seed_days=6,
+    # NO prior_seeds override. epidemia's default -- seed_pooling with
+    # seed_aux_rate=0.03 -- already IS Flaxman's seeding: tau ~ Exp(0.03),
+    # y[m] ~ Exp(1/tau), prior mean ~33 infections/day. An earlier draft set
+    # prior_seeds=normal(0, 1), giving 0-2/day, ~30x too small; the model then
+    # had to grow much further over the run-up and compensated with a larger
+    # R_0. Removing it alone moved lockdown from 26% to 50%.
+    # Flaxman: Rt_adj = (S/P) * Rt -- LINEAR depletion, not epidemia's
+    # saturating S(1 - exp(-i'/P)).
+    pop_adjust="linear",
+    # NOTE: an informative prior_intercept was tried and is INERT here. With
+    # region_effects=True only `intercept + sd_intercept*z0[m]` is identified,
+    # not either part: sweeping the prior scale over {0.05, 0.1, 0.2, 0.5} moved
+    # exp(intercept) from 3.35 to 10.56 while sd_intercept absorbed the shift
+    # exactly (1.282 -> 0.456), leaving every per-country R_0 unchanged to two
+    # significant figures. So Flaxman's mu[m] ~ normal(3.28, kappa) has no
+    # faithful epidemia expression in this parameterisation -- a third
+    # documented approximation.
+)
+flaxman_model = build_epidemia_model(panel, obs, flaxman_cfg)
+print(f"{len(flaxman_model.free_RVs)} free parameters")
+```
+
+    10 free parameters
+
+
+## Fitting
+
+
+```python
+# target_accept 0.99 matches the R vignette's adapt_delta; at 0.95 this geometry
+# still produced divergences. maxdepth matches its max_treedepth: the Gamma(1/6)
+# coefficient prior has an integrable spike at zero, so a covariate whose effect
+# really is zero sends log(g_beta) off toward -inf and the trajectory needs room.
+# At nutpie's default of 10 this saturated 124 times and left beta_gamma[0] at
+# R-hat 1.11 / ESS 26 while R, at 14, reported no problems at all.
+# adaptation="diag" matches Stan's default metric, which is what the R vignette
+# samples with. epidemia's Python default is "low_rank"; on this posterior it
+# left beta_gamma at R-hat 1.17 / ESS 17 while R, on the same specification,
+# reported 1.004 / 1089. Since rank-normalised R-hat is invariant to monotone
+# transforms, and both sample log(Gamma(1/6, 1)) for a null coefficient, the
+# difference is the metric rather than the parameterisation.
+idata_flaxman = fit_epidemia(panel, obs, flaxman_cfg, draws=1000, tune=1000,
+                             chains=4, seed=12345, target_accept=0.99,
+                             maxdepth=14, adaptation="diag", progress_bar=False)
+print(epidemia.sampler_diagnostics(idata_flaxman))
+```
+
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.030 for beta_gamma[5] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 93 for beta_gamma[3] is 23 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+    Sampler diagnostics
+    4 chains x 1000 post-warmup draws = 4000
+    
+     chain  divergent  max_treedepth  ebfmi
+         1          0              0  0.902
+         2          0              0  0.942
+         3          0              0  0.835
+         4          0              0  0.783
+    
+    Divergent transitions: 0 (0.0%)
+    Hit max treedepth:     0 (0.0%)
+    Lowest E-BFMI:         0.78
+    Worst R-hat:           1.030  (beta_gamma[5])
+    Lowest bulk ESS:       93  (beta_gamma[3])
+    Lowest tail ESS:       58
+    
+    Warnings:
+    * R-hat of 1.030 for beta_gamma[5] exceeds 1.01, so the chains have not mixed.
+    * Bulk ESS of 93 for beta_gamma[3] is 23 per chain, below the 100 per chain that keeps posterior summaries stable.
+
+
+## The effect sizes
+
+This is the comparison the notebook exists for. Flaxman's constraint should
+push the four non-lockdown effects toward zero.
+
+
+```python
+# `beta` now spans only the columns with a pooled coefficient, so
+# sweden_public_events -- random-only, as Flaxman has it -- is absent.
+labels = [n.replace("_", " ").capitalize()
+          for n, keep in zip(NPIS, FIXED) if keep]
+labels[:6] = ["Schools", "Isolating", "Events", "Distancing", "Lockdown",
+              "Any intervention"]
+epidemia.plot_effects(idata_flaxman, labels=labels, save="flaxman-effects",
+                      title="Flaxman specification: global NPI effects")
+```
+
+    [epidemia] saved figures/flaxman-effects.png
+
+
+
+
+
+    
+![png](flaxman_files/flaxman_9_1.png)
+    
+
+
+
+Flaxman's paper reports effects as a **relative reduction in $R_t$**, which for
+the log link is $1 - e^{\beta_k}$. That is the scale of the Nature figure.
+
+
+```python
+def reduction_table(idata, labels):
+    beta = np.asarray(idata.posterior["beta"].stack(s=("chain", "draw")))  # (K, S)
+    red = 100.0 * (1.0 - np.exp(beta))
+    return pd.DataFrame({
+        "intervention": labels,
+        "median %": np.percentile(red, 50, axis=1).round(1),
+        "5%": np.percentile(red, 5, axis=1).round(1),
+        "95%": np.percentile(red, 95, axis=1).round(1),
+    })
+
+
+print("Flaxman specification — relative reduction in R_t (%)")
+print(reduction_table(idata_flaxman, labels).to_string(index=False))
+```
+
+    Flaxman specification — relative reduction in R_t (%)
+        intervention  median %   5%  95%
+             Schools       2.2 -0.8 29.5
+           Isolating      -0.1 -0.8 19.8
+              Events      -0.6 -0.8  9.7
+          Distancing      18.2 -0.8 40.9
+            Lockdown      79.2 73.4 83.4
+    Any intervention      -0.2 -0.8 19.0
+
+
+## What does *not* map
+
+Two pieces of Flaxman's model have no epidemia expression, and both are
+omitted here rather than approximated:
+
+* `mu[m] ~ normal(3.28, kappa)` puts the hierarchical prior on $R_0$ itself.
+  epidemia's `(1 | country)` puts it on $\log R_0$, so the induced prior on
+  $\mu_m$ is log-normal rather than normal.
+* `ifr_noise[m] ~ normal(1, 0.1)` scales each country's infection fatality
+  ratio. epidemia has no per-country IFR multiplier; writing
+  `deaths ~ 0 + country` would give per-country ascertainment but as a
+  *fixed* effect with a different prior.
+
+## What it took to reproduce
+
+Five things had to be right, and each was found by reading
+`base-nature.stan` and `utils/process-covariates.r` rather than the paper.
+
+**1. The fit window.** `EuropeCovid2` runs to 30 June; Flaxman's data ends
+**5 May**. Those extra eight weeks are all post-lockdown, and
+`social_distancing_encouraged` — in force everywhere and never lifted —
+absorbs suppression that belongs to lockdown. Truncating it was the single
+largest effect of any fix here: measured at the time, distancing fell from
+30.6% to 5.3% and lockdown rose from 75.0% to 80.8%. (Those figures predate
+the infection-to-death kernel correction, so they show the size of the window
+effect rather than the numbers this notebook now reports.)
+
+**2. The run-up is simulated but not fitted.** `EpidemicStart = index1 + 1 -
+index2` means the likelihood starts on day 31, so 330 country-days of the
+earliest, noisiest counts contribute nothing to the posterior.
+
+**3. Column 7 is Sweden-only, and has no pooled coefficient.** `alpha` spans
+columns 1–6; column 7 enters *exclusively* through `last_intervention[m]`.
+`fixed_effects=` expresses that. Inventing this column as "all interventions
+in force" instead left the fit at R-hat 1.27 with ESS 11.
+
+**4. A global intercept.** `EpiModelConfig` defaults to `intercept=False`,
+i.e. R's `~ 0 + ...`. Flaxman's `mu[m] ~ normal(3.28, kappa)` has a non-zero
+hyper-mean that a zero-centred country intercept cannot supply; without it the
+prior on $R_0$ sits at 1.01 rather than 3.31.
+
+**5. Per-country IFR.** 0.91%–1.26%, not a flat 1%, with the country
+coefficient carrying `ifr_noise[m] * IFR_m / IFR_ref`.
+
+## What still differs from the paper
+
+Two *inputs* differ, and neither is a modelling choice:
+
+- **The death series is a later ECDC vintage.** 299 of 1364 overlapping
+  country-days differ; totals to 5 May run 12.9% higher for Sweden, 8.7% for
+  Switzerland, 5.4% for Spain, while Austria, Germany, Italy and Norway match
+  exactly.
+- **The delay kernel is discretised differently**, which is handled above
+  rather than left as a discrepancy: this notebook builds the paper's midpoint
+  kernel (mean lag 23.9) instead of `ec.inf2death`, which gives entry $k$ the
+  mass in $(k-1, k]$ (mean lag 24.4) so as to agree with the serial interval
+  and put no mass at lag zero.
+
+What matches exactly: all 55 intervention start dates, the collapsing of
+post-lockdown measures onto the lockdown date, and the serial interval
+(`EuropeCovid$si` agrees with `serial-interval.rds` to 1.4e-16).
+
+Three modelling approximations remain, all stated in the R vignette too: the
+intercept prior is on $\log R_0$ rather than $R_0$; `decov` splits one scale
+across the intercept and both slopes where Flaxman separates `kappa` from
+`gamma`; and this notebook uses `pop_adjust="linear"` to match Flaxman's
+`Rt_adj = (S/P) Rt` exactly, where the R vignette uses epidemia's saturating
+form (the two agree to first order in $i'/P$).
+
+
+<!-- ===== tutorials/b117.md ===== -->
+
+# Transmissibility of a new variant
+
+[Volz et al. (2021)](https://www.nature.com/articles/s41586-021-03470-x) used
+**epidemia** to ask how much more transmissible SARS-CoV-2 lineage B.1.1.7 was
+than the lineages it displaced in England. This tutorial reproduces that
+analysis for one area.
+
+The question has an awkward shape. Two lineages spread through the same
+population at the same time, under the same restrictions, and both are seen
+only through case counts. Anything that changes transmission for one — a
+lockdown, school holidays, behaviour — changes it for the other too. What we
+want is the *ratio* of their reproduction numbers, and the model has to be
+built so that ratio is a parameter rather than something reconstructed
+afterwards from two separate fits.
+
+> **Read this as a demonstration of the method, not as a specification to
+> copy.** The structure and priors are the paper's own, but a tutorial is not
+> an analysis. It fits **one** area rather than all of them, omits the
+> machinery the authors used to get every area to converge, and makes no claim
+> that these priors suit other data. The section *"Not the paper's
+> configuration"* at the end sets out exactly what differs.
+
+
+```python
+import numpy as np
+import pandas as pd
+from plotnine import (aes, geom_hline, geom_line, geom_point, geom_ribbon,
+                      ggplot, labs)
+
+import epidemia as epi
+from epidemia.core import (EpiModelConfig, ObsModel, RandomWalk, fit_epidemia,
+                           prepare_panel)
+from epidemia.plots import save_plot, theme_epidemia
+from epidemia.priors import normal
+```
+
+## S-gene target failure
+
+The measurement that makes this possible is an accident of assay design.
+Routine PCR testing in England used a three-target assay, and B.1.1.7 carries
+a deletion that makes the S-gene target fail while the other two still
+amplify. "S-gene target failure" (SGTF) therefore acts as a proxy for the
+lineage in ordinary testing data, without sequencing every sample.
+
+Each area-day splits into `corrected_negative` (S-gene negative, so B.1.1.7)
+and `corrected_positive` (everything else), already adjusted for testing
+effort by the original authors.
+
+
+```python
+b117 = epi.england_b117()
+AREA = "Kent and Medway"
+
+_k = b117.data[b117.data["area"] == AREA]
+print(f"{AREA}: {len(_k)} days, {_k.date.min().date()} .. {_k.date.max().date()}")
+print(f"  B.1.1.7 {_k.corrected_negative.sum():,.0f}   other "
+      f"{_k.corrected_positive.sum():,.0f}   "
+      f"({100 * _k.corrected_negative.sum() / (_k.corrected_negative.sum() + _k.corrected_positive.sum()):.1f}% B.1.1.7)")
+```
+
+    Kent and Medway: 120 days, 2020-09-26 .. 2021-01-23
+      B.1.1.7 88,009   other 15,012   (85.4% B.1.1.7)
+
+
+We fit **Kent and Medway**, where B.1.1.7 was first identified and where
+replacement went furthest, while enough non-B.1.1.7 cases remain to serve as a
+comparison arm.
+
+## One area, two groups
+
+The modelling idea is to treat each lineage in an area as its **own group**.
+The area becomes two rows of the panel — `Kent and Medway positive` and
+`Kent and Medway negative` — each with its own case series, seeded
+independently, sharing a population. That turns a two-lineage problem into an
+ordinary multi-group renewal model, and it is what lets the transmissibility
+ratio be a single coefficient.
+
+
+```python
+dat = (b117.data[b117.data["area"] == AREA]
+       .sort_values("date").reset_index(drop=True))
+dat["week"] = dat["epiweek"].clip(lower=42)
+
+positive = pd.DataFrame({
+    "area": f"{AREA} positive", "date": dat["date"], "week": dat["week"],
+    "Cases_week": dat["corrected_positive"], "neg": 0.0,
+    "negweek": np.nan,
+})
+negative = pd.DataFrame({
+    "area": f"{AREA} negative", "date": dat["date"], "week": dat["week"],
+    "Cases_week": dat["corrected_negative"], "neg": 1.0,
+    "negweek": dat["epiweek"].clip(lower=45),
+})
+
+panel_df = (pd.concat([positive, negative], ignore_index=True)
+            .merge(b117.iar, on="date", how="left"))
+panel_df["iar"] = panel_df["iar"].ffill().bfill()
+panel_df["pop"] = float(b117.pop.loc[b117.pop["area"] == AREA, "pop"].iloc[0])
+```
+
+Two things are worth pausing on.
+
+`neg` is an indicator that is 1 only for the B.1.1.7 group. Because it is
+constant within a group and the two groups share everything else, **its
+coefficient is the log transmissibility advantage** — the quantity the paper
+is about. It is not a nuisance term; it is the answer.
+
+`negweek` is the epidemiological week for the B.1.1.7 group and missing for
+the other. A random walk indexed by it therefore exists only for B.1.1.7,
+which is how the advantage is allowed to vary over time. Clamping at 45 pools
+the earliest weeks, when B.1.1.7 counts are too small to say anything.
+
+## Building the panel
+
+The window is taken as given — the whole series, both groups — so
+`prepare_panel`'s own "start when deaths exceed a threshold" rule is switched
+off with a column that is 1 from the first row.
+
+
+```python
+panel_df["_win"] = 1.0
+panel, series = prepare_panel(
+    panel_df, npis=["neg"], responses=["Cases_week"], group="area", pop="pop",
+    threshold_on="_win", threshold=0, seed_offset=1,
+)
+print(f"{len(panel.regions)} groups: {panel.regions}")
+print(f"{int(panel.lengths.sum())} rows (R vignette: 240)")
+```
+
+    2 groups: ['Kent and Medway negative', 'Kent and Medway positive']
+    240 rows (R vignette: 240)
+
+
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_98917/220630698.py:2: UserWarning: 'Kent and Medway negative': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+    /var/folders/3b/9h2hhrtd6m10021mpjqtv6s40000gn/T/ipykernel_98917/220630698.py:2: UserWarning: 'Kent and Medway positive': only 0 day(s) before cumulative _win exceeded 0, fewer than seed_offset=1; starting at the first available day.
+
+
+### The two random walks
+
+R writes these as `rw(time = week, prior_scale = 0.15) + rw(time = negweek)`
+in the formula. In Python a walk is a `RandomWalk` carrying an explicit index
+per region-day, and a list of them is summed — the same thing epidemia does
+with several `rw()` terms in one formula.
+
+`negweek` is missing for the non-B.1.1.7 group, and `-1` is how that is said:
+it means "this day gets no term from this walk", which is exactly R's `NA` in
+an `rw(time = )` column.
+
+
+```python
+def _walk_index(col, panel, panel_df):
+    """Map a week column onto contiguous walk steps, with -1 where missing."""
+    M, T = len(panel.regions), panel.X.shape[1]
+    idx = np.full((M, T), -1, dtype=int)
+    levels = np.sort(panel_df[col].dropna().unique())
+    step = {v: i for i, v in enumerate(levels)}
+    for m, region in enumerate(panel.regions):
+        g = panel_df[panel_df["area"] == region].sort_values("date")
+        vals = g[col].to_numpy()[: panel.lengths[m]]
+        idx[m, : panel.lengths[m]] = [
+            step[v] if np.isfinite(v) else -1 for v in vals
+        ]
+    return idx, levels
+
+
+week_idx, week_levels = _walk_index("week", panel, panel_df)
+negweek_idx, negweek_levels = _walk_index("negweek", panel, panel_df)
+print(f"shared walk : {len(week_levels)} steps, weeks {week_levels.min():.0f}-{week_levels.max():.0f}")
+print(f"B.1.1.7 walk: {len(negweek_levels)} steps, weeks {negweek_levels.min():.0f}-{negweek_levels.max():.0f}; "
+      f"{(negweek_idx == -1).sum()} region-days excluded")
+```
+
+    shared walk : 15 steps, weeks 42-56
+    B.1.1.7 walk: 12 steps, weeks 45-56; 120 region-days excluded
+
+
+## The model
+
+Three terms doing three jobs. The shared weekly walk absorbs everything that
+moved transmission in Kent over this period — the November lockdown, its
+lifting, Christmas mixing, the January lockdown — without any of it being
+specified. `neg` is the constant advantage. The second walk lets that
+advantage vary by week.
+
+With a log link, the ratio of reproduction numbers between the groups on any
+day is $\exp(\beta_{\text{neg}} + w^{(\text{negweek})}_t)$: the shared walk
+cancels. That cancellation is the point of the design — the estimate does not
+depend on getting the epidemic trajectory right, only on the two lineages
+experiencing it together.
+
+
+```python
+def _region_column(col):
+    """A (M, T) array of `col`, laid out in the panel's own region/day order."""
+    M, T = len(panel.regions), panel.X.shape[1]
+    out = np.zeros((M, T))
+    for m, region in enumerate(panel.regions):
+        g = panel_df[panel_df["area"] == region].sort_values("date")
+        n = panel.lengths[m]
+        out[m, :n] = g[col].to_numpy()[:n]
+        out[m, n:] = out[m, n - 1] if n else 0.0     # pad, never used
+    return out
+
+
+# R writes this as `Cases_week ~ 0 + iar`: no intercept, one covariate holding
+# the ascertainment rate, whose coefficient has a prior centred at 1. So the
+# rate IS iar, up to a modest multiplicative correction.
+iar_design = _region_column("iar")[:, :, None]        # (M, T, 1)
+
+obs = [ObsModel(
+    "Cases_week", series["Cases_week"]["y"], series["Cases_week"]["mask"],
+    i2o=b117.i2o,                     # sums to 7: each observation is a week
+    family="quasi_poisson",
+    link="identity",
+    intercept=False,
+    X=iar_design,
+    prior=normal(1.0, b117.iar_sd),   # ascertainment supplied as data
+    prior_aux=normal(3.0, 2.0),
+)]
+
+config = EpiModelConfig(
+    gen=epi.europe_covid2().si,       # same generation kernel as the paper
+    link="log",
+    intercept=True,
+    region_effects=False,             # the two groups differ through `neg`
+    prior_intercept=normal(np.log(1.25), 0.1),
+    prior_covariates=normal(0.0, 0.25),
+    rw=[RandomWalk(index=week_idx, prior_scale=0.15),
+        RandomWalk(index=negweek_idx, prior_scale=0.2)],
+    seed_days=14,
+    seed_pooling=True,
+    seed_aux_rate=1 / 5000,           # deliberately vague
+    pop_adjust=True,
+)
+```
+
+## Fitting
+
+
+```python
+idata = fit_epidemia(panel, obs, config, draws=1000, tune=1000, chains=4,
+                     seed=12345, adaptation="diag", target_accept=0.92,
+                     maxdepth=14, progress_bar=False)
+print(epi.sampler_diagnostics(idata))
+```
+
+    Sampler diagnostics
+    4 chains x 1000 post-warmup draws = 4000
+    
+     chain  divergent  max_treedepth  ebfmi
+         1          0              0  0.883
+         2          0              0  0.761
+         3          0              0  0.811
+         4          0              0  0.763
+    
+    Divergent transitions: 0 (0.0%)
+    Hit max treedepth:     0 (0.0%)
+    Lowest E-BFMI:         0.76
+    Worst R-hat:           1.010  (rw_noise[0, 0])
+    Lowest bulk ESS:       1134  (rw_noise[0, 1])
+    Lowest tail ESS:       1754
+    
+    No problems detected.
+
+
+## The transmissibility advantage
+
+The advantage in week $w$ is the ratio of the two groups' reproduction
+numbers, $R^{(\text{B.1.1.7})}_t / R^{(\text{other})}_t$. Compute it from the
+fitted $R_t$ rather than from the coefficients: the shared walk cancels
+automatically, and it does not depend on how the walk parameters are stored —
+which differs between the two ports.
+
+
+```python
+# Take the ratio of the two groups' fitted R_t series, which is what the
+# original analysis does (transmission_model/gather_joint.R):
+#
+#     rt <- posterior_rt(fit)
+#     Ratio_45 = quantile(rt$draws[, negative & epiweek == 45] /
+#                         rt$draws[, positive & epiweek == 45], 0.5)
+#
+# Reading the coefficient and walk parameters out instead is a trap. R reports
+# a walk's INCREMENTS while Python stores its cumulative levels, so the same
+# arithmetic is right in one port and wrong in the other -- treating R's as
+# levels flattened the curve to a correlation of 0.44 with the published series.
+# Working from R_t sidesteps the parameterisation entirely, and the shared walk
+# cancels in the ratio by construction.
+rt = np.asarray(idata.posterior["Rt"].stack(s=("chain", "draw")))   # (M, T, S)
+neg_i = panel.regions.index(f"{AREA} negative")
+pos_i = panel.regions.index(f"{AREA} positive")
+
+# Use the dataset's OWN epiweek column, not isocalendar(). The data numbers
+# weeks continuously through the season (39..56), whereas ISO weeks restart at 1
+# each January -- which would relabel the last four weeks 1, 2, 3 and silently
+# drop them from the comparison.
+dates = pd.to_datetime(panel.dates[neg_i])
+_wk = dict(zip(b117.data["date"], b117.data["epiweek"]))
+weeks = np.array([_wk[d] for d in dates])
+
+rows = []
+for w in np.unique(weeks[weeks >= 45]):
+    cols = np.flatnonzero(weeks == w)
+    a = (rt[neg_i, cols, :] / rt[pos_i, cols, :]).ravel()
+    rows.append({"epiweek": int(w), "median": np.median(a),
+                 "lower": np.percentile(a, 2.5), "upper": np.percentile(a, 97.5)})
+advantage = pd.DataFrame(rows)
+
+published = (b117.published[b117.published["area"] == AREA]
+             [["epiweek", "ratio"]].rename(columns={"ratio": "published"}))
+comparison = advantage.merge(published, on="epiweek", how="left")
+print(comparison.round(2).to_string(index=False))
+
+inside = comparison.dropna(subset=["published"])
+cover = ((inside["published"] >= inside["lower"]) &
+         (inside["published"] <= inside["upper"])).sum()
+print(f"\npublished values inside our 95% interval: {cover}/{len(inside)}")
+```
+
+     epiweek  median  lower  upper  published
+          45    1.68   1.56   1.82       1.68
+          46    1.77   1.45   2.10       1.76
+          47    1.94   1.67   2.34       1.94
+          48    1.62   1.35   1.92       1.62
+          49    1.38   1.18   1.61       1.38
+          50    1.21   1.05   1.41       1.21
+          51    1.11   0.84   1.34       1.11
+          52    1.45   1.22   1.85       1.46
+          53    1.22   0.97   1.46       1.22
+          54    1.17   0.96   1.43       1.17
+          55    1.11   0.82   1.51       1.11
+          56    1.10   0.64   1.80        NaN
+    
+    published values inside our 95% interval: 11/11
+
+
+
+```python
+p = (
+    ggplot(comparison, aes("epiweek"))
+    + geom_hline(yintercept=1, linetype="dashed", colour="#666666")
+    + geom_ribbon(aes(ymin="lower", ymax="upper"), alpha=0.25, fill="#2171b5")
+    + geom_line(aes(y="median"), colour="#2171b5", size=0.8)
+    + geom_point(aes(y="published"), colour="#d95f02", size=2)
+    + labs(x="Epidemiological week",
+           y="Advantage (ratio of reproduction numbers)",
+           title="B.1.1.7 transmissibility advantage, Kent and Medway")
+    + theme_epidemia()
+)
+save_plot(p, "b117-advantage")
+p
+```
+
+    [epidemia] saved figures/b117-advantage.png
+
+
+    /Users/smishra/Documents/GitHub/epidemia/python/.venv/lib/python3.12/site-packages/plotnine/layer.py:374: PlotnineWarning: geom_point : Removed 1 rows containing missing values.
+    /Users/smishra/Documents/GitHub/epidemia/python/.venv/lib/python3.12/site-packages/plotnine/layer.py:374: PlotnineWarning: geom_point : Removed 1 rows containing missing values.
+
+
+
+
+
+    
+![png](b117_files/b117_16_2.png)
+    
+
+
+
+
+```python
+epi.plots.plot_rt(idata, data=panel, save="b117-rt",
+                  title="Reproduction numbers by lineage")
+```
+
+    [epidemia] saved figures/b117-rt.png
+
+
+
+
+
+    
+![png](b117_files/b117_17_1.png)
+    
+
+
+
+
+```python
+epi.plots.plot_obs(idata, data=panel, obs_model=obs[0], series="Cases_week",
+                   save="b117-obs", title="Posterior predictive: weekly cases")
+```
+
+    [epidemia] saved figures/b117-obs.png
+
+
+
+
+
+    
+![png](b117_files/b117_18_1.png)
+    
+
+
+
+## This is one area, not the paper's answer
+
+**The published estimate is not a single fit.** Volz et al. fit this model
+*separately to each area in England* — 42 of the areas in `EnglandB117` have
+the population needed for the susceptibility adjustment; the remaining seven
+are NHS regions, aggregates of the others, which the source does not size. The
+headline figure combines those per-area fits; no single area produces it.
+
+That matters for reading the table. One area gives one noisy estimate, and its
+interval is wide — wide enough in some weeks to include no advantage at all.
+The strength of the published result comes from the same signal appearing in
+area after area, not from any one of them.
+
+
+```python
+print(b117.published_england.round(2).to_string(index=False))
+```
+
+     epiweek  median  lower  upper
+          45    1.66   1.11   2.28
+          46    1.79   1.20   2.56
+          47    1.86   1.26   2.72
+          48    1.86   1.29   2.73
+          49    1.87   1.31   2.63
+          50    1.85   1.29   2.61
+          51    1.74   1.19   2.54
+          52    1.76   1.42   2.59
+          53    1.53   1.11   2.04
+          54    1.49   1.08   2.14
+          55    1.50   1.01   2.18
+
+
+To reproduce that, loop this model over every area in `b117.pop["area"]`,
+keeping each fit separate, and combine the per-week advantages afterwards. The
+original implementation does exactly that — one job per area, driven by a
+`Makefile`, in `transmission_model/` of
+[mrc-ide/sarscov2-b.1.1.7](https://github.com/mrc-ide/sarscov2-b.1.1.7).
+
+## Not the paper's configuration
+
+Everything structural is the paper's: the three-term predictor, `normal(0,
+0.25)` on the advantage, `normal(log(1.25), 0.1)` on the intercept,
+`prior_scale=0.15` on the shared walk, `normal(1, iar_sd)` on the
+ascertainment coefficient, `normal(3, 2)` on the dispersion, `seed_days=14`,
+vague seeding, and the same generation distribution. The week clamps are
+theirs too.
+
+Three things are nonetheless **not** what produced the published numbers.
+
+*It is one area.* The published estimate combines separate per-area fits.
+
+*There is no convergence machinery.* The original script re-runs an area that
+fails its diagnostics — doubling iterations and thinning, or raising
+`adapt_delta` — and records the adjusted settings. Its `fit_params.csv` holds
+89 such re-runs. Kent and Medway is not among them, so this area does fit at
+the defaults; an arbitrary area may not, and this tutorial would report the bad
+diagnostics rather than fix them.
+
+*`max_treedepth` is 14, not the 18 the original sets.* Check rather than
+assume: if the fit above saturated the tree depth zero times, the lower cap was
+never binding.
+
+More generally these priors were chosen for *this* question on *these* data.
+The informative intercept encodes what was known about $R$ in England in
+autumn 2020; the tight ascertainment prior works because the ascertainment rate
+is supplied as data. None of that transfers automatically. Treat the structure
+as the reusable idea and the numbers as specific to this analysis.
+
+## What does not reproduce exactly
+
+The counts are **aggregates**. The raw SGSS line-list behind them is
+disclosure-controlled — counts below five are suppressed at source — so the
+step from testing records to these tables cannot be re-run outside PHE.
+
+The generation distribution is assumed identical for both lineages: the model
+asks whether B.1.1.7 transmitted *more*, not whether it transmitted on a
+different timescale. Separating those needs data this design does not contain.
+
+
+<!-- ===== priors.md ===== -->
+
+# Priors
+
+Every prior in the R package has a constructor with the same name here, taking
+R's argument names and reporting R's `dist` string. They live in
+[`epidemia.priors`](reference.md#priors) and are passed to
+`EpiModelConfig(prior_covariates=, prior_intercept=, prior_seeds=, prior_aux=)`
+and `ObsModel(prior_intercept=, prior=, prior_aux=)`.
+
+A specification only *describes* a prior. It becomes a random variable when the
+model is built, so the same object can be reused across models and inspected
+before fitting.
+
+```python
+from epidemia.priors import normal, shifted_gamma
+
+normal(0, 0.5).params()          # {'location': 0.0, 'scale': 0.5}
+shifted_gamma(1/6, 1, 0.05)      # the default R_t covariate prior in the vignettes
+```
+
+## What a bare constructor means
+
+R's constructors take `scale = NULL` and resolve it late: `set_prior_scale()`
+substitutes `default_scale`, which `standata_reg` passes as **0.25** for
+coefficients, intercepts and auxiliary parameters alike. Python has no `NULL` to
+resolve, so 0.25 is the constructor default. A bare `normal()` therefore means
+`N(0, 0.25)` in both languages.
+
+## Which families go where
+
+R rejects an out-of-set family rather than letting it through, and so does this
+port. The sets are `OK_DISTS`, `OK_INT_DISTS`, `OK_AUX_DISTS` and
+`OK_COV_DISTS`.
+
+| Slot | Allowed |
+|---|---|
+| Covariates (`prior_covariates`, `ObsModel(prior=)`) | `normal`, `student_t`, `cauchy`, `laplace`, `shifted_gamma`, `hexp` |
+| Intercepts (`prior_intercept`) | `normal`, `student_t`, `cauchy` |
+| Auxiliary (`prior_aux`) | `normal`, `student_t`, `cauchy`, `exponential` |
+| Covariance (`prior_covariance`) | `decov`; `lkj` also works here, which R does not support |
+| Removal noise (`prior_rm_noise`) | `normal` |
+
+## Autoscaling
+
+R divides a coefficient's prior scale by that covariate's own scale — the
+**range** for a binary covariate, the **standard deviation** otherwise — so the
+prior is a statement about standardised covariates. Whether it happens is a
+property of the prior, and epidemia's defaults are the opposite of rstanarm's:
+
+- `shifted_gamma` autoscales by default. It is the default `R_t` covariate prior
+  in the vignettes, so this applies more often than it looks.
+- `normal`, `student_t`, `cauchy`, `laplace` and `lasso` do **not**.
+
+The model builder applies it; `EpiModelConfig(autoscale=False)` turns it off
+entirely.
+
+## Shrinkage families
+
+`hs`, `hs_plus`, `lasso` and `product_normal` are available for covariate
+priors when there are many covariates and you expect most effects to be near
+zero. They carry no `autoscale` argument, in either language.
+
+## Covariance priors on region effects
+
+`decov()` is R's only covariance prior: a Gamma scale split across terms by a
+symmetric Dirichlet, combined with an LKJ correlation. `lkj()` is exported by R
+but its Stan program has no branch for it, so `epirt()` rejects it. Here it
+works and builds a genuine LKJ covariance — a place where the port is more
+capable than the original rather than merely different.
+
+See the [parity table](parity.md) for the full mapping, and
+[the reference](reference.md#priors) for each constructor's arguments.
+
+
+<!-- ===== parity.md ===== -->
+
+# What this port does and does not do
+
+`epidemia` exists twice in this repository: the **R package** at the repository
+root is the reference implementation, and this **Python package** is a focused
+port of its core. The two share a model, not a feature set.
+
+This page is the honest inventory. It is checked against the code rather than
+against intentions, because the most expensive way to learn that a feature is
+missing is halfway through an analysis.
+
+## At a glance
+
+| Capability | R | Python |
+|---|:--:|:--:|
+| Multiple regions / groups | ✅ | ✅ |
+| Multilevel / partial pooling | ✅ | ✅ |
+| Correlated random effects | ✅ | ✅ `correlated=True` |
+| Random walk on `R_t`, incl. per region | ✅ | ✅ `RandomWalk(by_region=)` |
+| Multiple observation series | ✅ | ✅ `[ObsModel, ObsModel]` |
+| Time-varying ascertainment | ✅ | ✅ `ObsModel(X=)` |
+| Population / susceptibility adjustment | ✅ | ✅ `pop_adjust=True` |
+| Observation families | ✅ 5 | ✅ 5 |
+| Forecast scoring (CRPS, coverage) | ✅ | ✅ `epidemia.scoring` |
+| Posterior predictive sampling | ✅ | ✅ `epidemia.predict` |
+| Plots band the posterior **predictive** | ✅ | ✅ `plot_obs(predictive=True)`, default |
+| Spaghetti plots | ✅ | ✅ `spaghetti_rt` etc. |
+| Variational inference | ✅ | ✅ `fit_variational` |
+| Swappable prior families | ✅ | ✅ `epidemia.priors` |
+| Hierarchical seeding | ✅ | ✅ |
+| Non-centred parameterisation | ✅ | ✅ |
+| Covariates on `R_t` | ✅ formula | ✅ `parse_formula` / `build_from_formula` |
+| Forecasting from new data | ✅ one call | ✅ `forecast(...)` |
+| Random walk keeps walking over the horizon | ✅ | ✅ `forecast(rw_forecast="draw")`, default |
+| Stochastic latent infections | ✅ | ✅ `latent=True` |
+| Autoscaled priors, `hs`/`lasso` families | ✅ | ✅ applied by the builder; `EpiModelConfig(autoscale=)` |
+| Counterfactuals | ✅ | ⚠️ `R_t` via `effect_table`; observations via `forecast` |
+| Observation-level random walk | ✅ | ✅ `ObsModel(rw=)` |
+| Vaccination removal (`epiinf(rm=)`) | ✅ | ✅ `EpiModelConfig(rm=, prior_rm_noise=)` |
+| Prior predictive (`prior_PD`) | ✅ | ✅ `EpiModelConfig(prior_PD=True)` |
+| `group_subset` | ✅ | ✅ `prepare_panel(group_subset=)` |
+| `posterior_linpred` | ✅ | ✅ `epidemia.postprocess` |
+| `posterior_infectious` (incl. `/ max(gen)`) | ✅ | ✅ `epidemia.postprocess` |
+| `prior_summary` | ✅ | ✅ `epidemia.postprocess` |
+| `as.matrix` / `get_samps` | ✅ | ✅ `extract_samples` |
+| Link functions | ✅ | ✅ 3 on `R_t`, 6 on observations |
+| `center=` | ✅ | ✅ |
+| Fully pooled (no region effects) | ✅ | ✅ `region_effects=False` |
+| `plot_coverage` / `plot_metrics` | ✅ | ✅ `epidemia.plots` |
+| `plot_infectious` / `plot_linpred` | ✅ | ✅ `epidemia.plots` |
+| Forecasting a latent (`latent=True`) fit | ✅ | ✅ drawn, not frozen |
+| ADVI stops on ELBO convergence | ✅ `tol_rel_obj` | ✅ `fit_variational(early_stop=)` |
+| Default prior scale when unspecified | 0.25 | 0.25 |
+| `lkj()` as `prior_covariance` | ❌ rejected (no Stan support) | ✅ proper LKJ covariance |
+| Plot a forecast directly (`newdata`) | ✅ `plot_obs(newdata=)` | ✅ `plot_obs(a_forecast)` |
+| In-sample vs out-of-sample marking | ✅ | ✅ `n_fitted=` |
+| Default credible levels | 30/60/90 | 30/60/90 |
+| `date_breaks` / `date_format` | ✅ | ✅ |
+| `summary()` with diagnostics | ✅ | ✅ `epidemia.summary` |
+| Parameter interval plot | ✅ `plot.epimodel` | ✅ `plot_intervals` |
+| Pairs plot | ✅ `pairs.epimodel` | ✅ `pairs_plot` |
+| `par_types` parameter filtering | ✅ | ✅ `extract_samples(par_types=)` |
+| Plot a vector of groups | ✅ `groups=` | ✅ `groups=` |
+| `log=` axis tolerates zeros | ✅ pseudo-log | ✅ pseudo-log |
+| `smooth=` drops incomplete windows | ✅ | ✅ |
+| `bar=` selects the marker | ✅ | ✅ |
+| Prior families validated against R's sets | ✅ | ✅ |
+| Exclude days from a random walk | ✅ `NA` in `rw(time=)` | ✅ `index = -1` |
+| Sampler diagnostics retained on the fit | ✅ `sampler_diagnostics()` | ✅ `sampler_diagnostics()` |
+| nutpie sampler, JAX/GPU option | ❌ | ✅ |
+| `plotnine` plots | ❌ | ✅ |
+
+Everything in the top block used to be missing. The model that expresses it is
+:func:`epidemia.build_epidemia_model`, which supersedes the two earlier builders:
+`build_model` had a random walk but one population, `build_multilevel_model` had
+regions but a deterministic `R_t` and a single series, and neither could write
+what the R tutorials write routinely.
+
+```python
+from epidemia.core import (EpiModelConfig, ObsModel, PanelData,
+                           RandomWalk, build_epidemia_model, prepare_panel)
+
+panel, series = prepare_panel(
+    df, npis=["lockdown"], responses=["deaths", "cases"],
+    pop="pop", rw_by="week", fit_until="2020-05-05")
+
+model = build_epidemia_model(
+    panel,
+    [ObsModel("deaths", **series["deaths"], i2o=inf2death,
+              family="neg_binom", link_K=0.02),
+     ObsModel("cases", **series["cases"], i2o=inf2case,
+              family="quasi_poisson", link_K=0.4)],
+    EpiModelConfig(gen=si, correlated=True, pop_adjust=True,
+                   rw=RandomWalk(index=panel.rw_index, by_region=True)),
+)
+```
+
+That is R's `R(country, date) ~ (1 + lockdown | country) + rw(time = week, gr = country)`
+with `obs = list(deaths, cases)` and `epiinf(pop_adjust = TRUE)`.
+
+## Writing a model as a formula
+
+```python
+from epidemia.formula import build_from_formula
+from epidemia.core import EpiModelConfig, ObsModel, fit_epidemia
+
+panel, series, cfg = build_from_formula(
+    df,
+    "R(country, date) ~ 1 + rw(time = week, gr = country) + lockdown",
+    responses=["deaths", "cases"], pop="pop", fit_until="2020-05-05")
+
+idata = fit_epidemia(panel, obs_models, EpiModelConfig(gen=si, **cfg))
+```
+
+`||` gives independent region effects and `|` correlated ones; `0 +` drops the
+intercept; `rw(gr = x)` gives one walk per level of `x` and `rw()` one shared
+walk. Non-numeric covariates are dummy-coded with R's treatment contrasts.
+
+## Forecasting
+
+```python
+from epidemia.forecast import forecast
+
+fc = forecast(idata, panel, obs_models, config, newdata=longer_df)
+fc.to_frame()          # tidy long frame: region, date, variable, quantiles
+```
+
+Nothing is re-fitted: this is forward simulation over posterior draws.
+Covariates past the fit window carry forward, and the random walk **keeps
+walking** — new increments are drawn at its own fitted scale and cumulated, as
+R's `new_rw_stanmat` does, so forecast `R_t` fans out. Pass
+`rw_forecast="hold"` to freeze it at its last fitted step instead.
+`fc.predicted` holds draws from the observation family, not just the mean.
+
+## Deliberate departures from R
+
+Two places where this port does **not** match R, on purpose:
+
+**The default `R_t` coefficient prior is a shifted gamma.** R's `epirt()` defaults
+to `normal(0, 0.5)`; `EpiModelConfig` defaults to the shifted gamma
+`log(1.05)/6 - Gamma(1/6, 1)`, which puts effectively all mass on the negative
+half line. That is the prior every epidemia vignette overrides to, and it
+encodes the modelling stance the package is for: an intervention is a priori
+non-increasing in transmission. Name the prior explicitly — as the R vignettes
+do — if you want R's symmetric default.
+
+**Student-t and Cauchy `prior_seeds` keep your location and scale.** R
+hard-codes `student_t_lpdf(seeds_raw | df, 0, 1)` (`priors_inf.stan:40-41`), so
+`student_t(3, 50, 20)` silently becomes a half-t(3, 0, 1). That is an R-side
+defect rather than a design choice; this port honours what you asked for. The
+normal case is unaffected in either language.
+
+## The caveats that remain
+
+**The formula's fixed/random split is advisory.** `build_epidemia_model` shares
+one design matrix between the population-level `beta` and the region-level `b`,
+so a covariate appearing only inside `(... | group)` still gets a population
+coefficient, and vice versa. The *pooling* structure — `|` versus `||`, whether
+there is an intercept — is exact; the column split is not. Nesting
+(`(1 | county/district)`) and interactions (`a:b`) are rejected rather than
+silently mis-parsed. The formula wrapper accepts only one `rw()` term, though
+the builder itself takes a list — write `EpiModelConfig(rw=[...])` for several.
+`build_from_formula` also does not yet emit `region_effects`, so set it yourself
+for a fully pooled model.
+
+**Counterfactuals on observations** are now possible by editing the covariates in
+`newdata` and calling `forecast`, but there is no dedicated helper as in R.
+
+## Choosing a side
+
+The two now express the same models. Use **R** when you want the formula
+interface, one-call forecasting from a `newdata` frame, or stochastic latent
+infections. Use **Python** when you want a PyMC/ArviZ workflow, nutpie's
+sampler, or to build the design matrices yourself. See
+[Performance](performance.md) for how the two backends actually compare on that
+model — the answer is less one-sided than "Rust sampler beats Stan" suggests.
+
+
+<!-- ===== performance.md ===== -->
+
+# Performance
+
+Is the Python port faster than the R package? On the model both can fit, the
+honest answer is: **not by default — but it can be, and the difference comes
+from one argument.**
+
+The benchmark fits the *same* model in both: the eleven-country
+Europe/COVID-19 multilevel model, five NPIs, deaths, 4 chains of
+500 tuning + 500 draws. Engines run strictly one after another on an idle
+machine, so the timings are comparable.
+
+Reproduce it with:
+
+```bash
+uv run --project python python benchmarks/run.py --draws 500 --tune 500
+uv run --project python python benchmarks/report.py \
+    --json "$TMPDIR/epidemia-bench/benchmark.json" --out python/docs/img
+```
+
+## Wall-clock
+
+![Sampling wall-clock by engine](img/bench-speed.png)
+
+nutpie with its default diagonal adaptation finishes in essentially the same
+time as Stan — 963s against 975s, a 1% difference that means nothing. Switching
+to `low_rank` adaptation drops it to 752s.
+
+## The number that matters
+
+Wall-clock alone is misleading, because a sampler that finishes quickly having
+explored badly has not saved you anything. The comparison worth making is
+**effective samples per second**.
+
+![Effective samples per second by engine](img/bench-efficiency.png)
+
+Now the picture separates:
+
+- **nutpie's default is the worst of the three.** Same wall-clock as Stan, but
+  a minimum bulk ESS of 27 against Stan's 88, with 27 divergences and an R-hat
+  of 1.10 — which is to say it had not converged.
+- **nutpie with `low_rank` is the best.** 1.7× Stan's effective samples per
+  second, and **4.6× nutpie's own default**.
+
+--8<-- "benchmark-table.md"
+
+## This is now the default
+
+Because it wins everywhere we measured, `adaptation="low_rank"` is what
+`fit`, `fit_multilevel` and `fit_epidemia` use — deliberately departing from
+nutpie's own `"diag"` default. The small single-population flu model shows the
+same pattern even more starkly than the eleven-country one, so there is no easy
+case in which the diagonal metric is the better choice:
+
+| Model | `diag` | `low_rank` | speed-up | ESS/s gain |
+|---|---:|---:|---:|---:|
+| Flu, 1 population, 92 days | 130.2s ±3.1 | **27.9s ±2.9** | 4.7× | 6.3× |
+| Europe COVID, 11 regions | 963s | **752s** | 1.3× | 4.6× |
+
+(Three seeds each on the small model; min bulk ESS was also higher for
+`low_rank` in both cases.)
+
+Pass `adaptation="diag"` explicitly if you want the old behaviour.
+
+## Why `low_rank` matters so much here
+
+The five NPIs were enacted within days of each other across most of these
+countries — Germany banned public events on the same day it locked down. Their
+effects are therefore **highly collinear**, and the posterior has a narrow ridge
+that a diagonal mass matrix cannot follow. The sampler does not fall over; it
+just fails to move along the ridge.
+
+That is exactly the failure `low_rank` is for: it fits a low-rank correction to
+the mass matrix and recovers the ridge.
+
+```python
+idata = fit_multilevel(data, config, adaptation="low_rank")
+```
+
+!!! warning "A clean divergence count is not evidence of a good fit"
+    The default run above produced an R-hat of 1.10 and an ESS of 27. Always
+    read `arviz.summary` for `r_hat` and `ess_bulk`; divergences alone would not
+    have told you.
+
+## Do the two implementations agree?
+
+They are the same model, so they should — and within Monte Carlo error, they do.
+
+![NPI effect estimates by engine](img/bench-agreement.png)
+
+Every 95% interval overlaps across engines, and all three agree on the
+substance: lockdown carries by far the largest effect, distancing a smaller one,
+and the remaining three are indistinguishable from zero.
+
+The point estimates are not identical — lockdown is −2.18 in R against −1.78 in
+Python, roughly one posterior SD apart. Two things explain that, and neither is
+a discrepancy between the ports. The collinear effects **trade off against one
+another**, so what is attributed to lockdown versus distancing shifts between
+runs; and at a minimum ESS of around 100 out of 2000 draws, **neither run is
+converged tightly enough** to resolve a difference that size. Run either engine
+longer and the estimates converge on each other.
+
+## Compilation
+
+Stan compiles once per machine and caches the executable — 0.1s here, because it
+was already built. nutpie re-compiles the log-density on **every run**, about
+20s. Irrelevant for a real fit; noticeable if you are iterating on a small model.
+
+## What this means in practice
+
+| If you… | Use |
+|---|---|
+| Are iterating on a model, or already work in PyMC/ArviZ | Python, with `adaptation="low_rank"` |
+| Have correlated covariates | Python + `low_rank`, or Stan; **not** nutpie's default |
+| Need multiple observation series, forecasting, or scoring | R — see [parity](parity.md) |
+| Want the fewest surprises | R; it is the reference implementation |
+
+The headline is not "Rust beats C++". Both samplers are good, both struggle on
+this posterior's ridge, and the one setting that actually changes the outcome is
+the mass-matrix adaptation.
+
+!!! note "Your numbers will differ"
+    Measured on a 10-core Apple Silicon machine. The *ratios* should hold; the
+    absolute times will not. Nothing here is fitted at documentation-build time,
+    and the benchmark writes only to a temporary directory.
+
+
 <!-- ===== reference.md ===== -->
 
 # API reference
 
 The public API is re-exported from the top-level `epidemia` package.
 
-## Configuration & model
+Start with **[The model](#the-model)**. `build_epidemia_model` is the current
+builder and expresses what R's `epirt`/`epiinf`/`epiobs`/`epim` do. The two older
+builders, under [Superseded](#superseded), predate it and are kept only because
+the example notebooks still use them.
 
-::: epidemia.model.EpiConfig
+---
 
-::: epidemia.model.build_model
+## The model
+
+::: epidemia.core.build_epidemia_model
+
+::: epidemia.core.fit_epidemia
+
+### Configuration
+
+::: epidemia.core.EpiModelConfig
+
+::: epidemia.core.ObsModel
+
+::: epidemia.core.RandomWalk
+
+::: epidemia.core.PanelData
+
+### Preparing data
+
+::: epidemia.core.prepare_panel
+
+## Formulas
+
+Write the model as R does, rather than assembling design matrices by hand.
+
+::: epidemia.formula.parse_formula
+
+::: epidemia.formula.build_from_formula
+
+## Priors
+
+Prior specifications mirroring R's constructors, with R's argument names. Pass
+them to `EpiModelConfig(prior_covariates=, prior_intercept=, prior_seeds=,
+prior_aux=)` or `ObsModel(prior_intercept=, prior=, prior_aux=)`; leaving a field
+unset keeps the scalar-hyperparameter default, so nothing changes unless you ask.
+
+::: epidemia.priors.normal
+
+::: epidemia.priors.student_t
+
+::: epidemia.priors.cauchy
+
+::: epidemia.priors.exponential
+
+::: epidemia.priors.laplace
+
+::: epidemia.priors.shifted_gamma
+
+::: epidemia.priors.hexp
+
+::: epidemia.priors.decov
+
+::: epidemia.priors.lkj
+
+::: epidemia.priors.hs
+
+::: epidemia.priors.hs_plus
+
+::: epidemia.priors.lasso
+
+::: epidemia.priors.product_normal
+
+::: epidemia.priors.autoscale
+
+::: epidemia.priors.build_covariance
 
 ## Inference
 
 ::: epidemia.infer.fit
 
+::: epidemia.variational.fit_variational
+
+## Forecasting
+
+Forward simulation over posterior draws — nothing is refitted.
+
+::: epidemia.forecast.forecast
+
+::: epidemia.forecast.Forecast
+
+::: epidemia.predict.simulate
+
+::: epidemia.predict.posterior_predict
+
+::: epidemia.predict.expected_observations
+
+## Diagnostics
+
+Check the sampler before reading anything off a fit. The mirror of R's
+`sampler_diagnostics()`, reporting the same quantities under the same names.
+
+::: epidemia.diagnostics.sampler_diagnostics
+
+::: epidemia.diagnostics.SamplerDiagnostics
+
+## Post-processing
+
+::: epidemia.postprocess.posterior_linpred
+
+::: epidemia.postprocess.posterior_infectious
+
+::: epidemia.postprocess.extract_samples
+
+::: epidemia.postprocess.summary
+
+::: epidemia.postprocess.prior_summary
+
+## Scoring
+
+::: epidemia.scoring.evaluate_forecast
+
+::: epidemia.scoring.crps
+
+::: epidemia.scoring.posterior_metrics
+
+::: epidemia.scoring.posterior_coverage
+
+## Plots
+
+::: epidemia.plots.plot_rt
+
+::: epidemia.plots.plot_obs
+
+::: epidemia.plots.plot_infections
+
+::: epidemia.plots.spaghetti_rt
+
+::: epidemia.plots.spaghetti_infections
+
+::: epidemia.plots.spaghetti_obs
+
+::: epidemia.plots.plot_infectious
+
+::: epidemia.plots.plot_linpred
+
+::: epidemia.plots.plot_coverage
+
+::: epidemia.plots.plot_metrics
+
+::: epidemia.plots.plot_intervals
+
+::: epidemia.plots.pairs_plot
+
+::: epidemia.plots.available_series
+
 ## Renewal dynamics (NumPy reference)
+
+The reference implementation the PyMC model is checked against.
 
 ::: epidemia.renewal
 
@@ -207,6 +4390,31 @@ The public API is re-exported from the top-level `epidemia` package.
 
 ::: epidemia.data
 
-## Plotting
+::: epidemia.data.england_new_cases
 
-::: epidemia.plots
+::: epidemia.data.europe_covid
+
+---
+
+## Superseded
+
+Still working, because the notebooks use them. `model.build_model` has a random
+walk but a single population; `multilevel.build_multilevel_model` has regions but
+a deterministic `R_t` and one observation series. Neither can express the
+combination, which is why `core.build_epidemia_model` exists.
+
+::: epidemia.model.EpiConfig
+
+::: epidemia.model.build_model
+
+::: epidemia.multilevel.MultilevelConfig
+
+::: epidemia.multilevel.MultilevelData
+
+::: epidemia.multilevel.prepare_panel
+
+::: epidemia.multilevel.build_multilevel_model
+
+::: epidemia.multilevel.fit_multilevel
+
+::: epidemia.multilevel.effect_table

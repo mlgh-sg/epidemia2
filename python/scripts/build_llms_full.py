@@ -9,7 +9,26 @@ from __future__ import annotations
 
 from pathlib import Path
 
-ORDER = ["index.md", "guide.md", "reference.md"]
+# Follows the site nav. The TUTORIALS matter most for an LLM -- they are the
+# worked examples, and omitting them (as this script used to) left llms-full.txt
+# at a twelfth the size of the R package's, carrying the API but none of the
+# usage. Kept explicit rather than globbed so the order is the reading order and
+# a new page is a deliberate addition.
+ORDER = [
+    "index.md",
+    "guide.md",
+    "tutorials.md",
+    "tutorials/flu.md",
+    "tutorials/multiple-obs.md",
+    "tutorials/partial-pooling.md",
+    "tutorials/multilevel-multi-obs.md",
+    "tutorials/flaxman.md",
+    "tutorials/b117.md",
+    "priors.md",
+    "parity.md",
+    "performance.md",
+    "reference.md",
+]
 HEADER = (
     "# epidemia (Python) — full documentation\n\n"
     "> Concatenation of the epidemia Python docs for LLM ingestion. "
@@ -23,6 +42,13 @@ HEADER = (
 def main() -> None:
     docs = Path(__file__).resolve().parent.parent / "docs"
     parts = [HEADER]
+    missing = [n for n in ORDER if not (docs / n).exists()]
+    if missing:
+        raise SystemExit(
+            f"missing docs page(s): {missing}. Bake the tutorials first "
+            "(uv run --group dev python scripts/precompute.py), or drop the "
+            "page from ORDER if it is gone for good."
+        )
     for name in ORDER:
         parts.append(f"\n\n<!-- ===== {name} ===== -->\n\n")
         parts.append((docs / name).read_text())

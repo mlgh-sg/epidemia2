@@ -4,6 +4,13 @@ Guidance for AI agents (and humans) modifying this package. For *using* the R
 package to build epidemic models, see `llms.txt` and the vignettes; for the
 Python port, see `python/README.md` and `python/docs/` (`python/docs/llms.txt`).
 
+
+> **Picking this up cold?** Read [`HANDOVER.md`](HANDOVER.md) first. It records
+> the state at `v1.1.0`, the delay-kernel convention, how the docs-baking
+> pipeline works, and six traps that produce wrong answers without erroring —
+> including that R reports random-walk *increments* while Python stores
+> cumulative *levels*.
+
 ## Two implementations — keep them in parity
 
 This repository ships **two implementations of the same model**, on one branch:
