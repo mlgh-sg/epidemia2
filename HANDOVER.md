@@ -138,11 +138,6 @@ and must be regenerated after tutorials change.
 
 ## Still open
 
-- **Is nutpie faster than Stan for these models?** The benchmark in
-  `python/docs/performance.md` covers only the NPI model (equal wall-clock;
-  `low_rank` 1.7× on ESS/second). A clean head-to-head on B.1.1.7 — two groups,
-  two random walks — has never been run. `benchmarks/run.py` is the harness;
-  it needs an idle machine.
 - **`multilevel-multi-obs` worst R-hat is 1.020**, just above the 1.01
   threshold. Everything else is clean (0 divergences, 0 saturation, E-BFMI 0.80).
 - **`refresh-vignettes` cannot open PRs** without *Settings → Actions → General →
