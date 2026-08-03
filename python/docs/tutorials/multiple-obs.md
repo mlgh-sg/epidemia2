@@ -494,11 +494,11 @@ print(f"prior R_t: median {qs[1]:.2f}, 90% interval [{qs[0]:.2f}, {qs[2]:.2f}]")
 print(f"(the scaled_logit cap is {config.R_link_K}, so R_t cannot exceed it)")
 ```
 
-    prior R_t: median 0.85, 90% interval [0.20, 2.02]
+    prior R_t: median 0.83, 90% interval [0.20, 2.11]
     (the scaled_logit cap is 7.0, so R_t cannot exceed it)
 
 
-    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for rw_noise[0, 37] exceeds 1.01, so the chains have not mixed.
+    /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: R-hat of 1.020 for rw_noise[0, 11] exceeds 1.01, so the chains have not mixed.
 
 
 

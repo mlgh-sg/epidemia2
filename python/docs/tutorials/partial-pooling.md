@@ -144,7 +144,7 @@ az.summary(idata_pp, var_names=["beta", "sd"])
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    done in 33.8s
+    done in 20.6s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -251,7 +251,7 @@ az.summary(idata_pp, var_names=["beta", "sd"])
         Finished Chains:
         <span id="active-chains">4</span>
     </p>
-    <p>Sampling for 45 seconds</p>
+    <p>Sampling for a minute</p>
     <p>
         Estimated Time to Completion:
         <span id="eta">now</span>
@@ -333,7 +333,7 @@ az.summary(idata_pp, var_names=["beta", "sd"])
 
 
 
-    [epidemia] sampled in 45.5s
+    [epidemia] sampled in 49.5s
 
 
     divergences: 1
@@ -520,7 +520,7 @@ eff = {
 
     [epidemia] compiling the log-density (numba backend)... 
 
-    done in 28.8s
+    done in 20.1s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -709,7 +709,7 @@ eff = {
 
 
 
-    [epidemia] sampled in 71.7s
+    [epidemia] sampled in 67.1s
 
 
     [epidemia] compiling the log-density (numba backend)... 
@@ -719,7 +719,7 @@ eff = {
     /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: Bulk ESS of 60 for sd_intercept is 15 per chain, below the 100 per chain that keeps posterior summaries stable.
 
 
-    done in 28.5s
+    done in 20.2s
 
 
     [epidemia] sampling 4 chains x (1000 tune + 500 draws)
@@ -826,7 +826,7 @@ eff = {
         Finished Chains:
         <span id="active-chains">4</span>
     </p>
-    <p>Sampling for 20 seconds</p>
+    <p>Sampling for 19 seconds</p>
     <p>
         Estimated Time to Completion:
         <span id="eta">now</span>
@@ -908,7 +908,7 @@ eff = {
 
 
 
-    [epidemia] sampled in 20.6s
+    [epidemia] sampled in 19.9s
 
 
     /Users/smishra/Documents/GitHub/epidemia/python/src/epidemia/multilevel.py:649: UserWarning: 3 divergent transitions. These bias the posterior and more draws will not help; raise target_accept above its current value or reparameterise.
