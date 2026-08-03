@@ -99,6 +99,9 @@
 <div id="agentsmd--working-on-the-epidemia-codebase" class="section level1">
 
 <p>Guidance for AI agents (and humans) modifying this package. For <em>using</em> the R package to build epidemic models, see <code>llms.txt</code> and the vignettes; for the Python port, see <code>python/README.md</code> and <code>python/docs/</code> (<code>python/docs/llms.txt</code>).</p>
+<blockquote>
+<p><strong>Picking this up cold?</strong> Read <a href="HANDOVER.html"><code>HANDOVER.md</code></a> first. It records the state at <code>v1.1.0</code>, the delay-kernel convention, how the docs-baking pipeline works, and six traps that produce wrong answers without erroring — including that R reports random-walk <em>increments</em> while Python stores cumulative <em>levels</em>.</p>
+</blockquote>
 <div class="section level2">
 <h2 id="two-implementations--keep-them-in-parity">Two implementations — keep them in parity<a class="anchor" aria-label="anchor" href="#two-implementations--keep-them-in-parity"></a></h2>
 <p>This repository ships <strong>two implementations of the same model</strong>, on one branch:</p>

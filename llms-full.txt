@@ -153,6 +153,40 @@ fm <- epim(rt, inf, obs, data, algorithm = "fullrank", iter = 5e4, tol_rel_obj =
 - Forecast evaluation: `evaluate_forecast()`, `posterior_coverage()`,
   `posterior_metrics()` (CRPS / MAE), `plot_coverage()`, `plot_metrics()`.
 
+## Bundled data
+
+- `EuropeCovid`, `EuropeCovid2` — 11 European countries, first COVID-19 wave:
+  daily cases/deaths, five NPI indicators, `si` (generation time) and
+  `inf2death`.
+- `EnglandB117` — SGTF-split English case counts behind Volz et al. (2021),
+  *Nature* 593:266-269. 49 areas x 120 days, plus populations, the ascertainment
+  rate, the delay kernel, **and the paper's own fitted estimates** (`published`,
+  `published_england`) so a reproduction can check itself.
+- `EnglandNewCases`, `Flu1918`.
+
+## Delay-kernel convention (important)
+
+Both `gen` and `i2o` are **lag-1-first**: entry 1 weights infections one day
+back, and an infection is never observed on the day it happens. Entry *k* should
+therefore carry the probability mass in **(k-1, k]**, i.e. `F(k) - F(k-1)`, which
+puts a kernel's mean lag half a day above its distribution's mean and assigns no
+mass at lag 0.
+
+Reproductions of published work should **build their own kernel** rather than use
+a bundled one: Flaxman et al. discretise at the midpoint (`F(k+1/2) - F(k-1/2)`),
+which is half a day different, and the B.1.1.7 model's `i2o` sums to **7, not 1**
+because its observations are weekly totals attached to a daily series.
+
+## Random walks: read the reported parameters carefully
+
+`R|rw(...)` draws are the walk's **increments**, not its levels — take a
+cumulative sum to get the walk. Safer still, derive quantities from
+`posterior_rt()` rather than from coefficients: for a two-group model the ratio
+of the two groups' `R_t` cancels any shared walk and depends on no
+parameterisation. (The B.1.1.7 vignette does this; reading the parameters as
+levels instead gave a correlation of 0.44 with the published series where the
+ratio gives 0.99.)
+
 ## Gotchas
 
 - `epirt` LHS must be exactly `R(group, date)`; `epiobs` LHS is the observed column.
@@ -160,7 +194,13 @@ fm <- epim(rt, inf, obs, data, algorithm = "fullrank", iter = 5e4, tol_rel_obj =
 - `i2o` and `gen` are per-day PMF vectors; `i2o` need not sum to 1 (it also encodes
   ascertainment scaling), `gen` should be a simplex.
 - Set early per-group observations to `NA` so the seeding period is not treated as data.
+- `NA` in an `rw(time = )` column means "this day gets no term from this walk" --
+  the way to give a walk to only some groups.
 - Fitting compiles Stan on first use (slow once, then cached).
+- `correlated` region effects (`(1 + x | g)`, single bar) need enough groups to
+  support a full covariance. With ~11 groups plus a per-group random walk it may
+  not identify: check `Sigma_chol` R-hat before trusting anything downstream, and
+  prefer the double-bar `||` form if it has not mixed.
 ```
 
 <!-- ===== README.md ===== -->
