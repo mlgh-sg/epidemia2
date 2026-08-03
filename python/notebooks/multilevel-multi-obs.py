@@ -21,8 +21,8 @@
 # This is the model the earlier Python builders could not express. It puts four
 # things together at once:
 #
-# * **partial pooling** of reproduction numbers across regions, with the region
-#   intercept and slope *correlated* (R's `(1 + x | region)` with `decov`);
+# * **partial pooling** of reproduction numbers across regions, with independent
+#   region intercepts and slopes (R's double-bar `(1 + x || region)`);
 # * a **random walk** on $R_t$, one per region (R's `rw(time = week, gr = region)`);
 # * **two observation series** fitted jointly, deaths and cases, each with its own
 #   delay distribution, family and ascertainment rate;
@@ -107,9 +107,25 @@ obs = [
 # %% [markdown]
 # ## The transmission model
 #
-# `correlated=True` estimates the full covariance of the region intercept and the
-# lockdown slope through an LKJ-Cholesky prior — R's single-bar `(1 + lockdown |
-# country)`. Setting it `False` gives the independent double-bar form.
+# `correlated=False` gives independent region intercepts and slopes — R's
+# double-bar `(1 + lockdown || country)`. Setting it `True` would estimate their
+# full covariance through an LKJ-Cholesky prior instead, R's single-bar form.
+#
+# **This tutorial deliberately uses the independent form.** The correlated one is
+# the more expressive model and epidemia supports it, but on *these* data it does
+# not identify: eleven regions are asked to support a full intercept-slope
+# covariance *and* a per-region random walk at the same time, and the sampler
+# cannot explore the resulting funnel. Fitted that way it returns a worst R-hat
+# of **1.620** on `Sigma_chol[0]` with a bulk ESS of **7** — chains that never
+# mixed, and a plot whose credible bands are an artefact of their disagreement
+# rather than a posterior. The independent form, at identical sampler settings,
+# gives R-hat **1.020** and ESS **96**.
+#
+# Raising `maxdepth` does not rescue the correlated version: at 14 the fit
+# extrapolates to fifteen hours and still saturates. The fix is the model, not
+# the compute budget. Use `correlated=True` when the correlation is what you are
+# after and you have the regions to support it — and check `Sigma_chol` before
+# believing anything downstream of it.
 #
 # `RandomWalk(by_region=True)` gives each country its own monthly walk with its
 # own scale; `by_region=False` would put them all on one shared walk.
@@ -119,7 +135,7 @@ obs = [
 # %%
 config = EpiModelConfig(
     gen=ec.si,
-    correlated=True,
+    correlated=False,
     pop_adjust=True,
     prior_susc_mean=0.95,
     prior_susc_sd=0.05,
@@ -141,10 +157,13 @@ print(f"{len(model.free_RVs)} free parameters")
 # [performance](../performance.md) page for the measurements.
 
 # %%
+# maxdepth is raised from nutpie's 10: about a third of iterations saturate it
+# even in the independent form, and a truncated trajectory costs efficiency
+# silently. 12 rather than 14 -- on this posterior 14 is not worth its cost.
 idata = fit_epidemia(panel, obs, config, draws=1000, tune=1000, chains=4,
-                     seed=12345, target_accept=0.99, progress_bar=False)
-summ = az.summary(idata, var_names=["beta", "seed", "rw_scale",
-                                   "Sigma_chol_stds"])
+                     seed=12345, target_accept=0.99, maxdepth=12,
+                     progress_bar=False)
+summ = az.summary(idata, var_names=["beta", "seed", "rw_scale", "sd"])
 print(summ[["mean", "sd", "r_hat", "ess_bulk"]].to_string())
 
 # %% [markdown]
